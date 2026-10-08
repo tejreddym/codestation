@@ -99,21 +99,22 @@ NEXT_PUBLIC_ADS_POPUNDER_ENABLED=false
 NEXT_PUBLIC_ADS_NATIVE_ENABLED=false
 ```
 
-Production indexing for `codestation.in` is owner-approved. Keep
-`SITE_INDEXING=index` in both the Workers Build variables and the Worker's
-runtime Variables & Secrets. Build variables are needed because
-`NEXT_PUBLIC_*` values are bundled during the Next build; the runtime value is
-needed because `robots.txt` and `sitemap.xml` read `SITE_INDEXING` at request
-time. The local/default examples and CI deliberately keep indexing disabled.
+Production indexing for `codestation.in` is owner-approved.
+`SITE_INDEXING=index` is declared as a committed runtime variable in
+`wrangler.jsonc` `vars`, so `robots.txt` and `sitemap.xml` read it at request
+time without a separate dashboard step. Build variables still need
+`SITE_INDEXING=index` alongside `NEXT_PUBLIC_SITE_URL` because `siteConfig`
+is evaluated during the Next build for page metadata. The local/default
+examples and CI deliberately keep indexing disabled.
 
-Set `SITE_INDEXING=index` in the Worker’s **runtime Variables & Secrets** as
-well. The robots and sitemap handlers read this non-public value at runtime,
-so a build-only value is not enough for the deployed Worker. For a local Worker
-preview, copy `.dev.vars.example` to `.dev.vars` and intentionally uncomment
-`SITE_INDEXING=index` only when testing the indexing-enabled path.
+For a local Worker preview, copy `.dev.vars.example` to `.dev.vars` and
+intentionally uncomment `SITE_INDEXING=index` only when testing the
+indexing-enabled path. `.dev.vars` values override `wrangler.jsonc` `vars`
+locally.
 
 Keep runtime secrets in the Worker’s **Settings → Variables & Secrets** area;
-do not put secrets in `wrangler.jsonc`, `.env.local`, `.dev.vars`, or Git.
+do not put secrets in `.env.local`, `.dev.vars`, or Git. Non-secret runtime
+variables like `SITE_INDEXING` belong in `wrangler.jsonc` `vars`.
 
 ## Domain and release checklist
 

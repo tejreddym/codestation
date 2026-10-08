@@ -1,5 +1,14 @@
 # Changelog
 
+## Commit SITE_INDEXING runtime variable — 2026-10-08
+
+- Declared `SITE_INDEXING=index` in `wrangler.jsonc` `vars` so the Worker
+  runtime receives it without a separate dashboard step. `robots.txt` and
+  `sitemap.xml` now serve the indexing-enabled responses on every deployment.
+- Updated `docs/CLOUDFLARE_DEPLOYMENT.md` to reflect the committed variable.
+- Build variables still require `SITE_INDEXING=index` alongside
+  `NEXT_PUBLIC_SITE_URL` for page metadata baked during the Next build.
+
 ## Adsterra advertising integration — 2026-10-08
 
 - Added production-only, opt-in Social Bar, Popunder, and Native Banner loading

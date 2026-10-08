@@ -19,6 +19,9 @@
   "placement": {
     "mode": "smart"
   },
+  "vars": {
+    "SITE_INDEXING": "index"
+  },
   "observability": {
     "enabled": true
   }

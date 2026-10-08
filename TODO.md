@@ -125,7 +125,7 @@
 - [x] Add a pinned Node toolchain, GitHub checks workflow, and repeatable Worker preview smoke script (2026-10-08).
 - [x] Connect Workers Builds to `tejreddym/codestation`, set the production origin build variable, attach `codestation.in`, and complete the production sitemap/robots smoke check (2026-10-08).
 - [x] Approve production indexing for `codestation.in`; keep CI/local defaults noindex (2026-10-08).
-- [ ] Apply `SITE_INDEXING=index` in both Cloudflare build and runtime settings, deploy, and verify live crawlability.
+- [x] Commit `SITE_INDEXING=index` in `wrangler.jsonc` `vars` and set it in Cloudflare build variables; deploy and verify live crawlability (2026-10-08).
 - [ ] Establish CI checks beyond the Cloudflare Workers Build gate.
 - [ ] Add authentication, billing, persistence, ads, and admin boundaries when product scope requires them.
 
