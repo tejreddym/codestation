@@ -33,12 +33,24 @@ function catalogData(stationId: string, stationToolList: readonly string[]) {
   return { tools: stationToolList.map(id => registryTools.find(tool => tool.id === id)).filter((tool): tool is ToolDefinition => Boolean(tool)), filters: undefined, labels: undefined };
 }
 
+import { JsonLd } from "./StructuredData";
+import { siteConfig } from "@/config/site";
+
 export default function StationLanding({ stationId, notice }: { stationId: string; notice?: string }) {
   const station = getStation(stationId);
   if (!station) return null;
   const catalog = catalogData(station.id, station.toolList);
   const related = station.relatedStations.map(getStation).filter((item): item is NonNullable<typeof item> => Boolean(item));
-  return <main className="shell"><section className="tool-page station-page">
+  return <main className="shell">
+    <JsonLd schema={{
+      "@context": "https://schema.org",
+      "@type": "CollectionPage",
+      name: `${station.name} Station`,
+      description: station.description,
+      ...(siteConfig.origin ? { url: `${siteConfig.origin}${station.route}` } : {})
+    } as any} />
+    <section className="tool-page station-page">
+
     <nav className="crumb" aria-label="Breadcrumb"><Link href="/">Home</Link><span aria-hidden="true"> / </span><Link href="/#categories">Stations</Link><span aria-hidden="true"> / </span><Link href={station.route} aria-current="page">{station.name}</Link></nav>
     <div className="station-intro">
       <div><div className="eyebrow station-eyebrow"><span className="bracket-label">THE STATIONS</span><span>{station.toolCount} tools</span></div>

@@ -19,10 +19,20 @@ const showcases = [
   { slug: "color-converter", title: "Find your expression.", description: "Translate colors between HEX, RGB, and HSL.", label: "03 / COLOR & CSS", Graphic: ColorPreview },
 ].map(item => ({ ...item, tool: tools.find(tool => tool.slug === item.slug) })).filter(item => item.tool);
 
+import { JsonLd } from "@/components/StructuredData";
+import { siteConfig } from "@/config/site";
+
 export default function HomePage() {
   const [query, setQuery] = useState("");
   const matches = useMemo(() => query.trim() ? searchTools(tools, query) : quickAccess, [query]);
   return <main className={styles.page}>
+    <JsonLd schema={{
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      name: siteConfig.name,
+      description: siteConfig.description,
+      ...(siteConfig.origin ? { url: siteConfig.origin } : {})
+    } as any} />
     <div className={`shell ${styles.container}`}>
       <section className={styles.hero} data-searching={Boolean(query.trim())} aria-labelledby="home-title">
         <div className={styles.eyebrow}><span aria-hidden="true">[</span> YOUR EVERYDAY DEVELOPER WORKBENCH <span aria-hidden="true">]</span></div>

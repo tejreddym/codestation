@@ -9,6 +9,7 @@ import ToolWorkspace from "@/components/ToolWorkspace";
 import { getImageDefinition } from "@/config/image-tools";
 import { getStationByName } from "@/config/stations";
 import { metadataForRoute } from "@/config/site";
+import { JsonLd } from "@/components/StructuredData";
 
 export function generateStaticParams() { return tools.map((tool) => ({ slug: tool.slug })); }
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
@@ -24,7 +25,17 @@ export default async function ToolPage({ params }: { params: Promise<{ slug: str
   const tool = getTool(slug);
   if (!tool) notFound();
   const local = tool.localContract ?? getImageDefinition(tool.id)?.localContract;
-  return <main className="shell"><section className="tool-page workspace-page">
+  return <main className="shell">
+    <JsonLd schema={{
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      name: tool.name,
+      description: tool.description,
+      applicationCategory: "DeveloperApplication",
+      operatingSystem: "Any",
+      offers: { "@type": "Offer", price: "0", priceCurrency: "USD" }
+    } as any} />
+    <section className="tool-page workspace-page">
     <nav className="crumb" aria-label="Breadcrumb"><Link href="/">Home</Link><span aria-hidden="true"> / </span><Link href="/tools">Tools</Link><span aria-hidden="true"> / </span><Link href={tool.localContract ? getStationByName(tool.category)!.route : tool.apiContract ? "/stations/api" : tool.webContract ? "/stations/web" : `/tools?category=${encodeURIComponent(tool.category)}`}>{tool.category}</Link><span aria-hidden="true"> / </span><Link href={`/tools/${tool.slug}`} aria-current="page">{tool.name}</Link></nav>
     <div className="workspace-heading"><div><div className="eyebrow"><span className="bracket-label">{tool.category}</span></div>
     <h1>{tool.name}</h1><p className="lead">{tool.description}</p></div><span className="workspace-symbol" aria-hidden="true"><StationMark large label={tool.category} /></span></div>
