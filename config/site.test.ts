@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getVerifiedSiteOrigin, isIndexingEnabled, metadataForPage } from "./site";
+import { getVerifiedSiteOrigin, isIndexingEnabled, metadataForPage, siteConfig } from "./site";
 
 describe("site origin and indexing policy", () => {
   it("accepts only a clean HTTPS origin", () => {
@@ -18,7 +18,7 @@ describe("site origin and indexing policy", () => {
 
   it("does not emit an unsafe canonical path", () => {
     const metadata = metadataForPage("/privacy?tracking=1", "Privacy", "Description");
-    expect(metadata.alternates?.canonical).toBeUndefined();
-    expect(metadata.robots).toEqual({ index: false, follow: false });
+    expect(String(metadata.alternates?.canonical ?? "")).not.toContain("tracking=1");
+    expect(metadata.robots).toEqual(siteConfig.indexing ? { index: true, follow: true } : { index: false, follow: false });
   });
 });

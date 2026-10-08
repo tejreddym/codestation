@@ -16,8 +16,9 @@ export function getVerifiedSiteOrigin(value = process.env.NEXT_PUBLIC_SITE_URL):
   }
 }
 
-export function isIndexingEnabled(origin = getVerifiedSiteOrigin(), setting = process.env.SITE_INDEXING): boolean {
-  return setting === "index" && !!origin;
+export function isIndexingEnabled(origin?: string, setting = process.env.SITE_INDEXING): boolean {
+  const effectiveOrigin = arguments.length === 0 ? getVerifiedSiteOrigin() : origin;
+  return setting === "index" && !!effectiveOrigin;
 }
 
 const verifiedOrigin = getVerifiedSiteOrigin();
