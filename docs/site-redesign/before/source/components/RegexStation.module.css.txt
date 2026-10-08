@@ -1,0 +1,49 @@
+.station { display:grid; gap:24px; margin-top:32px; min-width:0; }
+.station * { min-width:0; }
+.form,.results { min-width:0; padding:24px; border:1px solid var(--line); border-radius:var(--radius-md); background:var(--surface); box-shadow:var(--shadow-tactile); }
+.fields { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; align-items:start; }
+.field { display:grid; gap:8px; }
+.field:only-child { grid-column:1 / -1; }
+.field > label,.flagField legend { font-size:14px; font-weight:700; line-height:1.5; overflow-wrap:anywhere; }
+.field textarea,.field select { width:100%; max-width:100%; min-height:44px; padding:12px; border:1px solid var(--line-strong); border-radius:var(--radius-sm); background:var(--surface); color:var(--ink); font:14px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace; }
+.field textarea { min-height:110px; resize:vertical; }
+.field textarea[rows="7"] { min-height:190px; }
+.field select { background:var(--surface); color:var(--ink); }
+.flagField { grid-column:1 / -1; margin:0; padding:12px; border:1px solid var(--line); border-radius:var(--radius-sm); }
+.flags { display:grid; grid-template-columns:repeat(auto-fit,minmax(165px,1fr)); gap:8px; }
+.flag { display:flex; align-items:center; gap:9px; min-height:44px; padding:7px 9px; border:1px solid var(--line); border-radius:var(--radius-sm); background:var(--surface-alt); font:13px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace; cursor:pointer; }
+.flag input { flex:none; width:18px; height:18px; margin:0; accent-color:var(--accent); }
+.actions { display:flex; flex-wrap:wrap; gap:9px; margin-top:16px; }
+.button { min-width:44px; max-width:100%; min-height:44px; padding:9px 13px; border:1px solid var(--line-strong); border-radius:var(--radius-sm); background:var(--surface); color:var(--ink); font-size:13px; font-weight:700; line-height:1.5; overflow-wrap:anywhere; box-shadow:var(--shadow-tactile); }
+.button:hover:not(:disabled) { border-color:var(--accent); }
+.button:active:not(:disabled) { transform:translateY(1px); box-shadow:none; }
+.button:disabled { opacity:.55; cursor:default; }
+.button.primary { background:var(--accent); border-color:var(--accent); color:var(--button-primary-text); }
+.station button:focus-visible,.station input:focus-visible,.station textarea:focus-visible,.station select:focus-visible,.output:focus-visible { outline:2px solid var(--focus); outline-offset:3px; }
+.hint,.notes { color:var(--secondary); font-size:14px; line-height:1.65; overflow-wrap:anywhere; }
+.hint { margin:0; }
+.flagField .hint { margin-top:10px; }
+.notes p { margin:0 0 10px; }
+.error { margin:14px 0 0; padding:12px; border:1px solid var(--red); border-radius:var(--radius-sm); color:var(--red); overflow-wrap:anywhere; }
+.results { display:grid; gap:16px; }
+.results h2 { font-size:20px; line-height:1.4; margin:0; overflow-wrap:anywhere; }
+.list { display:grid; gap:14px; }
+.card { display:grid; gap:12px; padding:16px; border:1px solid var(--line); border-radius:var(--radius-md); background:var(--surface-alt); }
+.card h3,.card h4 { margin:0; overflow-wrap:anywhere; }
+.card h4 { font-size:15px; }
+.value { display:grid; gap:8px; }
+.valueHead { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px; font-size:13px; font-weight:700; }
+.valueHead span { overflow-wrap:anywhere; }
+.valueHead button { flex:none; }
+.output { display:block; margin:0; padding:12px; max-width:100%; min-height:44px; max-height:320px; overflow:auto; white-space:pre; tab-size:4; border:1px solid var(--line); border-radius:var(--radius-sm); background:var(--code); color:var(--code-ink); font:13px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace; }
+.metrics { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; }
+.pagination { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; padding:10px 0; }
+.pagination p { margin:0; color:var(--secondary); font-size:13px; }
+.pagination .actions { margin:0; }
+@media (max-width:640px) {
+  .fields,.metrics { grid-template-columns:minmax(0,1fr); }
+  .form,.results { padding:16px; }
+  .field textarea,.field select { font-size:16px; }
+  .card { padding:12px; }
+  .flags { grid-template-columns:minmax(0,1fr); }
+}

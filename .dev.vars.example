@@ -1,0 +1,7 @@
+# OpenNext local Worker runtime environment.
+# Keep secrets and machine-specific values in .dev.vars, which is ignored.
+NEXTJS_ENV=development
+
+# Optional runtime value for a local Worker preview. Leave unset to keep
+# robots.txt noindex/disallowed until an intentional indexing decision.
+# SITE_INDEXING=index

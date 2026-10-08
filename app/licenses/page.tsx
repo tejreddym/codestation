@@ -1,0 +1,8 @@
+import { InformationalPage, informationalStyles } from "@/components/InformationalPage";
+import { metadataForPage } from "@/config/site";
+
+export const metadata = metadataForPage("/licenses", "Licenses and Notices", "Third-party software and asset licensing notices for Code Station.");
+
+export default function LicensesPage() {
+  return <InformationalPage title="Licenses and Notices" intro="Code Station includes third-party software and project-authored presentation code."><p className={informationalStyles.notice}>The project does not currently contain a root project license. No ownership or license is asserted for the project’s own code or supplied visual assets on this page.</p><h2>Third-party software</h2><p>The generated <a href="/THIRD_PARTY_NOTICES.md">third-party notice artifact</a> preserves discovered license texts for the installed production dependency closure. It is generated from <code>package-lock.json</code> and installed package license files by <code>scripts/generate-third-party-notices.mjs</code>. License labels without corresponding text are recorded as unresolved rather than treated as sufficient notice.</p><h2>Assets and provenance</h2><p>The illustrated theme toggle is present in the application and its provenance or license has not been verified in the available materials. The asset owner must confirm attribution and permission before a final asset notice is published. No additional font, image, or icon ownership is inferred here.</p><h2>Maintenance</h2><p>Regenerate the artifact after dependency changes and review missing-license entries before a production release.</p></InformationalPage>;
+}

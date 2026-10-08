@@ -1,0 +1,8 @@
+import Link from "next/link";
+
+export default function SiteFooter() {
+  return <footer className="footer"><div className="shell footer-grid">
+    <div><strong>Code Station</strong><p className="muted">Browser-first developer utilities with documented limits and local processing where supported.</p></div>
+    <nav aria-label="Footer"><Link href="/about">About</Link><Link href="/privacy">Privacy</Link><Link href="/terms">Terms</Link><Link href="/licenses">Licenses</Link><Link href="/site-directory">Site directory</Link></nav>
+  </div></footer>;
+}

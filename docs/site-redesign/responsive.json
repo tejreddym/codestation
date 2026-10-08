@@ -1,0 +1,128 @@
+[
+  {
+    "route": "/stations/converters",
+    "width": 320,
+    "height": 760,
+    "content": 305,
+    "viewport": 320
+  },
+  {
+    "route": "/tools",
+    "width": 320,
+    "height": 760,
+    "content": 305,
+    "viewport": 320
+  },
+  {
+    "route": "/tools/json-formatter",
+    "width": 320,
+    "height": 760,
+    "content": 305,
+    "viewport": 320
+  },
+  {
+    "route": "/tools/png-to-webp",
+    "width": 320,
+    "height": 760,
+    "content": 305,
+    "viewport": 320
+  },
+  {
+    "route": "/about",
+    "width": 320,
+    "height": 760,
+    "content": 305,
+    "viewport": 320
+  },
+  {
+    "route": "/site-directory",
+    "width": 320,
+    "height": 760,
+    "content": 305,
+    "viewport": 320
+  },
+  {
+    "route": "/stations/converters",
+    "width": 768,
+    "height": 1024,
+    "content": 753,
+    "viewport": 768
+  },
+  {
+    "route": "/tools",
+    "width": 768,
+    "height": 1024,
+    "content": 753,
+    "viewport": 768
+  },
+  {
+    "route": "/tools/json-formatter",
+    "width": 768,
+    "height": 1024,
+    "content": 753,
+    "viewport": 768
+  },
+  {
+    "route": "/tools/png-to-webp",
+    "width": 768,
+    "height": 1024,
+    "content": 753,
+    "viewport": 768
+  },
+  {
+    "route": "/about",
+    "width": 768,
+    "height": 1024,
+    "content": 753,
+    "viewport": 768
+  },
+  {
+    "route": "/site-directory",
+    "width": 768,
+    "height": 1024,
+    "content": 753,
+    "viewport": 768
+  },
+  {
+    "route": "/stations/converters",
+    "width": 1024,
+    "height": 600,
+    "content": 1009,
+    "viewport": 1024
+  },
+  {
+    "route": "/tools",
+    "width": 1024,
+    "height": 600,
+    "content": 1009,
+    "viewport": 1024
+  },
+  {
+    "route": "/tools/json-formatter",
+    "width": 1024,
+    "height": 600,
+    "content": 1009,
+    "viewport": 1024
+  },
+  {
+    "route": "/tools/png-to-webp",
+    "width": 1024,
+    "height": 600,
+    "content": 1009,
+    "viewport": 1024
+  },
+  {
+    "route": "/about",
+    "width": 1024,
+    "height": 600,
+    "content": 1009,
+    "viewport": 1024
+  },
+  {
+    "route": "/site-directory",
+    "width": 1024,
+    "height": 600,
+    "content": 1009,
+    "viewport": 1024
+  }
+]

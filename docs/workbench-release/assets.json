@@ -1,0 +1,18 @@
+{
+  "public/app-icon.svg": {
+    "raw": 308,
+    "gzip": 225
+  },
+  "public/code-station-sw.js": {
+    "raw": 3308,
+    "gzip": 1359
+  },
+  "public/manifest.webmanifest": {
+    "raw": 330,
+    "gzip": 234
+  },
+  "public/offline-assets.json": {
+    "raw": 7260,
+    "gzip": 2238
+  }
+}

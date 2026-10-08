@@ -1,0 +1,48 @@
+import Link from "next/link";
+import { converterCategories, converterEntries } from "@/config/converter-tools";
+import { getStation } from "@/config/stations";
+import { getTool, type ToolDefinition } from "@/config/tools";
+import StationMark from "./StationMark";
+import ToolCatalog, { type ToolCategoryFilter } from "./ToolCatalog";
+
+const defaultNotices: Record<string, string> = {
+  "json-data": "Data is parsed and transformed locally. Previews are inert text and inputs are not uploaded or persisted.",
+  encoding: "Encoding and decoding run locally in the browser. JWT decoding is structural only and never verifies signatures.",
+  security: "Cryptographic operations use browser-local APIs. Secrets and generated values remain in this page and are not persisted.",
+  regex: "Regular expressions run locally with bounded processing. No pattern or text is sent to a server.",
+  "date-time": "Date and time calculations use the browser runtime and explicit IANA zones. Inputs remain local to this page.",
+  text: "Text processing stays in this browser. Inputs are not uploaded, logged, or stored.",
+  cron: "Schedules are parsed and calculated locally. No jobs, commands, timers, or schedules are executed.",
+  "sql-database": "SQL is parsed and generated locally. No database connections, query execution, or credential testing is performed.",
+  web: "URLs and metadata are treated as local data. No entered URL is fetched or crawled.",
+  api: "Builders and converters run locally. Only the explicit request tester sends a browser request, with no backend proxy.",
+  image: "Files stay in this browser. Outputs are bounded and validated locally; unsupported codecs are not exposed.",
+  spreadsheet: "Workbook processing stays local. Macros never execute and formulas are not recalculated.",
+  markdown: "Markdown is processed locally. Generated HTML is sanitized inert text; remote image URLs in previews may be requested by the browser.",
+  "color-css": "Color calculations and CSS generation run locally using bounded, validated values.",
+  converters: "Cards reuse canonical registered tool identities and show only format mappings present in the capability registry.",
+};
+
+function catalogData(stationId: string, stationToolList: readonly string[]) {
+  if (stationId === "converters") {
+    const tools = converterEntries.map(entry => entry.tool);
+    const filters: ToolCategoryFilter[] = converterCategories.map(category => ({ id: category.id, name: category.name, toolIds: converterEntries.filter(entry => entry.category.id === category.id).map(entry => String(entry.tool.id)) }));
+    return { tools, filters, labels: Object.fromEntries(converterEntries.map(entry => [String(entry.tool.id), entry.category.name])) };
+  }
+  return { tools: stationToolList.map(getTool).filter((tool): tool is ToolDefinition => Boolean(tool)), filters: undefined, labels: undefined };
+}
+
+export default function StationLanding({ stationId, notice }: { stationId: string; notice?: string }) {
+  const station = getStation(stationId);
+  if (!station) return null;
+  const catalog = catalogData(station.id, station.toolList);
+  const related = station.relatedStations.map(getStation).filter((item): item is NonNullable<typeof item> => Boolean(item));
+  return <main className="shell"><section className="tool-page station-page">
+    <nav className="crumb" aria-label="Breadcrumb"><Link href="/">Home</Link><span aria-hidden="true"> / </span><Link href="/#categories">Stations</Link><span aria-hidden="true"> / </span><Link href={station.route} aria-current="page">{station.name}</Link></nav>
+    <div className="eyebrow station-eyebrow"><StationMark />{station.toolCount} browser-local tools</div>
+    <div className="page-heading station-heading"><div><h1>{station.name} Station</h1><p className="lead">{station.description}</p></div><span className="result-chip">LOCAL PROCESSING</span></div>
+    <div className="content"><p>{notice ?? defaultNotices[station.id]}</p></div>
+    <ToolCatalog name={station.name} tools={catalog.tools} categoryFilters={catalog.filters} categoryLabels={catalog.labels} emptyMessage={station.id === "converters" ? "No converter tools match those filters." : undefined} />
+    <section className="section related-section" aria-labelledby={`${station.id}-related`}><div className="section-head"><div><span className="section-kicker">KEEP EXPLORING</span><h2 id={`${station.id}-related`}>Related developer stations</h2></div></div><div className="category-grid">{related.map(item => <Link className="category station-card" href={item.route} key={item.id}><div className="station-card-header"><StationMark large label={item.name} /><strong>{item.name}</strong></div><p className="station-description">{item.description}</p><div className="station-card-footer"><span className="station-count">{item.toolCount} tools</span><span className="station-card-explore">Explore <span aria-hidden="true">→</span></span></div></Link>)}</div></section>
+  </section></main>;
+}

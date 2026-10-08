@@ -1,0 +1,11 @@
+import Link from "next/link";
+import type { ToolDefinition } from "@/config/tools";
+
+export default function ToolCard({ tool, category }: { tool: ToolDefinition; category?: string }) {
+  return <Link className="tool-card" href={`/tools/${tool.slug}`}>
+    <span className="tag">{category ?? tool.category}</span>
+    <h3>{tool.name}</h3>
+    <p>{tool.description}</p>
+    <span className="tool-arrow" aria-hidden="true">↗</span>
+  </Link>;
+}

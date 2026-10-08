@@ -1,0 +1,25 @@
+# Dependencies and build output
+node_modules/
+.next/
+.open-next/
+.wrangler/
+out/
+dist/
+
+# Local environment and credentials
+.env
+.env.*
+!.env.example
+.dev.vars
+.dev.vars.*
+!.dev.vars.example
+
+# Generated build metadata
+public/offline-assets.json
+cloudflare-env.d.ts
+tsconfig.tsbuildinfo
+
+# Local logs and editor/OS files
+*.log
+.DS_Store
+.omnirush/

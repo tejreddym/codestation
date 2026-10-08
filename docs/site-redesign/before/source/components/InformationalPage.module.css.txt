@@ -1,0 +1,179 @@
+.page {
+  padding-block: clamp(34px, 5vw, 58px) 88px;
+}
+
+.content {
+  max-width: 720px;
+  margin: 0 auto;
+  color: var(--secondary);
+  font-size: 16px;
+  line-height: 1.75;
+}
+
+.content :global(.crumb) {
+  margin-bottom: 30px;
+  color: var(--muted);
+}
+
+.content :global(.crumb) a {
+  color: var(--secondary);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--green) 62%, transparent);
+  text-underline-offset: 3px;
+}
+
+.content h1,
+.content h2,
+.content h3 {
+  color: var(--ink);
+  line-height: 1.15;
+}
+
+.content h1 {
+  max-width: 16ch;
+  margin: 0 0 18px;
+  font-size: clamp(38px, 5vw, 56px);
+  letter-spacing: -0.055em;
+}
+
+.content h2 {
+  margin: 44px 0 12px;
+  font-size: 24px;
+  letter-spacing: -0.035em;
+}
+
+.content h3 {
+  margin: 30px 0 8px;
+  font-size: 18px;
+  letter-spacing: -0.02em;
+}
+
+.content p {
+  margin: 0 0 20px;
+}
+
+.content :global(.lead) {
+  max-width: 620px;
+  margin-bottom: 32px;
+  color: var(--secondary);
+}
+
+.content a {
+  color: var(--secondary);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--green) 72%, transparent);
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 3px;
+  transition: color 0.15s var(--ease), text-decoration-color 0.15s var(--ease);
+}
+
+.content a:hover {
+  color: var(--green);
+  text-decoration-color: currentColor;
+}
+
+.content a:focus-visible {
+  border-radius: 3px;
+  outline: 2px solid var(--focus);
+  outline-offset: 4px;
+}
+
+.content ul:not(.directory),
+.content ol {
+  margin: 0 0 24px;
+  padding-left: 1.35rem;
+}
+
+.content li {
+  padding-left: 0.2rem;
+}
+
+.content li + li {
+  margin-top: 9px;
+}
+
+.notice {
+  margin: 0 0 28px;
+  border: 1px solid color-mix(in srgb, var(--yellow) 38%, var(--line));
+  border-inline-start: 4px solid var(--yellow);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--yellow) 11%, var(--surface));
+  padding: 14px 17px;
+  color: var(--secondary);
+}
+
+.directory {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  gap: 12px;
+  margin: 0 0 30px;
+  padding: 0;
+  list-style: none;
+}
+
+.directory li {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--secondary) 8%, transparent);
+  transition: border-color 0.15s var(--ease), background-color 0.15s var(--ease), transform 0.15s var(--ease);
+}
+
+.directory li:hover {
+  border-color: color-mix(in srgb, var(--green) 62%, var(--line-strong));
+  background: color-mix(in srgb, var(--green) 5%, var(--surface));
+  transform: translateY(-1px);
+}
+
+.directory li > a {
+  display: block;
+  overflow-wrap: anywhere;
+  padding: 14px 16px;
+  color: var(--ink);
+  font-weight: 700;
+  text-decoration-color: color-mix(in srgb, var(--green) 68%, transparent);
+}
+
+.directory li > a:hover {
+  color: var(--green);
+}
+
+.directory li > small {
+  display: block;
+  margin-top: -8px;
+  padding: 0 16px 14px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+@media (max-width: 720px) {
+  .page {
+    padding-top: 32px;
+    padding-bottom: 64px;
+  }
+
+  .content {
+    max-width: 100%;
+  }
+
+  .content :global(.crumb) {
+    margin-bottom: 24px;
+  }
+
+  .content h1 {
+    font-size: clamp(36px, 10vw, 48px);
+  }
+
+  .content h2 {
+    margin-top: 36px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .content a,
+  .directory li {
+    transition: none;
+  }
+}

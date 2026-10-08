@@ -1,0 +1,469 @@
+.pickerField {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  position: relative;
+  width: 100%;
+}
+
+.label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--secondary);
+}
+
+.inputWrapper {
+  display: flex;
+  align-items: center;
+  position: relative;
+  width: 100%;
+}
+
+.input {
+  width: 100%;
+  padding: 9px 42px 9px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--ink);
+  font: 13px ui-monospace, monospace;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.05);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.inputWithTwoIcons {
+  padding-right: 74px;
+}
+
+.input:focus {
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+  border-color: var(--focus);
+}
+
+.iconGroup {
+  position: absolute;
+  right: 5px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.iconButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface-alt);
+  color: var(--secondary);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s, transform 0.1s;
+}
+
+.iconButton:hover {
+  background: var(--elevated);
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.iconButton:active {
+  transform: translateY(1px);
+}
+
+.iconButtonActive {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.hint {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 2px;
+  line-height: 1.4;
+}
+
+.popover {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 100;
+  background: var(--elevated);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow);
+  padding: 14px;
+  width: 330px;
+  max-width: 95vw;
+  animation: popoverFadeIn 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes popoverFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line);
+}
+
+.tab {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 7px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface-alt);
+  color: var(--secondary);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.tab:hover {
+  color: var(--ink);
+  border-color: var(--line-strong);
+}
+
+.tabActive {
+  background: var(--accent);
+  color: #ffffff !important;
+  border-color: var(--accent);
+  box-shadow: 0 1px 3px rgba(57, 120, 232, 0.3);
+}
+
+.popoverFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+  gap: 8px;
+}
+
+.footerLeft {
+  display: flex;
+  gap: 6px;
+}
+
+.actionBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.actionBtn:hover {
+  background: var(--surface-alt);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.actionBtnPrimary {
+  background: var(--accent);
+  color: #ffffff;
+  border-color: var(--accent);
+}
+
+.actionBtnPrimary:hover {
+  background: var(--accent-hover);
+  color: #ffffff;
+}
+
+/* =====================================================================
+   react-calendar Theme Overrides (Tactile Technical Dark & Light)
+   ===================================================================== */
+.popover :global(.react-calendar) {
+  width: 100%;
+  background: transparent;
+  border: none;
+  font-family: inherit;
+  color: var(--ink);
+  line-height: 1.2;
+}
+
+.popover :global(.react-calendar__navigation) {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 36px;
+  margin-bottom: 10px;
+}
+
+.popover :global(.react-calendar__navigation button) {
+  min-width: 32px;
+  height: 32px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.12s ease;
+}
+
+.popover :global(.react-calendar__navigation button:enabled:hover) {
+  background: var(--surface-alt);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.popover :global(.react-calendar__navigation button:disabled) {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.popover :global(.react-calendar__navigation__label) {
+  flex-grow: 1;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+}
+
+.popover :global(.react-calendar__month-view__weekdays) {
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 6px;
+}
+
+.popover :global(.react-calendar__month-view__weekdays__weekday) {
+  padding: 4px 0;
+}
+
+.popover :global(.react-calendar__month-view__weekdays__weekday abbr) {
+  text-decoration: none;
+}
+
+.popover :global(.react-calendar__month-view__weekdays__weekday--weekend) {
+  color: var(--red);
+  opacity: 0.85;
+}
+
+.popover :global(.react-calendar__tile) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 34px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--ink);
+  font-size: 12px;
+  font-family: ui-monospace, monospace;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.popover :global(.react-calendar__tile:enabled:hover) {
+  background: var(--surface-alt);
+  color: var(--accent);
+}
+
+.popover :global(.react-calendar__tile--now) {
+  border: 1px dashed var(--accent) !important;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.popover :global(.react-calendar__tile--active),
+.popover :global(.react-calendar__tile--active:enabled:hover) {
+  background: var(--accent) !important;
+  color: #ffffff !important;
+  font-weight: 700;
+  box-shadow: 0 2px 4px rgba(57, 120, 232, 0.35);
+}
+
+.popover :global(.react-calendar__month-view__days__day--neighboringMonth) {
+  color: var(--muted);
+  opacity: 0.35;
+}
+
+.popover :global(.react-calendar__year-view .react-calendar__tile),
+.popover :global(.react-calendar__decade-view .react-calendar__tile),
+.popover :global(.react-calendar__century-view .react-calendar__tile) {
+  height: 44px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+}
+
+/* =====================================================================
+   react-clock Theme Overrides & Clock Controls
+   ===================================================================== */
+.clockSection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.clockContainer {
+  display: flex;
+  justify-content: center;
+  padding: 6px 0;
+}
+
+.popover :global(.react-clock) {
+  margin: 0 auto;
+  border-radius: 50%;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+}
+
+.popover :global(.react-clock__face) {
+  background: var(--surface);
+  border: 2px solid var(--line-strong);
+  border-radius: 50%;
+}
+
+.popover :global(.react-clock__hand__body) {
+  background-color: var(--ink);
+  border-radius: 2px;
+}
+
+.popover :global(.react-clock__minute-hand .react-clock__hand__body) {
+  background-color: var(--accent);
+}
+
+.popover :global(.react-clock__second-hand__body) {
+  background-color: var(--red);
+}
+
+.popover :global(.react-clock__mark__body) {
+  background-color: var(--line-strong);
+}
+
+.popover :global(.react-clock__mark__number) {
+  color: var(--secondary);
+  font-size: 11px;
+  font-weight: 700;
+  font-family: ui-monospace, monospace;
+}
+
+.digitalReadout {
+  font: 700 18px ui-monospace, monospace;
+  color: var(--ink);
+  letter-spacing: 0.08em;
+  background: var(--surface);
+  padding: 6px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+}
+
+.clockSteppers {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.stepperUnit {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.stepperLabel {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.stepperControls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.stepperBtn {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.12s;
+}
+
+.stepperBtn:hover {
+  background: var(--surface-alt);
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.stepperValue {
+  min-width: 28px;
+  text-align: center;
+  font: 700 14px ui-monospace, monospace;
+  color: var(--ink);
+}
+
+.presetChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  justify-content: center;
+  margin-top: 4px;
+}
+
+.presetChip {
+  padding: 3px 8px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--muted);
+  font: 600 11px ui-monospace, monospace;
+  cursor: pointer;
+  transition: all 0.12s;
+}
+
+.presetChip:hover {
+  background: var(--surface-alt);
+  color: var(--accent);
+  border-color: var(--accent);
+}

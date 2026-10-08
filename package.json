@@ -1,0 +1,55 @@
+{
+  "name": "code-station",
+  "version": "0.1.0",
+  "private": true,
+  "engines": {
+    "node": ">=22.13.0 <23"
+  },
+  "packageManager": "npm@10.9.3",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build && node scripts/generate-offline-manifest.mjs",
+    "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
+    "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
+    "upload": "opennextjs-cloudflare build && opennextjs-cloudflare upload",
+    "cf:verify": "node scripts/verify-cloudflare-preview.mjs",
+    "cf:typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
+    "start": "next start",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@cfworker/json-schema": "^4.1.1",
+    "@opennextjs/cloudflare": "^1.20.9",
+    "entities": "^8.1.0",
+    "exceljs": "4.4.0",
+    "fflate": "0.8.3",
+    "lucide-react": "^1.50.0",
+    "next": "^15.5.0",
+    "node-sql-parser": "5.4.0",
+    "react": "^19.1.0",
+    "react-calendar": "^6.0.1",
+    "react-clock": "^6.0.0",
+    "react-dom": "^19.1.0",
+    "saxes": "^6.0.0",
+    "smol-toml": "^1.9.0",
+    "sql-formatter": "15.9.0",
+    "tr46": "^6.0.0",
+    "yaml": "^2.9.1"
+  },
+  "devDependencies": {
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.7",
+    "@types/node": "^22.15.0",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "@types/tr46": "^5.0.1",
+    "eslint": "9.39.1",
+    "eslint-config-next": "15.5.27",
+    "jsdom": "^29.1.1",
+    "typescript": "^5.8.0",
+    "vitest": "^3.2.0",
+    "wrangler": "^4.148.0"
+  }
+}

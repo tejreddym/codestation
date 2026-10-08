@@ -1,0 +1,1241 @@
+{
+  "version": 1,
+  "brand": "Code Station",
+  "naming": "dark = charcoal artwork for light backgrounds; light = ivory artwork for dark backgrounds",
+  "themes": {
+    "dark": {
+      "ink": "#151713",
+      "bg": "#F6F5F1",
+      "dots": [
+        "#B45309",
+        "#147D64",
+        "#476511"
+      ],
+      "accent": "#476511"
+    },
+    "light": {
+      "ink": "#F6F5F1",
+      "bg": "#151713",
+      "dots": [
+        "#FBBF24",
+        "#6EE7B7",
+        "#D9F975"
+      ],
+      "accent": "#D9F975"
+    }
+  },
+  "assets": [
+    {
+      "file": "svg/icon-dark.svg",
+      "format": "svg",
+      "width": 104,
+      "height": 104,
+      "theme": "dark",
+      "transparent": true,
+      "use": "icon",
+      "gzipBytes": 968,
+      "bytes": 2084
+    },
+    {
+      "file": "svg/icon-small-dark.svg",
+      "format": "svg",
+      "width": 32,
+      "height": 32,
+      "theme": "dark",
+      "transparent": true,
+      "use": "icon-small",
+      "gzipBytes": 451,
+      "bytes": 777
+    },
+    {
+      "file": "svg/logo-horizontal-dark.svg",
+      "format": "svg",
+      "width": 480,
+      "height": 128,
+      "theme": "dark",
+      "transparent": true,
+      "use": "logo-horizontal",
+      "gzipBytes": 3598,
+      "bytes": 8542
+    },
+    {
+      "file": "svg/logo-stacked-dark.svg",
+      "format": "svg",
+      "width": 360,
+      "height": 200,
+      "theme": "dark",
+      "transparent": true,
+      "use": "logo-stacked",
+      "gzipBytes": 3554,
+      "bytes": 8483
+    },
+    {
+      "file": "svg/logo-vertical-dark.svg",
+      "format": "svg",
+      "width": 320,
+      "height": 384,
+      "theme": "dark",
+      "transparent": true,
+      "use": "logo-vertical",
+      "gzipBytes": 3561,
+      "bytes": 8492
+    },
+    {
+      "file": "svg/wordmark-dark.svg",
+      "format": "svg",
+      "width": 540,
+      "height": 100,
+      "theme": "dark",
+      "transparent": true,
+      "use": "wordmark",
+      "gzipBytes": 2935,
+      "bytes": 6703
+    },
+    {
+      "file": "svg/wordmark-stacked-dark.svg",
+      "format": "svg",
+      "width": 320,
+      "height": 220,
+      "theme": "dark",
+      "transparent": true,
+      "use": "wordmark-stacked",
+      "gzipBytes": 2909,
+      "bytes": 6657
+    },
+    {
+      "file": "svg/icon-monochrome-dark.svg",
+      "format": "svg",
+      "width": 104,
+      "height": 104,
+      "theme": "dark",
+      "transparent": true,
+      "use": "icon-monochrome",
+      "gzipBytes": 934,
+      "bytes": 1923
+    },
+    {
+      "file": "svg/app-icon-dark.svg",
+      "format": "svg",
+      "width": 512,
+      "height": 512,
+      "theme": "dark",
+      "transparent": false,
+      "use": "app icon",
+      "gzipBytes": 988,
+      "bytes": 2163
+    },
+    {
+      "file": "svg/maskable-icon-dark.svg",
+      "format": "svg",
+      "width": 512,
+      "height": 512,
+      "theme": "dark",
+      "transparent": false,
+      "use": "maskable icon",
+      "gzipBytes": 1005,
+      "bytes": 2191
+    },
+    {
+      "file": "svg/social-landscape-dark.svg",
+      "format": "svg",
+      "width": 1200,
+      "height": 630,
+      "theme": "dark",
+      "transparent": false,
+      "use": "social-landscape",
+      "gzipBytes": 3598,
+      "bytes": 8613
+    },
+    {
+      "file": "social/social-landscape-dark-1200x630.png",
+      "format": "png",
+      "width": 1200,
+      "height": 630,
+      "theme": "dark",
+      "transparent": false,
+      "use": "social-landscape",
+      "bytes": 23436
+    },
+    {
+      "file": "svg/social-square-dark.svg",
+      "format": "svg",
+      "width": 1080,
+      "height": 1080,
+      "theme": "dark",
+      "transparent": false,
+      "use": "social-square",
+      "gzipBytes": 3560,
+      "bytes": 8564
+    },
+    {
+      "file": "social/social-square-dark-1080x1080.png",
+      "format": "png",
+      "width": 1080,
+      "height": 1080,
+      "theme": "dark",
+      "transparent": false,
+      "use": "social-square",
+      "bytes": 41931
+    },
+    {
+      "file": "svg/social-header-dark.svg",
+      "format": "svg",
+      "width": 1500,
+      "height": 500,
+      "theme": "dark",
+      "transparent": false,
+      "use": "social-header",
+      "gzipBytes": 3592,
+      "bytes": 8608
+    },
+    {
+      "file": "social/social-header-dark-1500x500.png",
+      "format": "png",
+      "width": 1500,
+      "height": 500,
+      "theme": "dark",
+      "transparent": false,
+      "use": "social-header",
+      "bytes": 25643
+    },
+    {
+      "file": "icons/icon-dark-16.png",
+      "format": "png",
+      "width": 16,
+      "height": 16,
+      "theme": "dark",
+      "transparent": true,
+      "use": "favicon / small UI",
+      "bytes": 383
+    },
+    {
+      "file": "icons/icon-dark-20.png",
+      "format": "png",
+      "width": 20,
+      "height": 20,
+      "theme": "dark",
+      "transparent": true,
+      "use": "favicon / small UI",
+      "bytes": 582
+    },
+    {
+      "file": "icons/icon-dark-24.png",
+      "format": "png",
+      "width": 24,
+      "height": 24,
+      "theme": "dark",
+      "transparent": true,
+      "use": "favicon / small UI",
+      "bytes": 692
+    },
+    {
+      "file": "icons/icon-dark-32.png",
+      "format": "png",
+      "width": 32,
+      "height": 32,
+      "theme": "dark",
+      "transparent": true,
+      "use": "favicon / small UI",
+      "bytes": 742
+    },
+    {
+      "file": "icons/icon-dark-40.png",
+      "format": "png",
+      "width": 40,
+      "height": 40,
+      "theme": "dark",
+      "transparent": true,
+      "use": "favicon / small UI",
+      "bytes": 1068
+    },
+    {
+      "file": "icons/icon-dark-48.png",
+      "format": "png",
+      "width": 48,
+      "height": 48,
+      "theme": "dark",
+      "transparent": true,
+      "use": "favicon / small UI",
+      "bytes": 1071
+    },
+    {
+      "file": "icons/icon-dark-64.png",
+      "format": "png",
+      "width": 64,
+      "height": 64,
+      "theme": "dark",
+      "transparent": true,
+      "use": "icon / avatar",
+      "bytes": 2685
+    },
+    {
+      "file": "icons/icon-dark-96.png",
+      "format": "png",
+      "width": 96,
+      "height": 96,
+      "theme": "dark",
+      "transparent": true,
+      "use": "icon / avatar",
+      "bytes": 4033
+    },
+    {
+      "file": "icons/icon-dark-128.png",
+      "format": "png",
+      "width": 128,
+      "height": 128,
+      "theme": "dark",
+      "transparent": true,
+      "use": "icon / avatar",
+      "bytes": 5248
+    },
+    {
+      "file": "icons/icon-dark-144.png",
+      "format": "png",
+      "width": 144,
+      "height": 144,
+      "theme": "dark",
+      "transparent": true,
+      "use": "icon / avatar",
+      "bytes": 5838
+    },
+    {
+      "file": "icons/icon-dark-152.png",
+      "format": "png",
+      "width": 152,
+      "height": 152,
+      "theme": "dark",
+      "transparent": true,
+      "use": "icon / avatar",
+      "bytes": 6192
+    },
+    {
+      "file": "icons/icon-dark-180.png",
+      "format": "png",
+      "width": 180,
+      "height": 180,
+      "theme": "dark",
+      "transparent": true,
+      "use": "icon / avatar",
+      "bytes": 7475
+    },
+    {
+      "file": "icons/icon-dark-192.png",
+      "format": "png",
+      "width": 192,
+      "height": 192,
+      "theme": "dark",
+      "transparent": true,
+      "use": "icon / avatar",
+      "bytes": 7920
+    },
+    {
+      "file": "icons/icon-dark-256.png",
+      "format": "png",
+      "width": 256,
+      "height": 256,
+      "theme": "dark",
+      "transparent": true,
+      "use": "icon / avatar",
+      "bytes": 10783
+    },
+    {
+      "file": "icons/icon-dark-384.png",
+      "format": "png",
+      "width": 384,
+      "height": 384,
+      "theme": "dark",
+      "transparent": true,
+      "use": "icon / avatar",
+      "bytes": 17688
+    },
+    {
+      "file": "icons/icon-dark-512.png",
+      "format": "png",
+      "width": 512,
+      "height": 512,
+      "theme": "dark",
+      "transparent": true,
+      "use": "icon / avatar",
+      "bytes": 25071
+    },
+    {
+      "file": "icons/icon-dark-1024.png",
+      "format": "png",
+      "width": 1024,
+      "height": 1024,
+      "theme": "dark",
+      "transparent": true,
+      "use": "icon / avatar",
+      "bytes": 55525
+    },
+    {
+      "file": "platform/apple-touch-icon-dark-120.png",
+      "format": "png",
+      "width": 120,
+      "height": 120,
+      "theme": "dark",
+      "transparent": false,
+      "use": "Apple touch icon",
+      "bytes": 3670
+    },
+    {
+      "file": "platform/apple-touch-icon-dark-152.png",
+      "format": "png",
+      "width": 152,
+      "height": 152,
+      "theme": "dark",
+      "transparent": false,
+      "use": "Apple touch icon",
+      "bytes": 4767
+    },
+    {
+      "file": "platform/apple-touch-icon-dark-167.png",
+      "format": "png",
+      "width": 167,
+      "height": 167,
+      "theme": "dark",
+      "transparent": false,
+      "use": "Apple touch icon",
+      "bytes": 5201
+    },
+    {
+      "file": "platform/apple-touch-icon-dark-180.png",
+      "format": "png",
+      "width": 180,
+      "height": 180,
+      "theme": "dark",
+      "transparent": false,
+      "use": "Apple touch icon",
+      "bytes": 5767
+    },
+    {
+      "file": "platform/android-chrome-dark-192.png",
+      "format": "png",
+      "width": 192,
+      "height": 192,
+      "theme": "dark",
+      "transparent": false,
+      "use": "PWA any",
+      "bytes": 6024
+    },
+    {
+      "file": "platform/maskable-icon-dark-192.png",
+      "format": "png",
+      "width": 192,
+      "height": 192,
+      "theme": "dark",
+      "transparent": false,
+      "use": "PWA maskable",
+      "bytes": 4873
+    },
+    {
+      "file": "platform/android-chrome-dark-512.png",
+      "format": "png",
+      "width": 512,
+      "height": 512,
+      "theme": "dark",
+      "transparent": false,
+      "use": "PWA any",
+      "bytes": 18453
+    },
+    {
+      "file": "platform/maskable-icon-dark-512.png",
+      "format": "png",
+      "width": 512,
+      "height": 512,
+      "theme": "dark",
+      "transparent": false,
+      "use": "PWA maskable",
+      "bytes": 14401
+    },
+    {
+      "file": "png/logo-horizontal-dark@1x.png",
+      "format": "png",
+      "width": 480,
+      "height": 128,
+      "theme": "dark",
+      "transparent": true,
+      "use": "presentations / email / documents",
+      "bytes": 10519
+    },
+    {
+      "file": "png/logo-horizontal-dark@2x.png",
+      "format": "png",
+      "width": 960,
+      "height": 256,
+      "theme": "dark",
+      "transparent": true,
+      "use": "presentations / email / documents",
+      "bytes": 23135
+    },
+    {
+      "file": "png/logo-horizontal-dark@3x.png",
+      "format": "png",
+      "width": 1440,
+      "height": 384,
+      "theme": "dark",
+      "transparent": true,
+      "use": "presentations / email / documents",
+      "bytes": 37295
+    },
+    {
+      "file": "png/logo-stacked-dark@1x.png",
+      "format": "png",
+      "width": 360,
+      "height": 200,
+      "theme": "dark",
+      "transparent": true,
+      "use": "presentations / email / documents",
+      "bytes": 12302
+    },
+    {
+      "file": "png/logo-stacked-dark@2x.png",
+      "format": "png",
+      "width": 720,
+      "height": 400,
+      "theme": "dark",
+      "transparent": true,
+      "use": "presentations / email / documents",
+      "bytes": 27161
+    },
+    {
+      "file": "png/logo-stacked-dark@3x.png",
+      "format": "png",
+      "width": 1080,
+      "height": 600,
+      "theme": "dark",
+      "transparent": true,
+      "use": "presentations / email / documents",
+      "bytes": 43719
+    },
+    {
+      "file": "png/logo-vertical-dark@1x.png",
+      "format": "png",
+      "width": 320,
+      "height": 384,
+      "theme": "dark",
+      "transparent": true,
+      "use": "presentations / email / documents",
+      "bytes": 15170
+    },
+    {
+      "file": "png/logo-vertical-dark@2x.png",
+      "format": "png",
+      "width": 640,
+      "height": 768,
+      "theme": "dark",
+      "transparent": true,
+      "use": "presentations / email / documents",
+      "bytes": 34286
+    },
+    {
+      "file": "png/logo-vertical-dark@3x.png",
+      "format": "png",
+      "width": 960,
+      "height": 1152,
+      "theme": "dark",
+      "transparent": true,
+      "use": "presentations / email / documents",
+      "bytes": 55075
+    },
+    {
+      "file": "png/wordmark-dark@1x.png",
+      "format": "png",
+      "width": 540,
+      "height": 100,
+      "theme": "dark",
+      "transparent": true,
+      "use": "presentations / email / documents",
+      "bytes": 13717
+    },
+    {
+      "file": "png/wordmark-dark@2x.png",
+      "format": "png",
+      "width": 1080,
+      "height": 200,
+      "theme": "dark",
+      "transparent": true,
+      "use": "presentations / email / documents",
+      "bytes": 19165
+    },
+    {
+      "file": "png/wordmark-dark@3x.png",
+      "format": "png",
+      "width": 1620,
+      "height": 300,
+      "theme": "dark",
+      "transparent": true,
+      "use": "presentations / email / documents",
+      "bytes": 31098
+    },
+    {
+      "file": "png/wordmark-stacked-dark@1x.png",
+      "format": "png",
+      "width": 320,
+      "height": 220,
+      "theme": "dark",
+      "transparent": true,
+      "use": "presentations / email / documents",
+      "bytes": 8924
+    },
+    {
+      "file": "png/wordmark-stacked-dark@2x.png",
+      "format": "png",
+      "width": 640,
+      "height": 440,
+      "theme": "dark",
+      "transparent": true,
+      "use": "presentations / email / documents",
+      "bytes": 19940
+    },
+    {
+      "file": "png/wordmark-stacked-dark@3x.png",
+      "format": "png",
+      "width": 960,
+      "height": 660,
+      "theme": "dark",
+      "transparent": true,
+      "use": "presentations / email / documents",
+      "bytes": 32453
+    },
+    {
+      "file": "favicon/favicon-dark.ico",
+      "format": "ico",
+      "theme": "dark",
+      "sizes": [
+        16,
+        32,
+        48
+      ],
+      "transparent": true,
+      "use": "favicon fallback",
+      "bytes": 2250
+    },
+    {
+      "file": "svg/icon-light.svg",
+      "format": "svg",
+      "width": 104,
+      "height": 104,
+      "theme": "light",
+      "transparent": true,
+      "use": "icon",
+      "gzipBytes": 973,
+      "bytes": 2085
+    },
+    {
+      "file": "svg/icon-small-light.svg",
+      "format": "svg",
+      "width": 32,
+      "height": 32,
+      "theme": "light",
+      "transparent": true,
+      "use": "icon-small",
+      "gzipBytes": 456,
+      "bytes": 778
+    },
+    {
+      "file": "svg/logo-horizontal-light.svg",
+      "format": "svg",
+      "width": 480,
+      "height": 128,
+      "theme": "light",
+      "transparent": true,
+      "use": "logo-horizontal",
+      "gzipBytes": 3606,
+      "bytes": 8543
+    },
+    {
+      "file": "svg/logo-stacked-light.svg",
+      "format": "svg",
+      "width": 360,
+      "height": 200,
+      "theme": "light",
+      "transparent": true,
+      "use": "logo-stacked",
+      "gzipBytes": 3563,
+      "bytes": 8484
+    },
+    {
+      "file": "svg/logo-vertical-light.svg",
+      "format": "svg",
+      "width": 320,
+      "height": 384,
+      "theme": "light",
+      "transparent": true,
+      "use": "logo-vertical",
+      "gzipBytes": 3569,
+      "bytes": 8493
+    },
+    {
+      "file": "svg/wordmark-light.svg",
+      "format": "svg",
+      "width": 540,
+      "height": 100,
+      "theme": "light",
+      "transparent": true,
+      "use": "wordmark",
+      "gzipBytes": 2939,
+      "bytes": 6704
+    },
+    {
+      "file": "svg/wordmark-stacked-light.svg",
+      "format": "svg",
+      "width": 320,
+      "height": 220,
+      "theme": "light",
+      "transparent": true,
+      "use": "wordmark-stacked",
+      "gzipBytes": 2914,
+      "bytes": 6658
+    },
+    {
+      "file": "svg/icon-monochrome-light.svg",
+      "format": "svg",
+      "width": 104,
+      "height": 104,
+      "theme": "light",
+      "transparent": true,
+      "use": "icon-monochrome",
+      "gzipBytes": 938,
+      "bytes": 1924
+    },
+    {
+      "file": "svg/app-icon-light.svg",
+      "format": "svg",
+      "width": 512,
+      "height": 512,
+      "theme": "light",
+      "transparent": false,
+      "use": "app icon",
+      "gzipBytes": 993,
+      "bytes": 2164
+    },
+    {
+      "file": "svg/maskable-icon-light.svg",
+      "format": "svg",
+      "width": 512,
+      "height": 512,
+      "theme": "light",
+      "transparent": false,
+      "use": "maskable icon",
+      "gzipBytes": 1007,
+      "bytes": 2192
+    },
+    {
+      "file": "svg/social-landscape-light.svg",
+      "format": "svg",
+      "width": 1200,
+      "height": 630,
+      "theme": "light",
+      "transparent": false,
+      "use": "social-landscape",
+      "gzipBytes": 3603,
+      "bytes": 8614
+    },
+    {
+      "file": "social/social-landscape-light-1200x630.png",
+      "format": "png",
+      "width": 1200,
+      "height": 630,
+      "theme": "light",
+      "transparent": false,
+      "use": "social-landscape",
+      "bytes": 23431
+    },
+    {
+      "file": "svg/social-square-light.svg",
+      "format": "svg",
+      "width": 1080,
+      "height": 1080,
+      "theme": "light",
+      "transparent": false,
+      "use": "social-square",
+      "gzipBytes": 3565,
+      "bytes": 8565
+    },
+    {
+      "file": "social/social-square-light-1080x1080.png",
+      "format": "png",
+      "width": 1080,
+      "height": 1080,
+      "theme": "light",
+      "transparent": false,
+      "use": "social-square",
+      "bytes": 41964
+    },
+    {
+      "file": "svg/social-header-light.svg",
+      "format": "svg",
+      "width": 1500,
+      "height": 500,
+      "theme": "light",
+      "transparent": false,
+      "use": "social-header",
+      "gzipBytes": 3597,
+      "bytes": 8609
+    },
+    {
+      "file": "social/social-header-light-1500x500.png",
+      "format": "png",
+      "width": 1500,
+      "height": 500,
+      "theme": "light",
+      "transparent": false,
+      "use": "social-header",
+      "bytes": 25691
+    },
+    {
+      "file": "icons/icon-light-16.png",
+      "format": "png",
+      "width": 16,
+      "height": 16,
+      "theme": "light",
+      "transparent": true,
+      "use": "favicon / small UI",
+      "bytes": 385
+    },
+    {
+      "file": "icons/icon-light-20.png",
+      "format": "png",
+      "width": 20,
+      "height": 20,
+      "theme": "light",
+      "transparent": true,
+      "use": "favicon / small UI",
+      "bytes": 582
+    },
+    {
+      "file": "icons/icon-light-24.png",
+      "format": "png",
+      "width": 24,
+      "height": 24,
+      "theme": "light",
+      "transparent": true,
+      "use": "favicon / small UI",
+      "bytes": 695
+    },
+    {
+      "file": "icons/icon-light-32.png",
+      "format": "png",
+      "width": 32,
+      "height": 32,
+      "theme": "light",
+      "transparent": true,
+      "use": "favicon / small UI",
+      "bytes": 729
+    },
+    {
+      "file": "icons/icon-light-40.png",
+      "format": "png",
+      "width": 40,
+      "height": 40,
+      "theme": "light",
+      "transparent": true,
+      "use": "favicon / small UI",
+      "bytes": 1067
+    },
+    {
+      "file": "icons/icon-light-48.png",
+      "format": "png",
+      "width": 48,
+      "height": 48,
+      "theme": "light",
+      "transparent": true,
+      "use": "favicon / small UI",
+      "bytes": 1063
+    },
+    {
+      "file": "icons/icon-light-64.png",
+      "format": "png",
+      "width": 64,
+      "height": 64,
+      "theme": "light",
+      "transparent": true,
+      "use": "icon / avatar",
+      "bytes": 2721
+    },
+    {
+      "file": "icons/icon-light-96.png",
+      "format": "png",
+      "width": 96,
+      "height": 96,
+      "theme": "light",
+      "transparent": true,
+      "use": "icon / avatar",
+      "bytes": 4132
+    },
+    {
+      "file": "icons/icon-light-128.png",
+      "format": "png",
+      "width": 128,
+      "height": 128,
+      "theme": "light",
+      "transparent": true,
+      "use": "icon / avatar",
+      "bytes": 5426
+    },
+    {
+      "file": "icons/icon-light-144.png",
+      "format": "png",
+      "width": 144,
+      "height": 144,
+      "theme": "light",
+      "transparent": true,
+      "use": "icon / avatar",
+      "bytes": 6021
+    },
+    {
+      "file": "icons/icon-light-152.png",
+      "format": "png",
+      "width": 152,
+      "height": 152,
+      "theme": "light",
+      "transparent": true,
+      "use": "icon / avatar",
+      "bytes": 6398
+    },
+    {
+      "file": "icons/icon-light-180.png",
+      "format": "png",
+      "width": 180,
+      "height": 180,
+      "theme": "light",
+      "transparent": true,
+      "use": "icon / avatar",
+      "bytes": 7782
+    },
+    {
+      "file": "icons/icon-light-192.png",
+      "format": "png",
+      "width": 192,
+      "height": 192,
+      "theme": "light",
+      "transparent": true,
+      "use": "icon / avatar",
+      "bytes": 8216
+    },
+    {
+      "file": "icons/icon-light-256.png",
+      "format": "png",
+      "width": 256,
+      "height": 256,
+      "theme": "light",
+      "transparent": true,
+      "use": "icon / avatar",
+      "bytes": 11027
+    },
+    {
+      "file": "icons/icon-light-384.png",
+      "format": "png",
+      "width": 384,
+      "height": 384,
+      "theme": "light",
+      "transparent": true,
+      "use": "icon / avatar",
+      "bytes": 18119
+    },
+    {
+      "file": "icons/icon-light-512.png",
+      "format": "png",
+      "width": 512,
+      "height": 512,
+      "theme": "light",
+      "transparent": true,
+      "use": "icon / avatar",
+      "bytes": 25656
+    },
+    {
+      "file": "icons/icon-light-1024.png",
+      "format": "png",
+      "width": 1024,
+      "height": 1024,
+      "theme": "light",
+      "transparent": true,
+      "use": "icon / avatar",
+      "bytes": 56499
+    },
+    {
+      "file": "platform/apple-touch-icon-light-120.png",
+      "format": "png",
+      "width": 120,
+      "height": 120,
+      "theme": "light",
+      "transparent": false,
+      "use": "Apple touch icon",
+      "bytes": 3687
+    },
+    {
+      "file": "platform/apple-touch-icon-light-152.png",
+      "format": "png",
+      "width": 152,
+      "height": 152,
+      "theme": "light",
+      "transparent": false,
+      "use": "Apple touch icon",
+      "bytes": 4802
+    },
+    {
+      "file": "platform/apple-touch-icon-light-167.png",
+      "format": "png",
+      "width": 167,
+      "height": 167,
+      "theme": "light",
+      "transparent": false,
+      "use": "Apple touch icon",
+      "bytes": 5241
+    },
+    {
+      "file": "platform/apple-touch-icon-light-180.png",
+      "format": "png",
+      "width": 180,
+      "height": 180,
+      "theme": "light",
+      "transparent": false,
+      "use": "Apple touch icon",
+      "bytes": 5783
+    },
+    {
+      "file": "platform/android-chrome-light-192.png",
+      "format": "png",
+      "width": 192,
+      "height": 192,
+      "theme": "light",
+      "transparent": false,
+      "use": "PWA any",
+      "bytes": 6077
+    },
+    {
+      "file": "platform/maskable-icon-light-192.png",
+      "format": "png",
+      "width": 192,
+      "height": 192,
+      "theme": "light",
+      "transparent": false,
+      "use": "PWA maskable",
+      "bytes": 4915
+    },
+    {
+      "file": "platform/android-chrome-light-512.png",
+      "format": "png",
+      "width": 512,
+      "height": 512,
+      "theme": "light",
+      "transparent": false,
+      "use": "PWA any",
+      "bytes": 18477
+    },
+    {
+      "file": "platform/maskable-icon-light-512.png",
+      "format": "png",
+      "width": 512,
+      "height": 512,
+      "theme": "light",
+      "transparent": false,
+      "use": "PWA maskable",
+      "bytes": 14442
+    },
+    {
+      "file": "png/logo-horizontal-light@1x.png",
+      "format": "png",
+      "width": 480,
+      "height": 128,
+      "theme": "light",
+      "transparent": true,
+      "use": "presentations / email / documents",
+      "bytes": 10641
+    },
+    {
+      "file": "png/logo-horizontal-light@2x.png",
+      "format": "png",
+      "width": 960,
+      "height": 256,
+      "theme": "light",
+      "transparent": true,
+      "use": "presentations / email / documents",
+      "bytes": 23447
+    },
+    {
+      "file": "png/logo-horizontal-light@3x.png",
+      "format": "png",
+      "width": 1440,
+      "height": 384,
+      "theme": "light",
+      "transparent": true,
+      "use": "presentations / email / documents",
+      "bytes": 37593
+    },
+    {
+      "file": "png/logo-stacked-light@1x.png",
+      "format": "png",
+      "width": 360,
+      "height": 200,
+      "theme": "light",
+      "transparent": true,
+      "use": "presentations / email / documents",
+      "bytes": 12479
+    },
+    {
+      "file": "png/logo-stacked-light@2x.png",
+      "format": "png",
+      "width": 720,
+      "height": 400,
+      "theme": "light",
+      "transparent": true,
+      "use": "presentations / email / documents",
+      "bytes": 27270
+    },
+    {
+      "file": "png/logo-stacked-light@3x.png",
+      "format": "png",
+      "width": 1080,
+      "height": 600,
+      "theme": "light",
+      "transparent": true,
+      "use": "presentations / email / documents",
+      "bytes": 44205
+    },
+    {
+      "file": "png/logo-vertical-light@1x.png",
+      "format": "png",
+      "width": 320,
+      "height": 384,
+      "theme": "light",
+      "transparent": true,
+      "use": "presentations / email / documents",
+      "bytes": 15404
+    },
+    {
+      "file": "png/logo-vertical-light@2x.png",
+      "format": "png",
+      "width": 640,
+      "height": 768,
+      "theme": "light",
+      "transparent": true,
+      "use": "presentations / email / documents",
+      "bytes": 34615
+    },
+    {
+      "file": "png/logo-vertical-light@3x.png",
+      "format": "png",
+      "width": 960,
+      "height": 1152,
+      "theme": "light",
+      "transparent": true,
+      "use": "presentations / email / documents",
+      "bytes": 55659
+    },
+    {
+      "file": "png/wordmark-light@1x.png",
+      "format": "png",
+      "width": 540,
+      "height": 100,
+      "theme": "light",
+      "transparent": true,
+      "use": "presentations / email / documents",
+      "bytes": 15421
+    },
+    {
+      "file": "png/wordmark-light@2x.png",
+      "format": "png",
+      "width": 1080,
+      "height": 200,
+      "theme": "light",
+      "transparent": true,
+      "use": "presentations / email / documents",
+      "bytes": 19130
+    },
+    {
+      "file": "png/wordmark-light@3x.png",
+      "format": "png",
+      "width": 1620,
+      "height": 300,
+      "theme": "light",
+      "transparent": true,
+      "use": "presentations / email / documents",
+      "bytes": 30906
+    },
+    {
+      "file": "png/wordmark-stacked-light@1x.png",
+      "format": "png",
+      "width": 320,
+      "height": 220,
+      "theme": "light",
+      "transparent": true,
+      "use": "presentations / email / documents",
+      "bytes": 8935
+    },
+    {
+      "file": "png/wordmark-stacked-light@2x.png",
+      "format": "png",
+      "width": 640,
+      "height": 440,
+      "theme": "light",
+      "transparent": true,
+      "use": "presentations / email / documents",
+      "bytes": 19872
+    },
+    {
+      "file": "png/wordmark-stacked-light@3x.png",
+      "format": "png",
+      "width": 960,
+      "height": 660,
+      "theme": "light",
+      "transparent": true,
+      "use": "presentations / email / documents",
+      "bytes": 32312
+    },
+    {
+      "file": "favicon/favicon-light.ico",
+      "format": "ico",
+      "theme": "light",
+      "sizes": [
+        16,
+        32,
+        48
+      ],
+      "transparent": true,
+      "use": "favicon fallback",
+      "bytes": 2231
+    },
+    {
+      "file": "favicon/favicon-adaptive.svg",
+      "format": "svg",
+      "width": 32,
+      "height": 32,
+      "theme": "adaptive",
+      "transparent": true,
+      "use": "automatic browser theme",
+      "gzipBytes": 552,
+      "bytes": 967
+    },
+    {
+      "file": "favicon/safari-pinned-tab.svg",
+      "format": "svg",
+      "width": 32,
+      "height": 32,
+      "theme": "monochrome",
+      "transparent": true,
+      "use": "Safari mask icon",
+      "gzipBytes": 430,
+      "bytes": 778
+    },
+    {
+      "file": "brand-overview.svg",
+      "format": "svg",
+      "width": 1440,
+      "height": 1640,
+      "use": "contact sheet",
+      "transparent": false,
+      "bytes": 81784
+    },
+    {
+      "file": "brand-overview.png",
+      "format": "png",
+      "width": 1440,
+      "height": 1640,
+      "use": "contact sheet",
+      "transparent": false,
+      "bytes": 161382
+    }
+  ]
+}

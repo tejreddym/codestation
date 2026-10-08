@@ -1,0 +1,33 @@
+.editor {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+  margin: 0;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  color: var(--ink);
+  color-scheme: light;
+}
+
+:global([data-theme="dark"]) .editor { color-scheme: dark; }
+.editor legend { padding: 0 5px; font-size: 14px; font-weight: 700; }
+.records, .values { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.record { display: flex; flex-direction: column; gap: 12px; min-width: 0; padding: 12px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface-alt); }
+.recordHead { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; font-size: 14px; }
+.pair, .literal { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; min-width: 0; }
+.field { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
+.field label { color: var(--ink); font-size: 13px; font-weight: 700; line-height: 1.5; overflow-wrap: anywhere; }
+.input { width: 100%; min-width: 0; min-height: 44px; padding: 9px 10px; border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--elevated); color: var(--ink); font-size: 16px; line-height: 1.4; }
+.input[aria-invalid="true"] { border-color: var(--red); }
+.button { align-self: flex-start; min-height: 44px; max-width: 100%; padding: 9px 12px; border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--surface); color: var(--ink); font-size: 13px; font-weight: 700; line-height: 1.5; }
+.button:hover { border-color: var(--accent); }
+.button:disabled { opacity: .55; cursor: not-allowed; }
+.editor button:focus-visible, .editor input:focus-visible, .editor select:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }
+.cells { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 12px; min-width: 0; }
+.cell { display: flex; flex-direction: column; gap: 10px; min-width: 0; padding: 10px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface); }
+.cell > strong { font-size: 13px; overflow-wrap: anywhere; }
+.conditionValue { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.hint { margin: 0; color: var(--secondary); font-size: 13px; line-height: 1.6; overflow-wrap: anywhere; }
+@media (max-width: 600px) { .pair, .literal { grid-template-columns: minmax(0, 1fr); } .record { padding: 10px; } }

@@ -1,0 +1,20 @@
+{
+  "assets": 118,
+  "SVG": 29,
+  "PNG": 87,
+  "ICO": 2,
+  "archiveEntries": 123,
+  "zipBytes": 1588140,
+  "checks": [
+    "All files exist",
+    "SVG XML valid with viewBox and titles",
+    "Logo SVGs use paths, no text/image/script dependencies",
+    "PNG dimensions match manifest",
+    "Transparent PNG corners and alpha verified",
+    "Opaque platform/social PNGs fully opaque",
+    "Maskable foreground fits central 80 percent safe circle",
+    "ICO files contain decodable 16/32/48 RGBA frames",
+    "ZIP CRC checks pass; no font files included"
+  ],
+  "failures": []
+}

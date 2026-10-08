@@ -1,0 +1,207 @@
+{
+  "routeResults": [
+    {
+      "route": "/",
+      "status": 200
+    },
+    {
+      "route": "/tools",
+      "status": 200
+    },
+    {
+      "route": "/about",
+      "status": 200
+    },
+    {
+      "route": "/tools/json-formatter",
+      "status": 200
+    },
+    {
+      "route": "/tools/json-validator",
+      "status": 200
+    },
+    {
+      "route": "/tools/json-minifier",
+      "status": 200
+    },
+    {
+      "route": "/tools/json-to-yaml",
+      "status": 200
+    },
+    {
+      "route": "/tools/json-to-csv",
+      "status": 200
+    },
+    {
+      "route": "/tools/json-schema-generator",
+      "status": 200
+    },
+    {
+      "route": "/tools/png-to-webp",
+      "status": 200
+    },
+    {
+      "route": "/tools/color-converter",
+      "status": 200
+    },
+    {
+      "route": "/stations/json-data",
+      "status": 200
+    },
+    {
+      "route": "/stations/encoding",
+      "status": 200
+    },
+    {
+      "route": "/stations/security",
+      "status": 200
+    },
+    {
+      "route": "/stations/regex",
+      "status": 200
+    },
+    {
+      "route": "/stations/date-time",
+      "status": 200
+    },
+    {
+      "route": "/stations/text",
+      "status": 200
+    },
+    {
+      "route": "/stations/cron",
+      "status": 200
+    },
+    {
+      "route": "/stations/sql-database",
+      "status": 200
+    },
+    {
+      "route": "/stations/web",
+      "status": 200
+    },
+    {
+      "route": "/stations/api",
+      "status": 200
+    },
+    {
+      "route": "/stations/image",
+      "status": 200
+    },
+    {
+      "route": "/stations/spreadsheet",
+      "status": 200
+    },
+    {
+      "route": "/stations/markdown",
+      "status": 200
+    },
+    {
+      "route": "/stations/color-css",
+      "status": 200
+    },
+    {
+      "route": "/stations/converters",
+      "status": 200
+    },
+    {
+      "route": "/privacy",
+      "status": 200
+    },
+    {
+      "route": "/site-directory",
+      "status": 200
+    },
+    {
+      "route": "/terms",
+      "status": 200
+    },
+    {
+      "route": "/licenses",
+      "status": 200
+    }
+  ],
+  "graphics": {
+    "count": 4,
+    "svgBytes": 5635,
+    "gzipBytes": 1472
+  },
+  "contrasts": [
+    {
+      "name": "light body",
+      "ratio": 16.54,
+      "minimum": 4.5
+    },
+    {
+      "name": "light secondary",
+      "ratio": 5.91,
+      "minimum": 4.5
+    },
+    {
+      "name": "light secondary on raised",
+      "ratio": 5.53,
+      "minimum": 4.5
+    },
+    {
+      "name": "light placeholder",
+      "ratio": 6.44,
+      "minimum": 4.5
+    },
+    {
+      "name": "dark body",
+      "ratio": 16.54,
+      "minimum": 4.5
+    },
+    {
+      "name": "dark secondary",
+      "ratio": 9.3,
+      "minimum": 4.5
+    },
+    {
+      "name": "dark secondary on raised",
+      "ratio": 7.09,
+      "minimum": 4.5
+    },
+    {
+      "name": "dark placeholder",
+      "ratio": 8.06,
+      "minimum": 4.5
+    },
+    {
+      "name": "lime fill text",
+      "ratio": 15.26,
+      "minimum": 4.5
+    },
+    {
+      "name": "footer secondary",
+      "ratio": 8.89,
+      "minimum": 4.5
+    },
+    {
+      "name": "light search border",
+      "ratio": 3.53,
+      "minimum": 3
+    },
+    {
+      "name": "light search border outer",
+      "ratio": 3.24,
+      "minimum": 3
+    },
+    {
+      "name": "dark search border",
+      "ratio": 4.16,
+      "minimum": 3
+    },
+    {
+      "name": "light focus",
+      "ratio": 6.14,
+      "minimum": 3
+    },
+    {
+      "name": "dark focus",
+      "ratio": 15.26,
+      "minimum": 3
+    }
+  ],
+  "reducedMotion": "CSS rule verified; live OS preference emulation not performed"
+}

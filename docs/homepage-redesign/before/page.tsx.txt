@@ -1,0 +1,27 @@
+"use client";
+
+import Link from "next/link";
+import { useMemo, useState } from "react";
+import { stations } from "@/config/stations";
+import { tools } from "@/config/tools";
+import { searchTools } from "@/lib/tool-search";
+import HeroIllustration from "@/components/HeroIllustration";
+import StationMark from "@/components/StationMark";
+
+const quickAccess = tools.filter(tool => tool.featured).slice(0, 6);
+
+export default function HomePage() {
+  const [query, setQuery] = useState("");
+  const matches = useMemo(() => query.trim() ? searchTools(tools, query) : quickAccess, [query]);
+  return <main className="shell">
+     <section className="hero home-hero" aria-labelledby="home-title">
+       <div className="hero-copy"><div className="eyebrow">CODE STATION / DEVELOPER WORKSPACE</div><h1 id="home-title">Developer tools. Beautifully organized.</h1><p className="lead">Find tools to format, convert, inspect, and build — all in one focused workspace.</p><label className="search home-search" htmlFor="global-tool-search"><span aria-hidden="true">⌕</span><span className="sr-only">Search all tools</span><input id="global-tool-search" value={query} onChange={event => setQuery(event.target.value)} placeholder="Search tools, formats, and tasks…" aria-label="Search all tools" autoComplete="off" /></label><p className="home-search-hint">{query.trim() ? `${matches.length} matching tools` : "Search the registry or browse a station below."}</p></div><HeroIllustration />
+    </section>
+
+     <section className="section" aria-labelledby="quick-access-title"><div className="section-head"><div><span className="section-kicker">{query.trim() ? "SEARCH RESULTS" : "QUICK ACCESS"}</span><h2 id="quick-access-title">{query.trim() ? "Matching tools" : "Start with a useful tool"}</h2><p className="muted">{query.trim() ? "Search covers every registered tool in Code Station." : "A few reliable entry points for everyday developer work."}</p></div><Link className="text-link" href="/tools">Browse all tools <span aria-hidden="true">↗</span></Link></div><div className="tool-grid">{matches.map(tool => <Link className="tool-card" href={`/tools/${tool.slug}`} key={tool.id}><span className="tag">{tool.category}</span><h3>{tool.name}</h3><p>{tool.description}</p><span className="tool-arrow" aria-hidden="true">↗</span></Link>)}</div>{!matches.length && <div className="empty-state"><p className="muted">No available tools match that search.</p><button className="button" type="button" onClick={() => setQuery("")}>Clear search</button></div>}</section>
+
+     <section className="section station-directory" id="categories" aria-labelledby="categories-title"><div className="section-head"><div><span className="section-kicker">THE WORKBENCH</span><h2 id="categories-title">Choose a station</h2><p className="muted">Focused collections for different kinds of technical work.</p></div></div><div className="category-grid">{stations.map(station => <Link className="category station-card" href={station.route} key={station.id}><div className="station-card-header"><StationMark large label={station.name} /><strong>{station.name}</strong></div><p className="station-description">{station.description}</p><div className="station-card-footer"><span className="station-count">{station.toolCount} available tools</span><span className="station-card-explore">Explore <span aria-hidden="true">→</span></span></div></Link>)}</div><p className="pending-station"><strong>Developer Math</strong> <span>Pending — not yet available or included in counts.</span></p></section>
+
+    <section className="section home-principles" aria-labelledby="principles-title"><div className="content"><span className="section-kicker">A CLEAR BOUNDARY</span><h2 id="principles-title">Know what each tool does</h2><p>Most utilities calculate or transform data in the browser. A small number of tools have documented exceptions, such as the explicit API Request Tester or browser requests caused by remote images in Markdown previews. Read each station’s limitations before relying on output.</p><div className="actions"><Link className="button primary" href="/about">About Code Station</Link><Link className="button" href="/privacy">Privacy and processing</Link><Link className="button" href="/site-directory">Site directory</Link></div></div></section>
+  </main>;
+}
