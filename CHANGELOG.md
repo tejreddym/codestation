@@ -1,5 +1,24 @@
 # Changelog
 
+## Adsterra advertising integration — 2026-10-08
+
+- Added production-only, opt-in Social Bar, Popunder, and Native Banner loading
+  with a centralized configuration, exact public switches, stable
+  `next/script` IDs, preserved `data-cfasync="false"`, and no fake Popunder
+  interaction hooks.
+- Added one responsive homepage Native Banner container between the showcase
+  and station directory. Blocked or failed third-party scripts leave the app
+  usable, and the Native Banner is contained with reserved space to reduce
+  layout shift.
+- Added focused gating/deduplication tests and [docs/ADVERTISING.md](docs/ADVERTISING.md).
+  All switches remain disabled by default. Owner consent, privacy, regional,
+  and advertising-account review is required before production enablement; no
+  deployment was made for this integration.
+- Verification: **5,348 tests / 96 files**, typecheck, and a 328-page
+  production build passed. Lint completed with the existing warnings. A
+  temporary all-enabled production build/server smoke was followed by an
+  explicit all-disabled final build.
+
 ## Cloudflare Workers deployment preparation — 2026-10-08
 
 - Added the official `@opennextjs/cloudflare` adapter and Wrangler setup for the

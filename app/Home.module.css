@@ -82,6 +82,15 @@
 .dataPanel { --home-line: #4a5340; --home-muted: #b7bcaf; color: #f6f5f1; background: #20251d; }
 .dataPanel > a { color: #d9f975; }
 .dataPanel > a:focus-visible { outline-color: #d9f975; }
+.nativeAd {
+  width: min(100%, 728px);
+  max-width: 728px;
+  min-width: 0;
+  min-height: 250px;
+  margin: 0 auto 56px;
+  overflow: hidden;
+  contain: layout paint;
+}
 .directory { display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: 48px; padding: 56px 0 64px; border-top: 1px solid var(--home-line); scroll-margin-top: 90px; }
 .directoryIntro p { color: var(--home-muted); margin: 19px 0 30px; font-size: 15px; }
 .indexCount { display: inline-flex; gap: 28px; align-items: center; color: #151713; background: var(--home-lime); padding: 10px 12px; font-size: 11px; border-radius: 3px; }
@@ -171,6 +180,7 @@
   .showcasePanel p { max-width: 290px; margin-bottom: 20px; }
   .preview, .dataPanel .preview { height: 180px; }
   .preview svg { max-height: 180px; }
+  .nativeAd { min-height: 180px; margin-bottom: 40px; }
   .directory { padding: 36px 0 44px; }
   .directoryIntro { display: block; }
   .directoryIntro p br { display: none; }

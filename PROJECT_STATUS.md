@@ -1,5 +1,32 @@
 # Project Status
 
+## Opt-in advertising integration — 2026-10-08
+
+- Added centralized Adsterra configuration and production-only, exact-`true`
+  switches for Social Bar, Popunder, and Native Banner. All four public ad
+  switches remain `false` in `.env.example`; no production ad enablement or
+  deployment was performed.
+- Social Bar and Popunder use stable `next/script` IDs in the persistent root
+  layout with `afterInteractive` loading and `data-cfasync="false"`. The
+  Native Banner uses one stable container on the homepage between the showcase
+  and station directory, with responsive containment and reserved space.
+- Added [docs/ADVERTISING.md](docs/ADVERTISING.md) with format/source
+  inventory, Cloudflare build-variable guidance, consent/privacy/regional
+  prerequisites, failure boundaries, and the explicit prohibition on assuming
+  regulatory compliance or enabling unsuitable ad categories.
+- Focused ad tests cover exact URLs/IDs, non-production gating, independent
+  switches, one native container, supplied attributes, React Strict Mode, and
+  remount deduplication. Final checks passed: `npm test` (**5,348 tests / 96
+  files**), `npm run typecheck`, and `npm run build` (**328 static pages** with
+  all ad switches explicitly false). `npm run lint` completed with the
+  existing warnings. A temporary all-enabled production build/server smoke
+  returned HTTP 200 and exposed the enabled ad source/container contract; the
+  temporary server was stopped and the final build restored ads to disabled.
+- Before any owner enables a format, the provisional privacy notice, consent
+  approach, regional requirements, and advertising-account inventory settings
+  still require explicit review. No ad response or third-party endpoint was
+  treated as reachable or compliant by the automated checks.
+
 ## Cloudflare Workers deployment preparation — 2026-10-08
 
 - Added the official OpenNext Cloudflare adapter (`@opennextjs/cloudflare`) and

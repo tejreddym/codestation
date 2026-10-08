@@ -7,6 +7,7 @@ import { stations } from "@/config/stations";
 import { tools } from "@/config/tools";
 import { searchTools } from "@/lib/tool-search";
 import PersonalTools from "@/components/PersonalTools";
+import NativeAd from "@/components/NativeAd";
 import StationMark from "@/components/StationMark";
 import { StationAssembly, DataPreview, ImagePreview, ColorPreview } from "@/components/HomeGraphics";
 import styles from "./Home.module.css";
@@ -43,6 +44,8 @@ export default function HomePage() {
         <div className={styles.sectionHeading}><div><span className={styles.kicker}>SMALL TOOLS, USEFUL POSSIBILITIES</span><h2 id="showcase-title">Make room for the work.</h2></div><span className={styles.sectionNote}>A few things you can do here <ArrowDown size={16} aria-hidden="true" /></span></div>
         <div className={styles.showcaseGrid}>{showcases.map(({ title, description, label, Graphic, tool }, index) => <article className={`${styles.showcasePanel} ${index === 0 ? styles.dataPanel : ""}`} key={tool!.id}><span className={styles.previewLabel}>{label}</span><div className={styles.preview}><Graphic /></div><h3>{title}</h3><p>{description}</p><Link href={`/tools/${tool!.slug}`}>{tool!.name}<ArrowUpRight size={18} aria-hidden="true" /></Link></article>)}</div>
       </section>
+
+      <NativeAd className={styles.nativeAd} />
 
       <section className={styles.directory} id="categories" aria-labelledby="categories-title">
         <div className={styles.directoryIntro}><span className={styles.kicker}>THE STATION INDEX</span><h2 id="categories-title">Choose a station</h2><p>Different tasks.<br />A place for each.</p><span className={styles.indexCount}>{String(stations.length).padStart(2, "0")} stations <ArrowDown size={17} aria-hidden="true" /></span></div>

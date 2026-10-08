@@ -1,5 +1,33 @@
 # Handoff
 
+## Opt-in advertising integration — 2026-10-08
+
+- Added `config/ads.ts`, `components/AdsterraGlobalScripts.tsx`, and
+  `components/NativeAd.tsx` for the exact Social Bar, Popunder, and Native
+  Banner sources. Social Bar/Popunder live in the persistent root layout;
+  Native Banner has one homepage placement between showcase and directory.
+- Gating is production-only and requires `NEXT_PUBLIC_ADS_ENABLED=true` plus
+  the exact format switch. Direct public-environment references are used so
+  Next.js can inline the switches into the client bundle; computed
+  `process.env[...]` lookup was deliberately avoided. `data-cfasync="false"`
+  and the supplied URLs are preserved. Stable IDs let Next's loader deduplicate
+  Strict Mode and client-navigation/remount paths.
+- `.env.example` and `docs/ADVERTISING.md` keep every switch disabled by
+  default and document consent/privacy/regional/inventory review, Cloudflare
+  build-time configuration, failure behavior, and the no-fake-interaction
+  Popunder boundary. `docs/CLOUDFLARE_DEPLOYMENT.md` now points to the ad
+  review before any build-variable enablement.
+- Added `config/ads.test.ts`, `components/Ads.test.tsx`, and
+  `components/AdsterraNextScript.test.tsx`. Final evidence: `npm test` **5,348
+  tests / 96 files**, `npm run typecheck`, `npm run build` **328 static pages**
+  with all ad switches false, and `npm run lint` with the existing warnings.
+  An isolated all-enabled production build/server smoke returned HTTP 200 and
+  confirmed the enabled source/container response contract; the server was
+  stopped and the final build was restored to disabled switches.
+- No commit, push, ad enablement, or new deployment was performed. Owner
+  decisions remain: finalize the public privacy/consent treatment, regional
+  advertising requirements, and account inventory settings before enabling.
+
 ## Cloudflare Workers deployment preparation — 2026-10-08
 
 - Prepared the existing Next.js 15 app for Cloudflare Workers with the

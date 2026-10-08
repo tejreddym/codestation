@@ -1,5 +1,16 @@
 # TODO
 
+## Advertising integration — 2026-10-08
+
+- [x] Add production-only, independently gated Adsterra Social Bar, Popunder,
+  and one responsive Native Banner placement with stable `next/script` IDs,
+  exact source attributes, and deduplication tests.
+- [x] Document ad placements, build-time switches, failure boundaries, and
+  consent/privacy/regional prerequisites in `docs/ADVERTISING.md`.
+- [ ] Owner/compliance review: update the public privacy/consent treatment,
+  confirm regional requirements and account inventory settings, then explicitly
+  enable only approved formats in a production build.
+
 - [x] Match the illustrated theme toggle to the station palette; verify behavior, mobile target and production build (2026-10-07).
 
 - [x] Create and validate the dark/light SVG brand kit, transparent PNG sizes and platform/social assets (2026-10-07).
@@ -14,7 +25,7 @@
 - [ ] Cross-browser clipboard focus/manual paste checks and physical device installation/offline checks.
 - [ ] Verify completed ZIP download bytes in browsers with an observable download path.
 - [ ] Expand workflows, batch source formats and contextual tool help based on feedback; current scope is documented.
-- [ ] Keep ads and speculative new-tool candidates separate from this release. Finalize operator/legal details before launch and explicitly enable indexing when ready.
+- [ ] Keep ad enablement and speculative new-tool candidates separate from this release. Finalize operator/legal/consent details before launch and explicitly enable only approved ad formats and indexing when ready.
 
 - [x] Configure codestation.in sitemap with all 317 public canonical page URLs and verify XML coverage (2026-10-07).
 
@@ -113,7 +124,8 @@
 - [x] Add reproducible Cloudflare Workers/OpenNext configuration, static caching headers, runtime scripts, and deployment documentation (2026-10-08).
 - [x] Add a pinned Node toolchain, GitHub checks workflow, and repeatable Worker preview smoke script (2026-10-08).
 - [x] Connect Workers Builds to `tejreddym/codestation`, set the production origin build variable, attach `codestation.in`, and complete the production sitemap/robots smoke check (2026-10-08).
-- [ ] Decide whether to set runtime `SITE_INDEXING=index`; leave it unset while launch indexing is not approved.
+- [x] Approve production indexing for `codestation.in`; keep CI/local defaults noindex (2026-10-08).
+- [ ] Apply `SITE_INDEXING=index` in both Cloudflare build and runtime settings, deploy, and verify live crawlability.
 - [ ] Establish CI checks beyond the Cloudflare Workers Build gate.
 - [ ] Add authentication, billing, persistence, ads, and admin boundaries when product scope requires them.
 

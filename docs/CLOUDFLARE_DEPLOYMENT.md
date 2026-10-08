@@ -88,17 +88,29 @@ NEXT_PUBLIC_SITE_URL=https://codestation.in
 SITE_INDEXING=index
 ```
 
-`SITE_INDEXING=index` is an explicit launch decision. Keep it unset or use a
-non-`index` value until the owner is ready for search indexing. Build variables
-are needed because `NEXT_PUBLIC_*` values are bundled during the Next build.
+Advertising is a separate, owner-approved opt-in. Keep these build variables
+`false` (or unset) unless the privacy, consent, regional, and inventory review
+in [ADVERTISING.md](ADVERTISING.md) is complete:
 
-Set `SITE_INDEXING` in the Worker’s **runtime Variables & Secrets** as well.
-The robots and sitemap handlers read this non-public value at runtime, so a
-build-only value is not enough for the deployed Worker. If indexing is not yet
-approved, leave the runtime value unset; the Worker will return disallow/noindex
-behavior. For a local Worker preview, copy `.dev.vars.example` to `.dev.vars`
-and intentionally uncomment `SITE_INDEXING=index` only when testing the
-indexing-enabled path.
+```text
+NEXT_PUBLIC_ADS_ENABLED=false
+NEXT_PUBLIC_ADS_SOCIAL_BAR_ENABLED=false
+NEXT_PUBLIC_ADS_POPUNDER_ENABLED=false
+NEXT_PUBLIC_ADS_NATIVE_ENABLED=false
+```
+
+Production indexing for `codestation.in` is owner-approved. Keep
+`SITE_INDEXING=index` in both the Workers Build variables and the Worker's
+runtime Variables & Secrets. Build variables are needed because
+`NEXT_PUBLIC_*` values are bundled during the Next build; the runtime value is
+needed because `robots.txt` and `sitemap.xml` read `SITE_INDEXING` at request
+time. The local/default examples and CI deliberately keep indexing disabled.
+
+Set `SITE_INDEXING=index` in the Worker’s **runtime Variables & Secrets** as
+well. The robots and sitemap handlers read this non-public value at runtime,
+so a build-only value is not enough for the deployed Worker. For a local Worker
+preview, copy `.dev.vars.example` to `.dev.vars` and intentionally uncomment
+`SITE_INDEXING=index` only when testing the indexing-enabled path.
 
 Keep runtime secrets in the Worker’s **Settings → Variables & Secrets** area;
 do not put secrets in `wrangler.jsonc`, `.env.local`, `.dev.vars`, or Git.
@@ -117,8 +129,9 @@ do not put secrets in `wrangler.jsonc`, `.env.local`, `.dev.vars`, or Git.
 4. Deploy from Workers Builds or run `npm run deploy` from an authenticated
    machine—not both for the same release unless deliberately testing a second
    path.
-5. Verify HTTPS, canonical URLs, response headers, the custom domain, and the
-   production offline starter pack before enabling indexing.
+5. Verify HTTPS, canonical URLs, response headers, the custom domain, the
+   production offline starter pack, `robots.txt`, and the sitemap after each
+   production deployment.
 
 The repository configuration does not prove Cloudflare account ownership,
 billing, or every production health check. Workers Builds has completed a
