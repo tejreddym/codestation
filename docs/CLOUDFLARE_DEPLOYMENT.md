@@ -54,7 +54,8 @@ of local verification.
 ## Files committed for the adapter
 
 - `wrangler.jsonc` points at `.open-next/worker.js` and `.open-next/assets`,
-  enables `nodejs_compat`, and enables Worker observability.
+  preserves the `codestation.in` custom domain and smart placement, enables
+  `nodejs_compat`, and enables Worker observability.
 - `open-next.config.ts` selects the Cloudflare OpenNext configuration.
 - `public/_headers` gives immutable caching to Next static chunks.
 - `next.config.ts` calls `initOpenNextCloudflareForDev()` so `next dev` can
@@ -107,8 +108,9 @@ do not put secrets in `wrangler.jsonc`, `.env.local`, `.dev.vars`, or Git.
 1. Create/connect the Worker named `codestation` in the intended Cloudflare
    account.
 2. Confirm the `codestation.in` zone is in that account and attach the custom
-   domain from the Worker’s Domains & Routes settings. Cloudflare manages the
-   required route/DNS changes when the zone is active there.
+   domain from the Worker’s Domains & Routes settings if it is not already
+   present. The committed Wrangler route preserves that custom domain on
+   subsequent deployments.
 3. Run a preview build and inspect representative station, tool, static asset,
    `robots.txt`, `sitemap.xml`, manifest, offline-pack, redirect, and direct
    refresh routes.
@@ -118,10 +120,11 @@ do not put secrets in `wrangler.jsonc`, `.env.local`, `.dev.vars`, or Git.
 5. Verify HTTPS, canonical URLs, response headers, the custom domain, and the
    production offline starter pack before enabling indexing.
 
-This repository preparation does not prove Cloudflare account access, domain
-ownership, DNS status, billing, or a successful production deployment. Those
-are account-side checks and remain separate from the reproducible source
-configuration here.
+The repository configuration does not prove Cloudflare account ownership,
+billing, or every production health check. Workers Builds has completed a
+production deployment for this release; future deployments should keep the
+custom-domain route declared in `wrangler.jsonc` and review the deploy warning
+if the dashboard configuration changes.
 
 ## Continuous integration
 

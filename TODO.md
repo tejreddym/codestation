@@ -112,7 +112,8 @@
 
 - [x] Add reproducible Cloudflare Workers/OpenNext configuration, static caching headers, runtime scripts, and deployment documentation (2026-10-08).
 - [x] Add a pinned Node toolchain, GitHub checks workflow, and repeatable Worker preview smoke script (2026-10-08).
-- [ ] Connect Workers Builds to `tejreddym/codestation`, set production build variables, attach `codestation.in`, and complete a production smoke check.
+- [x] Connect Workers Builds to `tejreddym/codestation`, set the production origin build variable, attach `codestation.in`, and complete the production sitemap/robots smoke check (2026-10-08).
+- [ ] Decide whether to set runtime `SITE_INDEXING=index`; leave it unset while launch indexing is not approved.
 - [ ] Establish CI checks beyond the Cloudflare Workers Build gate.
 - [ ] Add authentication, billing, persistence, ads, and admin boundaries when product scope requires them.
 
@@ -123,5 +124,5 @@
 ## Blocked
 
 - Standalone lint: completes with existing accessibility, image, and hook warnings; a clean lint baseline remains open.
-- Deployment readiness: Cloudflare account/domain setup, production dependency audit, and cross-browser/manual checks remain open.
+- Deployment follow-up: runtime indexing decision, production dependency audit, and cross-browser/manual checks remain open.
 - [ ] Complete live-browser acceptance for the Converters landing and numeric converter controls (search/category filters, conversion, Copy/Clear, responsive/theme/console checks).

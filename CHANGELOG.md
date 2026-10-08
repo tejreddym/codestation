@@ -12,8 +12,12 @@
   environment-variable, domain, and release instructions.
 - Added `.nvmrc`, package toolchain metadata, a GitHub Actions checks workflow,
   and `npm run cf:verify` for repeatable local Worker preview smoke checks.
-- No Cloudflare account login, DNS/domain change, production deployment, or
-  indexing decision was performed locally.
+- Declared the production `codestation.in` custom domain and smart placement
+  in `wrangler.jsonc` after the first successful Workers Builds deployment
+  reported those settings as dashboard-only overrides.
+- No local Cloudflare account login or DNS/domain change was performed; the
+  Workers Builds production deployment was completed separately after this
+  repository preparation. Indexing remains an explicit account-side decision.
 
 ## Brand-colored illustrated theme toggle — 2026-10-07
 

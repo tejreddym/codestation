@@ -35,9 +35,19 @@
   runtime Variables & Secrets (for the runtime robots/sitemap handlers). A
   build-only `SITE_INDEXING=index` was correctly not sufficient; leave the
   runtime value unset until indexing is approved.
-- GitHub publication remains blocked until the user re-authenticates `gh` with
-  an account that can write `tejreddym/codestation`. Cloudflare account,
-  custom-domain, Workers Builds, and indexing setup are account-side steps.
+- Workers Builds successfully deployed version `7c1e79cc-26d9-4318-a2a2-030fea80d58b`
+  after the build/deploy commands were corrected. The deployed sitemap on
+  both `codestation.in` and the `workers.dev` hostname now contains 323 URLs.
+  The deployment warning about dashboard-only `codestation.in` custom-domain
+  routing and smart placement was addressed by declaring both in
+  `wrangler.jsonc`. `robots.txt` remains deliberately disallowed until the
+  runtime `SITE_INDEXING` decision is made.
+- The route/placement follow-up is included in the follow-up deployment
+  commit. The private `.opencode/omnirush/` attachment directory is excluded
+  from Git and no attachment contents were copied into project documentation.
+- GitHub publication completed through the user-selected SSH personal-host
+  alias. Cloudflare Workers Builds and the custom domain are deployed; the
+  remaining account-side decision is whether to enable runtime indexing.
 
 ## Brand-colored illustrated theme toggle — 2026-10-07
 

@@ -17,18 +17,20 @@
 - `npm ci --no-audit --no-fund` completed under Node 22.19.0 from the updated
   lockfile. Final application checks passed: `npm run typecheck`, `npm test`
   (**5,341 tests / 93 files**), `npm run build` (**328 static pages**), and
-  `npm run lint` completed with the existing warnings. No Cloudflare account
-  login, DNS/domain change, production deployment, or indexing decision was
-  performed.
+  `npm run lint` completed with the existing warnings. No local Cloudflare
+  account login or DNS/domain change was performed; Workers Builds later
+  completed the production deployment, while indexing remains a separate
+  decision.
 - OpenNext packaging and Worker preview completed locally with
   `@opennextjs/cloudflare@1.20.9` / Wrangler 4.148.0. `npm run cf:verify`
   passed the noindex preview (323 canonical sitemap URLs, representative
   pages/assets, redirects, security headers, and offline manifest). A separate
   temporary `.dev.vars` runtime test passed the indexing-enabled path; the
   temporary file was removed afterward.
-- Current blockers remain: GitHub CLI authentication is invalid for the active
-  `Manik-Manohar` keyring account; Cloudflare account/domain access is not
-  established; `npm audit --omit=dev` reports eight findings after adding the
+- GitHub publication completed through the user-selected SSH personal-host
+  alias: `main` was pushed at `d1c8cd5`. GitHub CLI authentication was still
+  invalid at its last check; SSH publication did not require changing it.
+  `npm audit --omit=dev` reports eight findings after adding the
   current OpenNext/Wrangler build toolchain (including the pre-existing
   Next/PostCSS and ExcelJS/uuid findings). No blind `audit fix --force` was
   applied. See
@@ -39,6 +41,18 @@
   returns disallow/noindex unless the runtime variable is configured. The guide
   now calls out both build-time and runtime configuration; indexing remains
   intentionally unapproved.
+- First successful Workers Builds deployment completed with OpenNext build and
+  deploy commands. The deployed custom domain and `workers.dev` sitemap now
+  contain **323 canonical URLs**. The deploy log warned that the dashboard’s
+  `codestation.in` custom-domain route and smart placement were remote-only;
+  `wrangler.jsonc` now declares both so future deploys do not overwrite them.
+- Production `robots.txt` still returns `Disallow: /`; the active deployment
+  does not expose an indexing-enabled response. Build/runtime variable settings
+  have not been inspected directly in the Cloudflare account. A populated
+  sitemap alone does not enable indexing.
+- The route/placement follow-up is included in the follow-up deployment
+  commit. Private chat attachments under `.opencode/omnirush/` are excluded
+  from Git; no attachment contents were copied into documentation.
 
 ## Brand-colored illustrated theme toggle — 2026-10-07
 

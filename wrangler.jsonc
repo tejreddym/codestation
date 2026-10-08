@@ -8,6 +8,17 @@
     "directory": ".open-next/assets",
     "binding": "ASSETS"
   },
+  "routes": [
+    {
+      "pattern": "codestation.in",
+      "custom_domain": true,
+      "enabled": true,
+      "previews_enabled": false
+    }
+  ],
+  "placement": {
+    "mode": "smart"
+  },
   "observability": {
     "enabled": true
   }
