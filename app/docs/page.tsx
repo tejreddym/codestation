@@ -372,6 +372,25 @@ export default function DocsPage() {
           </Link>
         </p>
       </section>
+
+      <section>
+        <h2>10. Lost Key Recovery Policy</h2>
+        <p>
+          Because Code Station is 100% login-free, plaintext license keys are never stored on our servers.
+          Edge nodes only verify one-way SHA-256 hashes.
+        </p>
+        <p>
+          If you accidentally misplace or lose your license key:
+        </p>
+        <ul>
+          <li>Email <strong><a href="mailto:twnspace2@gmail.com">twnspace2@gmail.com</a></strong> with your proof of purchase (Razorpay Payment ID <code>pay_...</code> or receipt screenshot).</li>
+          <li>We revoke the old key hash in Cloudflare KV and generate a brand-new replacement key.</li>
+          <li>
+            <strong>Regeneration Fee Schedule:</strong> ₹25 for the 1st recovery, doubling every subsequent time
+            (₹50 for 2nd, ₹100 for 3rd, ₹200 for 4th, etc.) to discourage unauthorized key sharing while providing a reliable recovery mechanism.
+          </li>
+        </ul>
+      </section>
     </InformationalPage>
   );
 }

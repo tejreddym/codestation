@@ -285,6 +285,10 @@ export function ProSubscriptionManager() {
               </strong>
             </div>
 
+            <div className={styles.recoveryNotice}>
+              ⚠️ <strong>Backup this key safely:</strong> Code Station does not store plaintext keys. If you lose your key, email <a href="mailto:twnspace2@gmail.com">twnspace2@gmail.com</a> with your Payment ID or receipt screenshot to regenerate a new key (₹25 for 1st recovery, doubling each subsequent recovery: ₹50, ₹100, etc.).
+            </div>
+
             <div className={styles.cliSnippet}>
               <label>Run with Cursor or Claude Desktop:</label>
               <pre>

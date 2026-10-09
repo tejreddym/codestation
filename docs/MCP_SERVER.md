@@ -128,8 +128,26 @@ Published on npm: [`codestation-mcp`](https://www.npmjs.com/package/codestation-
 
 ---
 
+## Lost Key Recovery & Regeneration Policy
+
+Because Code Station is 100% login-free, plaintext keys are never stored on our servers (only one-way SHA-256 hashes exist in Cloudflare KV).
+
+- **How to Recover:** Email **twnspace2@gmail.com** with your proof of purchase:
+  - Razorpay Payment ID (`pay_...`), or
+  - Payment receipt screenshot.
+- **Revocation & Reissue:** We revoke the old key hash in Cloudflare KV and generate a brand-new replacement key.
+- **Progressive Regeneration Fee:**
+  - 1st recovery: **₹25**
+  - 2nd recovery: **₹50** (2x)
+  - 3rd recovery: **₹100** (2x)
+  - 4th recovery: **₹200** (2x)
+  - Doubling each subsequent recovery (*2) to discourage key sharing, leakage, or carelessness while providing a reliable recovery path.
+
+---
+
 ## Building
 ```bash
 npm run build:mcp
 ```
 Runs `esbuild` to produce `./bin/codestation-mcp.mjs`.
+

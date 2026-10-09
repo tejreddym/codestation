@@ -308,3 +308,20 @@
   display: block;
   color: var(--muted);
 }
+
+.recoveryNotice {
+  margin-top: 14px;
+  padding: 12px 14px;
+  background: var(--surface-alt);
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--secondary);
+}
+
+.recoveryNotice a {
+  color: var(--accent);
+  text-decoration: underline;
+}
+

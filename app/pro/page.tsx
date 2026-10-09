@@ -354,6 +354,20 @@ export default function ProPage() {
             </div>
 
             <div className={styles.faqCard}>
+              <h4 className={styles.faqQuestion}>What happens if I lose my license key?</h4>
+              <p className={styles.faqAnswer}>
+                For privacy, Code Station never stores plaintext keys on servers (only one-way SHA-256 hashes for edge verification). If you lose your key, email <strong><a href="mailto:twnspace2@gmail.com">twnspace2@gmail.com</a></strong> with your <strong>Razorpay Payment ID</strong> (e.g. <code>pay_...</code>) or payment receipt screenshot. We will revoke the lost key hash in Cloudflare KV and issue a brand-new replacement key.
+              </p>
+            </div>
+
+            <div className={styles.faqCard}>
+              <h4 className={styles.faqQuestion}>What is the Key Regeneration Fee policy?</h4>
+              <p className={styles.faqAnswer}>
+                To discourage key sharing and unauthorized redistribution, license regeneration requires a progressive administrative fee: <strong>₹25 for the 1st recovery</strong>, doubling each subsequent time (<strong>₹50</strong> for 2nd, <strong>₹100</strong> for 3rd, <strong>₹200</strong> for 4th, etc.). We send a quick payment link before reissuing the replacement key.
+              </p>
+            </div>
+
+            <div className={styles.faqCard}>
               <h4 className={styles.faqQuestion}>Are all the tools on the website free?</h4>
               <p className={styles.faqAnswer}>
                 Yes! All 250+ tools on codestation.in are 100% free with no paywalls or signups. The Pro subscription is strictly for local MCP AI Assistant integration and command-line terminal power tools.
