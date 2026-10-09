@@ -62,6 +62,29 @@ export default function HomePage() {
         <div><div className={styles.stationList}>{stations.map(station => <Link className={styles.station} href={station.route} key={station.id}><StationMark large label={station.name} /><div><h3>{station.name}</h3><p>{station.description}</p><span className={styles.count}>{station.toolCount} available tools</span></div><ArrowUpRight className={styles.stationArrow} size={18} aria-hidden="true" /></Link>)}</div><p className={styles.pending}><strong>Developer Math</strong><span>Pending — not yet available or included in counts.</span></p></div>
       </section>
 
+      <section className={styles.proSection} aria-labelledby="pro-title">
+        <div className={styles.proCopy}>
+          <span className={styles.kicker}>LEVEL UP YOUR WORKFLOW</span>
+          <h2 id="pro-title">Code Station Pro &amp; Local MCP CLI</h2>
+          <p>
+            Unlock advanced browser utilities (JWT Decoder, SQL Formatter, ER Diagrams, HMAC &amp; Cron) plus full CLI &amp; Model Context Protocol integration for Claude Desktop, Cursor, and AI coding agents.
+          </p>
+        </div>
+        <div className={styles.proActions}>
+          <div className={styles.proPrice}>
+            Starts at <strong>₹199 / mo</strong> ($2.99 / mo) • Lifetime option available
+          </div>
+          <div className={styles.proButtons}>
+            <Link href="/pro" className={styles.proBtnPrimary}>
+              Upgrade to Pro <ArrowUpRight size={16} aria-hidden="true" />
+            </Link>
+            <Link href="/docs" className={styles.proBtnSecondary}>
+              Explore Docs &amp; MCP <ArrowUpRight size={16} aria-hidden="true" />
+            </Link>
+          </div>
+        </div>
+      </section>
+
       <section className={styles.principles} aria-labelledby="principles-title"><div className={styles.principleMark} aria-hidden="true">[<span>↗</span>]</div><div><span className={styles.kicker}>A CLEAR BOUNDARY</span><h2 id="principles-title">Know what each tool does.</h2><p>Most utilities calculate or transform data in the browser. A small number of tools have documented exceptions, such as the explicit API Request Tester or browser requests caused by remote images in Markdown previews. Read each station’s limitations before relying on output.</p><div className={styles.principleLinks}><Link href="/about">About Code Station <ArrowUpRight size={16} aria-hidden="true" /></Link><Link href="/privacy">Privacy and processing <ArrowUpRight size={16} aria-hidden="true" /></Link><Link href="/site-directory">Site directory <ArrowUpRight size={16} aria-hidden="true" /></Link></div></div></section>
     </div>
   </main>;

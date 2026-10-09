@@ -15,6 +15,8 @@ export default function SiteHeader() {
       <Link href="/tools" onClick={() => setOpen(false)}>Tools</Link>
       <Link href="/#categories" onClick={() => setOpen(false)}>Stations</Link>
       <Link href="/workbench" onClick={() => setOpen(false)}>Workbench</Link>
+      <Link href="/docs" onClick={() => setOpen(false)}>Docs</Link>
+      <Link href="/pro" onClick={() => setOpen(false)} style={{ color: "var(--yellow)", fontWeight: 700 }}>Pro</Link>
       <Link href="/settings" onClick={() => setOpen(false)}>Settings</Link>
       <Link href="/about" onClick={() => setOpen(false)}>About</Link>
     </nav>

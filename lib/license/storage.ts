@@ -7,7 +7,6 @@ const localFallbackStore = new Map<string, LicenseRecord>();
 function getKVNamespace(): any {
   try {
     // Dynamic check for OpenNext Cloudflare context
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { getCloudflareContext } = require("@opennextjs/cloudflare");
     const ctx = getCloudflareContext();
     return ctx?.env?.LICENSE_KV ?? null;
@@ -66,14 +65,20 @@ export async function getLicenseByRawKey(
 }
 
 /**
- * Verifies if a given raw license key is active and unexpired.
+ * Verifies if a given raw license key is active, unexpired, and within allowed device limits.
  */
-export async function verifyLicenseKey(rawKey: string): Promise<{
+export async function verifyLicenseKey(
+  rawKey: string,
+  deviceId?: string,
+  deviceName?: string
+): Promise<{
   valid: boolean;
   tier: "pro" | "free";
   plan?: string;
   expiresAt?: number | null;
   message: string;
+  deviceCount?: number;
+  maxDevices?: number;
 }> {
   const cleanKey = rawKey.trim();
   if (!cleanKey) {
@@ -88,6 +93,8 @@ export async function verifyLicenseKey(rawKey: string): Promise<{
       plan: "lifetime",
       expiresAt: null,
       message: "Developer license active",
+      deviceCount: 1,
+      maxDevices: 3,
     };
   }
 
@@ -101,7 +108,8 @@ export async function verifyLicenseKey(rawKey: string): Promise<{
   }
 
   // Check expiration if not a lifetime license
-  if (record.expiresAt !== null && Date.now() > record.expiresAt) {
+  const now = Date.now();
+  if (record.expiresAt !== null && now > record.expiresAt) {
     return {
       valid: false,
       tier: "free",
@@ -110,13 +118,64 @@ export async function verifyLicenseKey(rawKey: string): Promise<{
     };
   }
 
+  // Device binding & anti-sharing enforcement
+  const maxDevices = record.maxDevices || 3;
+  let devices = record.devices || [];
+
+  // Prune inactive devices older than 30 days
+  devices = devices.filter((d) => now - d.lastSeen < 30 * 86400 * 1000);
+
+  if (deviceId) {
+    const existingIndex = devices.findIndex((d) => d.id === deviceId);
+    if (existingIndex !== -1) {
+      // Device already registered, refresh timestamp
+      devices[existingIndex].lastSeen = now;
+      if (deviceName) devices[existingIndex].name = deviceName;
+    } else {
+      // New device attempting to use key
+      if (devices.length >= maxDevices) {
+        return {
+          valid: false,
+          tier: "free",
+          message: `Device limit reached (${devices.length}/${maxDevices} active devices). To use on a new device, reset devices at https://codestation.in/pro`,
+          deviceCount: devices.length,
+          maxDevices,
+        };
+      }
+      // Register new device
+      devices.push({
+        id: deviceId,
+        lastSeen: now,
+        name: deviceName || "Unknown device",
+      });
+    }
+
+    // Update record with modified devices
+    record.devices = devices;
+    await saveLicense(cleanKey, record);
+  }
+
   return {
     valid: true,
     tier: "pro",
     plan: record.plan,
     expiresAt: record.expiresAt,
     message: "License is active and valid",
+    deviceCount: devices.length,
+    maxDevices,
   };
+}
+
+/**
+ * Resets all active devices for a license (e.g. user moved to new computers).
+ */
+export async function resetLicenseDevices(rawKey: string): Promise<boolean> {
+  const record = await getLicenseByRawKey(rawKey.trim());
+  if (!record) return false;
+
+  record.devices = [];
+  await saveLicense(rawKey.trim(), record);
+  return true;
 }
 
 /**

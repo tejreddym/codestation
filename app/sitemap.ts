@@ -4,7 +4,7 @@ import { tools } from "@/config/tools";
 import { stations } from "@/config/stations";
 
 // Only canonical public pages belong here; query variants and legacy redirects are excluded.
-const infoRoutes = ["/about", "/pro", "/privacy", "/terms", "/licenses", "/site-directory", "/workbench", "/settings", "/workflows", "/batch-images", "/feedback", "/offline"] as const;
+const infoRoutes = ["/about", "/docs", "/pro", "/privacy", "/terms", "/licenses", "/site-directory", "/workbench", "/settings", "/workflows", "/batch-images", "/feedback", "/offline"] as const;
 
 export default function sitemap(): MetadataRoute.Sitemap {
   if (!siteConfig.origin) return [];

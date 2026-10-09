@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import crypto from "node:crypto";
-import { getRazorpayCredentials } from "@/lib/razorpay";
+import { getRazorpayCredentials, verifySignature } from "@/lib/razorpay";
 import { generateLicenseKey } from "@/lib/license/hash";
 import { saveLicense } from "@/lib/license/storage";
 import type { LicensePlan } from "@/lib/license/types";
@@ -18,27 +18,6 @@ export async function OPTIONS() {
   });
 }
 
-export function verifySignature(
-  orderId: string,
-  paymentId: string,
-  signature: string,
-  secret: string
-): boolean {
-  const payload = `${orderId}|${paymentId}`;
-  const expectedSignature = crypto
-    .createHmac("sha256", secret)
-    .update(payload)
-    .digest("hex");
-
-  if (expectedSignature.length !== signature.length) {
-    return false;
-  }
-
-  return crypto.timingSafeEqual(
-    Buffer.from(expectedSignature, "utf-8"),
-    Buffer.from(signature, "utf-8")
-  );
-}
 
 export async function POST(request: Request) {
   try {

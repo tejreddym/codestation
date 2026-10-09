@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import crypto from "node:crypto";
-import { verifySignature } from "@/app/api/verify-payment/route";
-import { getRazorpayCredentials } from "@/lib/razorpay";
+import { getRazorpayCredentials, verifySignature } from "@/lib/razorpay";
 
 describe("Razorpay Integration", () => {
   const testSecret = "oZnLs4H38FXMcI7BHt1WH815";

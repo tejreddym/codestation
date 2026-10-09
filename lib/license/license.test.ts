@@ -87,4 +87,51 @@ describe("License Storage & Verification", () => {
     const result = await verifyLicenseKey("CS-PRO-NONEXISTENT");
     expect(result.valid).toBe(false);
   });
+
+  it("enforces device limit of 3 devices per license to prevent sharing", async () => {
+    const key = generateLicenseKey();
+    await saveLicense(key, {
+      status: "active",
+      tier: "pro",
+      plan: "lifetime",
+      createdAt: Date.now(),
+      expiresAt: null,
+      maxDevices: 3,
+    });
+
+    // Register device 1, 2, 3
+    expect((await verifyLicenseKey(key, "device_1", "MacBook")).valid).toBe(true);
+    expect((await verifyLicenseKey(key, "device_2", "Windows PC")).valid).toBe(true);
+    expect((await verifyLicenseKey(key, "device_3", "Linux Desktop")).valid).toBe(true);
+
+    // Existing device should still verify
+    expect((await verifyLicenseKey(key, "device_1")).valid).toBe(true);
+
+    // 4th device should be rejected to prevent key sharing
+    const fourthDevice = await verifyLicenseKey(key, "device_4", "Unknown Laptop");
+    expect(fourthDevice.valid).toBe(false);
+    expect(fourthDevice.message).toContain("Device limit reached");
+  });
+
+  it("resets devices when requested", async () => {
+    const key = generateLicenseKey();
+    await saveLicense(key, {
+      status: "active",
+      tier: "pro",
+      plan: "lifetime",
+      createdAt: Date.now(),
+      expiresAt: null,
+      maxDevices: 1,
+    });
+
+    expect((await verifyLicenseKey(key, "device_1")).valid).toBe(true);
+    expect((await verifyLicenseKey(key, "device_2")).valid).toBe(false);
+
+    // Reset devices
+    const { resetLicenseDevices } = await import("./storage");
+    await resetLicenseDevices(key);
+
+    // Device 2 can now register
+    expect((await verifyLicenseKey(key, "device_2")).valid).toBe(true);
+  });
 });

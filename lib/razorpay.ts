@@ -1,4 +1,5 @@
 import Razorpay from "razorpay";
+import crypto from "node:crypto";
 
 export interface RazorpayCredentials {
   keyId: string;
@@ -11,7 +12,6 @@ export function getRazorpayCredentials(): RazorpayCredentials {
 
   if (!keyId || !keySecret) {
     try {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const { getCloudflareContext } = require("@opennextjs/cloudflare");
       const ctx = getCloudflareContext();
       if (ctx?.env) {
@@ -38,3 +38,26 @@ export function getRazorpayClient(): Razorpay {
     key_secret: keySecret,
   });
 }
+
+export function verifySignature(
+  orderId: string,
+  paymentId: string,
+  signature: string,
+  secret: string
+): boolean {
+  const payload = `${orderId}|${paymentId}`;
+  const expectedSignature = crypto
+    .createHmac("sha256", secret)
+    .update(payload)
+    .digest("hex");
+
+  if (expectedSignature.length !== signature.length) {
+    return false;
+  }
+
+  return crypto.timingSafeEqual(
+    Buffer.from(expectedSignature, "utf-8"),
+    Buffer.from(signature, "utf-8")
+  );
+}
+
