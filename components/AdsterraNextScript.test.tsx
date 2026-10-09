@@ -11,7 +11,6 @@ describe("Adsterra Next Script loading", () => {
     vi.stubEnv("NODE_ENV", "production");
     vi.stubEnv("NEXT_PUBLIC_ADS_ENABLED", "true");
     vi.stubEnv("NEXT_PUBLIC_ADS_SOCIAL_BAR_ENABLED", "true");
-    vi.stubEnv("NEXT_PUBLIC_ADS_POPUNDER_ENABLED", "true");
     vi.stubEnv("NEXT_PUBLIC_ADS_NATIVE_ENABLED", "true");
   });
 
@@ -27,15 +26,14 @@ describe("Adsterra Next Script loading", () => {
 
     expect(scripts().map(script => script.id)).toEqual([
       adsterraScripts.socialBar.id,
-      adsterraScripts.popunder.id,
       adsterraScripts.native.id,
     ]);
-    expect(new Set(scripts().map(script => script.id)).size).toBe(3);
+    expect(new Set(scripts().map(script => script.id)).size).toBe(2);
     expect(document.querySelectorAll(`#${adsterraScripts.native.containerId}`)).toHaveLength(1);
 
     first.unmount();
     render(<AdsterraGlobalScripts />);
-    expect(scripts()).toHaveLength(3);
-    expect(new Set(scripts().map(script => script.id)).size).toBe(3);
+    expect(scripts()).toHaveLength(2);
+    expect(new Set(scripts().map(script => script.id)).size).toBe(2);
   });
 });

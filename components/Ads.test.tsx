@@ -34,7 +34,6 @@ describe("Adsterra DOM contracts", () => {
     vi.stubEnv("NODE_ENV", "production");
     vi.stubEnv("NEXT_PUBLIC_ADS_ENABLED", "true");
     vi.stubEnv("NEXT_PUBLIC_ADS_SOCIAL_BAR_ENABLED", "true");
-    vi.stubEnv("NEXT_PUBLIC_ADS_POPUNDER_ENABLED", "true");
     vi.stubEnv("NEXT_PUBLIC_ADS_NATIVE_ENABLED", "true");
   });
 
@@ -55,15 +54,13 @@ describe("Adsterra DOM contracts", () => {
     const { container } = render(<><AdsterraGlobalScripts /><NativeAd /></>);
     const scripts = [...container.querySelectorAll<HTMLScriptElement>("script")];
 
-    expect(scripts).toHaveLength(3);
+    expect(scripts).toHaveLength(2);
     expect(scripts.map(script => script.id)).toEqual([
       adsterraScripts.socialBar.id,
-      adsterraScripts.popunder.id,
       adsterraScripts.native.id,
     ]);
     expect(scripts.map(script => script.src)).toEqual([
       adsterraScripts.socialBar.src,
-      adsterraScripts.popunder.src,
       adsterraScripts.native.src,
     ]);
     expect(scripts.every(script => script.getAttribute("data-cfasync") === "false")).toBe(true);
@@ -76,12 +73,8 @@ describe("Adsterra DOM contracts", () => {
 
     vi.stubEnv("NEXT_PUBLIC_ADS_SOCIAL_BAR_ENABLED", "false");
     rerender(<><AdsterraGlobalScripts /><NativeAd /></>);
-    expect(enabledSources()).toEqual([adsterraScripts.popunder.src, adsterraScripts.native.src]);
-    expect(container.querySelector(`#${adsterraScripts.native.containerId}`)).not.toBeNull();
-
-    vi.stubEnv("NEXT_PUBLIC_ADS_POPUNDER_ENABLED", "false");
-    rerender(<><AdsterraGlobalScripts /><NativeAd /></>);
     expect(enabledSources()).toEqual([adsterraScripts.native.src]);
+    expect(container.querySelector(`#${adsterraScripts.native.containerId}`)).not.toBeNull();
 
     vi.stubEnv("NEXT_PUBLIC_ADS_NATIVE_ENABLED", "false");
     rerender(<><AdsterraGlobalScripts /><NativeAd /></>);

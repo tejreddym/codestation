@@ -13,14 +13,6 @@ export default function AdsterraGlobalScripts() {
           data-cfasync="false"
         />
       )}
-      {isAdsterraFormatEnabled("popunder") && (
-        <Script
-          id={adsterraScripts.popunder.id}
-          src={adsterraScripts.popunder.src}
-          strategy="afterInteractive"
-          data-cfasync="false"
-        />
-      )}
     </>
   );
 }

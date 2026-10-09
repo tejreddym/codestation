@@ -6,7 +6,6 @@ describe("Adsterra configuration", () => {
     vi.stubEnv("NODE_ENV", "production");
     vi.stubEnv("NEXT_PUBLIC_ADS_ENABLED", "true");
     vi.stubEnv("NEXT_PUBLIC_ADS_SOCIAL_BAR_ENABLED", "true");
-    vi.stubEnv("NEXT_PUBLIC_ADS_POPUNDER_ENABLED", "true");
     vi.stubEnv("NEXT_PUBLIC_ADS_NATIVE_ENABLED", "true");
   });
 
@@ -16,10 +15,6 @@ describe("Adsterra configuration", () => {
     expect(adsterraScripts.socialBar).toMatchObject({
       id: "adsterra-social-bar",
       src: "https://bauval.org/14/63bf50be8c148bc60eb10a44e5ad23b3",
-    });
-    expect(adsterraScripts.popunder).toMatchObject({
-      id: "adsterra-popunder",
-      src: "https://abscloud.org/1/e03072b30061fdd916e81456aa8185bf",
     });
     expect(adsterraScripts.native).toMatchObject({
       id: "adsterra-native-banner",
@@ -33,7 +28,6 @@ describe("Adsterra configuration", () => {
 
   it("requires production and exact opt-in values", () => {
     expect(isAdsterraFormatEnabled("socialBar")).toBe(true);
-    expect(isAdsterraFormatEnabled("popunder")).toBe(true);
     expect(isAdsterraFormatEnabled("native")).toBe(true);
 
     vi.stubEnv("NODE_ENV", "development");
@@ -49,12 +43,6 @@ describe("Adsterra configuration", () => {
   it("allows each format to be disabled independently", () => {
     vi.stubEnv("NEXT_PUBLIC_ADS_SOCIAL_BAR_ENABLED", "false");
     expect(isAdsterraFormatEnabled("socialBar")).toBe(false);
-    expect(isAdsterraFormatEnabled("popunder")).toBe(true);
-    expect(isAdsterraFormatEnabled("native")).toBe(true);
-
-    vi.stubEnv("NEXT_PUBLIC_ADS_POPUNDER_ENABLED", "false");
-    expect(isAdsterraFormatEnabled("socialBar")).toBe(false);
-    expect(isAdsterraFormatEnabled("popunder")).toBe(false);
     expect(isAdsterraFormatEnabled("native")).toBe(true);
 
     vi.stubEnv("NEXT_PUBLIC_ADS_NATIVE_ENABLED", "false");

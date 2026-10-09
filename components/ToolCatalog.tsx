@@ -1,9 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, Fragment } from "react";
 import type { ToolDefinition } from "@/config/tools";
 import { searchTools } from "@/lib/tool-search";
 import ToolCard from "./ToolCard";
+import BannerAd from "./BannerAd";
 
 export type ToolCategoryFilter = { id: string; name: string; toolIds: readonly string[] };
 
@@ -47,6 +48,14 @@ export default function ToolCatalog({ name, heading, searchName, tools, descript
       {categoryFilters && <button type="button" className="button secondary" onClick={resetFilters} disabled={!hasFilters}>Reset filters</button>}
     </div>
     <p className="muted" role="status" aria-live="off">{filtered.length} of {tools.length} tools</p>
-    {filtered.length ? <div className="tool-grid">{filtered.map(tool => <ToolCard key={tool.id} tool={tool} category={categoryLabels?.[String(tool.id)]} />)}</div> : <div className="empty-state"><p className="muted">{emptyMessage ?? `No ${name} tools match that search.`}</p>{hasFilters && <button type="button" className="button secondary" onClick={resetFilters}>Reset filters</button>}</div>}
+    {filtered.length ? <div className="tool-grid">{filtered.map((tool, i) => {
+      const showAd = i > 0 && i % 6 === 0;
+      return (
+        <Fragment key={tool.id}>
+          {showAd && <div style={{ display: 'flex', justifyContent: 'center', gridColumn: '1 / -1', margin: '20px 0' }}><BannerAd size="leaderboard" /></div>}
+          <ToolCard tool={tool} category={categoryLabels?.[String(tool.id)]} />
+        </Fragment>
+      );
+    })}</div> : <div className="empty-state"><p className="muted">{emptyMessage ?? `No ${name} tools match that search.`}</p>{hasFilters && <button type="button" className="button secondary" onClick={resetFilters}>Reset filters</button>}</div>}
   </section>;
 }
