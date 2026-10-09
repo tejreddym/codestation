@@ -1,18 +1,66 @@
 import { metadataForPage } from "@/config/site";
 import { InformationalPage } from "@/components/InformationalPage";
+import { CopySnippet } from "@/components/CopySnippet";
 import Link from "next/link";
 
 export const metadata = metadataForPage(
   "/docs",
-  "Documentation — Code Station MCP, Web Pro Tools & Licensing",
-  "Complete guide to Code Station Local MCP server on npm, Web Pro Tools, Claude Desktop and Cursor integration, anti-key-sharing policy, and developer APIs."
+  "Documentation — Code Station MCP, AI Setups & Developer Tools",
+  "Complete guide to Code Station Local MCP server on npm, 1-click copy-pastable AI assistant configurations for Claude, Cursor, and Windsurf, plus system prompts."
 );
+
+const NPX_FREE_CMD = `npx -y codestation-mcp`;
+
+const NPX_PRO_CMD = `npx -y codestation-mcp --key CS-PRO-YOUR-KEY`;
+
+const CLAUDE_DESKTOP_CONFIG = `{
+  "mcpServers": {
+    "codestation": {
+      "command": "npx",
+      "args": ["-y", "codestation-mcp", "--key", "CS-PRO-YOUR-KEY"]
+    }
+  }
+}`;
+
+const CURSOR_CONFIG = `{
+  "mcpServers": {
+    "codestation": {
+      "command": "npx",
+      "args": ["-y", "codestation-mcp", "--key", "CS-PRO-YOUR-KEY"]
+    }
+  }
+}`;
+
+const WINDSURF_CONFIG = `{
+  "mcpServers": {
+    "codestation": {
+      "command": "npx",
+      "args": ["-y", "codestation-mcp", "--key", "CS-PRO-YOUR-KEY"]
+    }
+  }
+}`;
+
+const CLAUDE_CODE_CLI = `claude mcp add codestation npx -y codestation-mcp --key CS-PRO-YOUR-KEY`;
+
+const AI_SYSTEM_PROMPT = `# Code Station MCP Assistant Guidelines
+
+You have access to the Code Station MCP developer server (codestation-mcp).
+Always prioritize calling these local, deterministic tools instead of calculating, parsing, or formatting in your internal reasoning:
+
+1. SQL Formatting & Execution: Call codestation_format_sql to format queries across PostgreSQL, MySQL, SQLite, and SQL Server. Use codestation_run_sql for in-memory execution.
+2. JWT Decoding: When inspecting JSON Web Tokens, call codestation_jwt_decode to inspect headers, claims, and expiry dates without guessing.
+3. Date, Time & Business Days: Use codestation_business_days to calculate working days excluding weekends/holidays. Use codestation_timezone_convert for accurate DST conversions.
+4. Cron Expressions: Use codestation_cron_explain to explain 5-field cron syntax or calculate next execution timestamps.
+5. JSON & YAML: Use codestation_format_json, codestation_json_to_yaml, codestation_yaml_to_json, and codestation_json_schema to infer Draft 7/2020-12 schemas.
+6. Hashing & Cryptography: Call codestation_hash (SHA-256, SHA-512, MD5, CRC-32) and codestation_hmac instead of fabricating digests.
+7. Regex Testing: Call codestation_regex_test to verify regular expressions and return match groups.
+8. Text Transformations: Use codestation_case_convert, codestation_text_diff, and codestation_uuid for RFC 4122 v4 UUIDs.`;
 
 export default function DocsPage() {
   return (
     <InformationalPage
       title="Code Station Documentation"
-      intro="Complete guide to the Local Model Context Protocol (MCP) server, Web Pro tools, AI coding assistant integrations, and device-bound licensing."
+      intro="Complete guide to the Local Model Context Protocol (MCP) server, 1-click copy-pastable AI configurations, and Pro licensing."
     >
       <section>
         <h2>1. Overview &amp; Philosophy</h2>
@@ -40,22 +88,21 @@ export default function DocsPage() {
       <section>
         <h2>2. npm Quick Start</h2>
         <p>
-          The Code Station MCP server is published on the official npm registry as <code>codestation-mcp</code>.
-          You can run it instantly using <code>npx</code>:
+          The Code Station MCP server is published on npm as <code>codestation-mcp</code>.
+          Run it instantly using <code>npx</code>:
         </p>
-        <pre style={{ padding: "14px", background: "var(--code)", color: "var(--code-ink)", borderRadius: "var(--radius-sm)", overflowX: "auto" }}>
-          <code>npx -y codestation-mcp</code>
-        </pre>
+        <CopySnippet code={NPX_FREE_CMD} title="Terminal (Free Tier)" language="bash" />
         <p>
           To unlock all Pro utilities (JWT decoding, SQL formatting &amp; execution, ER diagram generation, HMAC signatures, etc.), pass your license key:
         </p>
-        <pre style={{ padding: "14px", background: "var(--code)", color: "var(--code-ink)", borderRadius: "var(--radius-sm)", overflowX: "auto" }}>
-          <code>npx -y codestation-mcp --key CS-PRO-YOUR-KEY</code>
-        </pre>
+        <CopySnippet code={NPX_PRO_CMD} title="Terminal (Pro Tier)" language="bash" />
       </section>
 
       <section>
-        <h2>3. AI Assistant Integration Guides</h2>
+        <h2>3. 1-Click Copy-Pastable AI Setups</h2>
+        <p>
+          Click <strong>Copy</strong> on any of the configurations below to instantly paste into your AI assistant settings:
+        </p>
 
         <h3>Claude Desktop</h3>
         <p>
@@ -65,43 +112,38 @@ export default function DocsPage() {
           <li><strong>macOS:</strong> <code>~/Library/Application Support/Claude/claude_desktop_config.json</code></li>
           <li><strong>Windows:</strong> <code>%APPDATA%\Claude\claude_desktop_config.json</code></li>
         </ul>
-        <pre style={{ padding: "14px", background: "var(--code)", color: "var(--code-ink)", borderRadius: "var(--radius-sm)", overflowX: "auto" }}>
-{`{
-  "mcpServers": {
-    "codestation": {
-      "command": "npx",
-      "args": ["-y", "codestation-mcp", "--key", "CS-PRO-YOUR-KEY"]
-    }
-  }
-}`}
-        </pre>
+        <CopySnippet code={CLAUDE_DESKTOP_CONFIG} title="claude_desktop_config.json" language="json" />
 
         <h3>Cursor IDE</h3>
         <p>
-          Open <strong>Settings → Features → MCP</strong>, or add to your repository&apos;s <code>.cursor/mcp.json</code>:
+          Add to your repository&apos;s <code>.cursor/mcp.json</code> or paste into Cursor Settings (<strong>Settings → Features → MCP</strong>):
         </p>
-        <pre style={{ padding: "14px", background: "var(--code)", color: "var(--code-ink)", borderRadius: "var(--radius-sm)", overflowX: "auto" }}>
-{`{
-  "mcpServers": {
-    "codestation": {
-      "command": "npx",
-      "args": ["-y", "codestation-mcp", "--key", "CS-PRO-YOUR-KEY"]
-    }
-  }
-}`}
-        </pre>
+        <CopySnippet code={CURSOR_CONFIG} title=".cursor/mcp.json" language="json" />
 
-        <h3>CLI &amp; Environment Options</h3>
-        <p>You can provide your Pro license key through any of the following methods:</p>
-        <ol>
-          <li>Command line flag: <code>--key CS-PRO-YOUR-KEY</code></li>
-          <li>Environment variable: <code>export CODESTATION_KEY="CS-PRO-YOUR-KEY"</code></li>
-          <li>Local config file: Save <code>{`{ "licenseKey": "CS-PRO-YOUR-KEY" }`}</code> in <code>~/.codestation/license.json</code></li>
-        </ol>
+        <h3>Windsurf / Codeium</h3>
+        <p>
+          Add to your Windsurf configuration file located at <code>~/.codeium/windsurf/mcp_config.json</code>:
+        </p>
+        <CopySnippet code={WINDSURF_CONFIG} title="mcp_config.json (Windsurf)" language="json" />
+
+        <h3>Claude Code CLI / Terminal</h3>
+        <p>
+          Add directly using the Claude Code command-line tool:
+        </p>
+        <CopySnippet code={CLAUDE_CODE_CLI} title="Claude Code CLI" language="bash" />
       </section>
 
       <section>
-        <h2>4. Web App Pro Tools &amp; In-Browser Unlocking</h2>
+        <h2>4. Copy-Pastable AI System Prompt &amp; Rules</h2>
+        <p>
+          Paste this prompt into your assistant&apos;s Custom Instructions, <code>.cursorrules</code>, or <code>CLAUDE.md</code>.
+          It instructs your AI model to automatically use Code Station tools instead of guessing math, hashes, or syntax:
+        </p>
+        <CopySnippet code={AI_SYSTEM_PROMPT} title=".cursorrules / CLAUDE.md / Custom Prompt" language="markdown" />
+      </section>
+
+      <section>
+        <h2>5. Web App Pro Tools &amp; In-Browser Unlocking</h2>
         <p>
           On the Code Station web application, power tools are tagged with a <code>[PRO]</code> badge:
         </p>
@@ -130,7 +172,7 @@ export default function DocsPage() {
       </section>
 
       <section>
-        <h2>5. Anti-Key-Sharing Protection (Device Binding)</h2>
+        <h2>6. Anti-Key-Sharing Protection (Device Binding)</h2>
         <p>
           To prevent public sharing and resale of license keys while remaining flexible for developers, Code Station enforces
           an automated, privacy-respecting <strong>device binding policy</strong>:
@@ -162,7 +204,7 @@ export default function DocsPage() {
       </section>
 
       <section>
-        <h2>6. Tool Catalog &amp; Capability Matrix</h2>
+        <h2>7. Tool Catalog &amp; Capability Matrix</h2>
         <table style={{ width: "100%", borderCollapse: "collapse", marginTop: "12px", fontSize: "14px" }}>
           <thead>
             <tr style={{ borderBottom: "2px solid var(--line)", textAlign: "left" }}>
@@ -272,7 +314,7 @@ export default function DocsPage() {
       </section>
 
       <section>
-        <h2>7. Pricing &amp; Plans</h2>
+        <h2>8. Pricing &amp; Plans</h2>
         <p>
           Code Station Pro is priced accessibly for developers:
         </p>
