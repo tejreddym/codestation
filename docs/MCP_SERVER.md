@@ -54,12 +54,14 @@ export CODESTATION_LICENSE_KEY=CS-PRO-YOURKEY
 {
   "mcpServers": {
     "codestation": {
-      "command": "node",
-      "args": ["./bin/codestation-mcp.mjs", "--key", "YOUR_KEY"]
+      "command": "npx",
+      "args": ["-y", "codestation-mcp", "--key", "YOUR_KEY"]
     }
   }
 }
 ```
+
+Published on npm: [`codestation-mcp`](https://www.npmjs.com/package/codestation-mcp)
 
 ---
 
