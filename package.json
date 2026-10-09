@@ -6,9 +6,14 @@
     "node": ">=22.13.0 <23"
   },
   "packageManager": "npm@10.9.3",
+  "bin": {
+    "codestation-mcp": "./bin/codestation-mcp.mjs"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build && node scripts/generate-offline-manifest.mjs",
+    "build:mcp": "esbuild mcp/cli.ts --bundle --platform=node --target=node22 --format=esm --packages=external --outfile=bin/codestation-mcp.mjs && chmod +x bin/codestation-mcp.mjs",
+    "mcp": "node ./bin/codestation-mcp.mjs",
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
     "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
     "upload": "opennextjs-cloudflare build && opennextjs-cloudflare upload",
@@ -21,6 +26,7 @@
   },
   "dependencies": {
     "@cfworker/json-schema": "^4.1.1",
+    "@modelcontextprotocol/sdk": "^1.32.1",
     "@opennextjs/cloudflare": "^1.20.9",
     "entities": "^8.1.0",
     "exceljs": "4.4.0",

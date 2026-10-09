@@ -1,5 +1,13 @@
 # Changelog
 
+## Code Station Local MCP Server & Pro Licensing — 2026-10-09
+
+- Built `codestation-mcp` CLI supporting the Model Context Protocol (MCP) over `stdio`.
+- Exposes 20 core tools directly to AI assistants (Claude Desktop, Cursor, Antigravity) running locally with zero network latency and 100% privacy.
+- Introduced dual-tier model: Free tier with unlimited standard tools, and Pro tier priced at ₹199/month (or ₹999 lifetime) in India, $2.99/month (or $19 lifetime) globally.
+- Implemented offline-first license verification caching in `~/.codestation/license.json` with fallback grace modes.
+- Added automated unit test suite in `mcp/server.test.ts` and documentation in `docs/MCP_SERVER.md`.
+
 ## Commit SITE_INDEXING runtime variable — 2026-10-08
 
 - Declared `SITE_INDEXING=index` in `wrangler.jsonc` `vars` so the Worker

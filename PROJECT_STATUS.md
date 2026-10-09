@@ -1,5 +1,13 @@
 # Project Status
 
+## Local MCP Server & Pro Tier (`codestation-mcp`) — 2026-10-09
+
+- Built and verified local `codestation-mcp` CLI using `@modelcontextprotocol/sdk` and `esbuild`.
+- Exposes 20 core tools (UUID, Base64, JSON, YAML, diff, case, hashes, HMAC, JWT, SQL format, cron explain, timezone conversions, business days) over `stdio`.
+- Implemented Free tier + Pro licensing model: ₹199/month in India, $2.99/month globally.
+- Offline-first cached license validation with zero disruption to free tier tools.
+- Verification: unit tests pass in `mcp/server.test.ts`, JSON-RPC stdio protocol verified end-to-end, `npm run typecheck` clean.
+
 ## Opt-in advertising integration — 2026-10-08
 
 - Added centralized Adsterra configuration and production-only, exact-`true`
