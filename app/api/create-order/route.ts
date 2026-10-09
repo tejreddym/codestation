@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getRazorpayClient, getRazorpayCredentials } from "@/lib/razorpay";
+import { validateCoupon } from "@/lib/coupons";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -29,27 +30,42 @@ export async function POST(request: Request) {
     const rawAmount = Number(body.amount);
     const currency = (body.currency || "INR").toUpperCase();
     const plan = body.plan === "lifetime" ? "lifetime" : "monthly";
+    const couponCode = typeof body.couponCode === "string" ? body.couponCode.trim() : undefined;
+
+    let finalAmount = Math.round(rawAmount);
+    let appliedCoupon: string | undefined;
+
+    if (couponCode) {
+      const couponResult = validateCoupon(couponCode, plan, finalAmount);
+      if (!couponResult.valid) {
+        return NextResponse.json(
+          { error: couponResult.message || "Invalid coupon code." },
+          { status: 400, headers: CORS_HEADERS }
+        );
+      }
+      finalAmount = couponResult.discountedAmountPaise!;
+      appliedCoupon = couponResult.code;
+    }
 
     // Amount validation: minimum 100 paise (₹1.00)
-    if (!Number.isFinite(rawAmount) || rawAmount < 100) {
+    if (!Number.isFinite(finalAmount) || finalAmount < 100) {
       return NextResponse.json(
         { error: "Invalid amount. Minimum amount is 100 paise (₹1.00)." },
         { status: 400, headers: CORS_HEADERS }
       );
     }
 
-    const amount = Math.round(rawAmount);
     const receipt = body.receipt || `rcpt_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
-
     const razorpay = getRazorpayClient();
 
     const order = await razorpay.orders.create({
-      amount,
+      amount: finalAmount,
       currency,
       receipt,
       notes: {
         product: "Code Station Pro",
         plan,
+        ...(appliedCoupon ? { coupon: appliedCoupon } : {}),
       },
     });
 
@@ -59,6 +75,7 @@ export async function POST(request: Request) {
         amount: order.amount,
         currency: order.currency,
         key_id: keyId,
+        coupon_applied: appliedCoupon,
       },
       {
         status: 200,

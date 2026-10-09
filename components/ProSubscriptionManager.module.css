@@ -151,19 +151,103 @@
   margin-bottom: 16px;
 }
 
-.generateButton {
-  background: var(--accent);
-  color: white;
-  border: 1px solid var(--accent);
-  padding: 12px 24px;
+.couponSection {
+  margin: 16px 0 20px;
+  padding: 14px 16px;
+  border: 1px dashed var(--line);
   border-radius: var(--radius-sm);
+  background: var(--surface-alt);
+}
+
+.couponForm {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.couponInput {
+  flex: 1;
+  min-width: 180px;
+  max-width: 260px;
+  padding: 9px 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--ink);
+  font: 700 13px ui-monospace, monospace;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.couponInput:focus {
+  outline: 2px solid var(--accent);
+  border-color: var(--accent);
+}
+
+.couponApplyBtn {
+  padding: 9px 18px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--ink);
   font-weight: 700;
-  font-size: 14px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.couponApplyBtn:hover {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.couponBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--green);
+  background: color-mix(in srgb, var(--green) 12%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--green) 30%, var(--line));
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+}
+
+.couponRemoveBtn {
+  background: transparent;
+  border: none;
+  color: var(--red);
+  cursor: pointer;
+  font-size: 12px;
+  text-decoration: underline;
+  padding: 0 4px;
+}
+
+.couponError {
+  color: var(--red);
+  font-size: 12.5px;
+  margin-top: 6px;
+}
+
+.generateButton {
+  background: var(--action-bg, #d9f975);
+  color: var(--action-ink, #151713) !important;
+  border: 1.5px solid var(--line-strong);
+  box-shadow: var(--shadow-tactile);
+  padding: 13px 28px;
+  border-radius: var(--radius-sm);
+  font-weight: 800;
+  font-size: 15px;
+  letter-spacing: -0.01em;
   transition: opacity 0.15s, transform 0.1s;
+  cursor: pointer;
 }
 
 .generateButton:hover:not(:disabled) {
-  opacity: 0.95;
+  opacity: 0.94;
   transform: translateY(-1px);
 }
 

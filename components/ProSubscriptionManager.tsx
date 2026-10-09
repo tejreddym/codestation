@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { validateCoupon, type CouponValidationResult } from "@/lib/coupons";
 import styles from "./ProSubscriptionManager.module.css";
 
 interface VerifyResult {
@@ -35,6 +36,43 @@ export function ProSubscriptionManager() {
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [generatedResult, setGeneratedResult] = useState<GenerateResult | null>(null);
   const [copiedKey, setCopiedKey] = useState(false);
+
+  // Coupon state
+  const [couponInput, setCouponInput] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState<CouponValidationResult | null>(null);
+  const [couponError, setCouponError] = useState<string | null>(null);
+
+  function handleApplyCoupon(e: React.FormEvent) {
+    e.preventDefault();
+    if (!couponInput.trim()) return;
+
+    const basePaise = selectedPlan === "monthly" ? 19900 : 99900;
+    const result = validateCoupon(couponInput, selectedPlan, basePaise);
+
+    if (result.valid) {
+      setAppliedCoupon(result);
+      setCouponError(null);
+    } else {
+      setAppliedCoupon(null);
+      setCouponError(result.message || "Invalid coupon code.");
+    }
+  }
+
+  function handleRemoveCoupon() {
+    setAppliedCoupon(null);
+    setCouponInput("");
+    setCouponError(null);
+  }
+
+  function handleSelectPlan(plan: "monthly" | "lifetime") {
+    setSelectedPlan(plan);
+    if (plan === "lifetime" && appliedCoupon) {
+      setAppliedCoupon(null);
+      setCouponError("Coupon CS50FIRST was removed because it is valid only for the Monthly Pro plan.");
+    } else {
+      setCouponError(null);
+    }
+  }
 
   // Load Razorpay checkout script on mount
   useEffect(() => {
@@ -77,8 +115,12 @@ export function ProSubscriptionManager() {
     setGeneratedResult(null);
 
     try {
-      // 1. Create order on backend
-      const amountPaise = selectedPlan === "monthly" ? 19900 : 99900;
+      // 1. Create order on backend with optional coupon
+      const basePaise = selectedPlan === "monthly" ? 19900 : 99900;
+      const amountPaise = appliedCoupon?.valid && selectedPlan === "monthly"
+        ? appliedCoupon.discountedAmountPaise!
+        : basePaise;
+
       const orderRes = await fetch("/api/create-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -86,6 +128,7 @@ export function ProSubscriptionManager() {
           amount: amountPaise,
           currency: "INR",
           plan: selectedPlan,
+          couponCode: appliedCoupon?.valid ? appliedCoupon.code : undefined,
         }),
       });
 
@@ -200,9 +243,11 @@ export function ProSubscriptionManager() {
           <button
             type="button"
             className={styles.selectBtn}
-            onClick={() => setSelectedPlan("monthly")}
+            onClick={() => handleSelectPlan("monthly")}
           >
-            {selectedPlan === "monthly" ? "Selected Plan" : "Choose Monthly (₹199)"}
+            {selectedPlan === "monthly"
+              ? (appliedCoupon?.valid ? "Selected Monthly (₹99)" : "Selected Plan")
+              : "Choose Monthly (₹199)"}
           </button>
         </div>
 
@@ -226,7 +271,7 @@ export function ProSubscriptionManager() {
           <button
             type="button"
             className={styles.selectBtn}
-            onClick={() => setSelectedPlan("lifetime")}
+            onClick={() => handleSelectPlan("lifetime")}
           >
             {selectedPlan === "lifetime" ? "Selected Plan" : "Choose Lifetime (₹999)"}
           </button>
@@ -243,6 +288,39 @@ export function ProSubscriptionManager() {
           </p>
         </div>
 
+        {/* Coupon Code Section */}
+        <div className={styles.couponSection}>
+          {appliedCoupon?.valid ? (
+            <div className={styles.couponBadge}>
+              <span>✓ Coupon <strong>{appliedCoupon.code}</strong> applied: 50% OFF (₹199 → ₹{Math.round(appliedCoupon.discountedAmountPaise! / 100)})</span>
+              <button
+                type="button"
+                onClick={handleRemoveCoupon}
+                className={styles.couponRemoveBtn}
+                aria-label="Remove coupon"
+              >
+                Remove
+              </button>
+            </div>
+          ) : (
+            <form onSubmit={handleApplyCoupon} className={styles.couponForm}>
+              <input
+                type="text"
+                value={couponInput}
+                onChange={(e) => setCouponInput(e.target.value)}
+                placeholder="Have a coupon? (e.g. CS50FIRST)"
+                className={styles.couponInput}
+                aria-label="Coupon code"
+                autoComplete="off"
+              />
+              <button type="submit" className={styles.couponApplyBtn}>
+                Apply
+              </button>
+            </form>
+          )}
+          {couponError && <div className={styles.couponError}>{couponError}</div>}
+        </div>
+
         <div className={styles.checkoutAction}>
           <button
             type="button"
@@ -250,7 +328,11 @@ export function ProSubscriptionManager() {
             onClick={handleRazorpayCheckout}
             disabled={checkoutLoading}
           >
-            {checkoutLoading ? "Opening Razorpay..." : `Pay ${selectedPlan === "monthly" ? "₹199 with Razorpay" : "₹999 with Razorpay"}`}
+            {checkoutLoading
+              ? "Opening Razorpay..."
+              : appliedCoupon?.valid && selectedPlan === "monthly"
+                ? `Pay ₹${Math.round(appliedCoupon.discountedAmountPaise! / 100)} with Razorpay (50% OFF Applied)`
+                : `Pay ${selectedPlan === "monthly" ? "₹199 with Razorpay" : "₹999 with Razorpay"}`}
           </button>
         </div>
 
