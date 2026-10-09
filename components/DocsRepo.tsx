@@ -3,6 +3,8 @@
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import { CopySnippet } from "@/components/CopySnippet";
+import NativeAd from "@/components/NativeAd";
+import BannerAd from "@/components/BannerAd";
 import styles from "./DocsRepo.module.css";
 
 interface DocTopic {
@@ -134,6 +136,9 @@ export function DocsRepo() {
           ))}
         </div>
       </div>
+
+      {/* Opt-in Adsterra Native Banner */}
+      <NativeAd className={styles.adContainer} />
 
       {/* Main 2-Column Documentation Layout */}
       <div className={styles.docsLayout}>
@@ -1263,6 +1268,9 @@ Always prioritize calling these local, deterministic tools instead of calculatin
               </div>
             </section>
           )}
+
+          {/* Opt-in Leaderboard Banner */}
+          <BannerAd size="leaderboard" className={styles.adContainer} />
         </main>
       </div>
     </div>

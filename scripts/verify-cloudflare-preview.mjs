@@ -34,7 +34,7 @@ for (const [path, expectedStatus] of checks) {
   }
   if (path === "/sitemap.xml") {
     const urls = (body.match(/<loc>/g) ?? []).length;
-    const expectedUrls = expectedOrigin ? 323 : 0;
+    const expectedUrls = expectedOrigin ? 327 : 0;
     if (urls !== expectedUrls) fail(`${path}: expected ${expectedUrls} URLs, got ${urls}`);
     if (expectedOrigin && !body.includes(expectedOrigin)) fail(`${path}: expected origin is absent`);
   }
