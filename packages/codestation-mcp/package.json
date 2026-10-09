@@ -5,7 +5,7 @@
   "type": "module",
   "main": "./bin/codestation-mcp.mjs",
   "bin": {
-    "codestation-mcp": "./bin/codestation-mcp.mjs"
+    "codestation-mcp": "bin/codestation-mcp.mjs"
   },
   "files": [
     "bin",
