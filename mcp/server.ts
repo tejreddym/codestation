@@ -732,7 +732,7 @@ export async function executeMcpTool(
     const server = new Server(
       {
         name: "codestation-mcp",
-        version: "1.2.0",
+        version: "1.2.1",
       },
       {
         capabilities: {

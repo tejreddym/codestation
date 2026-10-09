@@ -55,7 +55,7 @@ async function main(): Promise<void> {
   const args = process.argv.slice(2);
 
   if (args.includes("--version") || args.includes("-v")) {
-    process.stderr.write("codestation-mcp v1.2.0\n");
+    process.stderr.write("codestation-mcp v1.2.1\n");
     process.exit(0);
   }
 

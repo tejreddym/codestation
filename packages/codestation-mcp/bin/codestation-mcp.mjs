@@ -4082,7 +4082,7 @@ function createMcpServer(cliKey) {
   const server = new Server(
     {
       name: "codestation-mcp",
-      version: "1.2.0"
+      version: "1.2.1"
     },
     {
       capabilities: {
@@ -4444,7 +4444,7 @@ async function handleCliSubcommand(command, args) {
           JSON.stringify(
             {
               name: "Code Station",
-              version: "1.2.0",
+              version: "1.2.1",
               license: {
                 tier: license.tier,
                 isPro: license.isPro,
@@ -4460,7 +4460,7 @@ async function handleCliSubcommand(command, args) {
         );
       } else {
         out("\n=== CODE STATION STATUS ===\n");
-        out("Version:     1.2.0\n");
+        out("Version:     1.2.1\n");
         out(`License:     ${license.isPro ? "PRO TIER (Active)" : "FREE TIER (Pro key not active)"}
 `);
         out(`Tools:       ${SHARED_TOOLS.length} registered tools across Web, CLI & MCP
@@ -4925,7 +4925,7 @@ Pricing:
 async function main() {
   const args = process.argv.slice(2);
   if (args.includes("--version") || args.includes("-v")) {
-    process.stderr.write("codestation-mcp v1.2.0\n");
+    process.stderr.write("codestation-mcp v1.2.1\n");
     process.exit(0);
   }
   if (args[0] === "setup") {

@@ -92,7 +92,7 @@ export function DocsRepo() {
           </div>
           <div className={styles.repoBadge}>
             <span className={styles.badgePulse} aria-hidden="true" />
-            <span>v1.2.0 • Node 22+ • 100% Offline-Ready</span>
+            <span>v1.2.1 • Node 22+ • 100% Offline-Ready</span>
           </div>
         </div>
       </div>
