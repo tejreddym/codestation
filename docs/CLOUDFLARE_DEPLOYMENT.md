@@ -63,8 +63,8 @@ of local verification.
 - `.dev.vars.example` documents the local Worker runtime selector. The real
   `.dev.vars` file is ignored and must not contain committed secrets.
 
-The app currently does not require R2, KV, D1, Images, or other Cloudflare
-bindings. Do not add a binding until a feature needs it.
+The app binds one Cloudflare KV namespace (`LICENSE_KV`) for storing one-way
+SHA-256 hashes of Code Station Pro license keys.
 
 ## Workers Builds setup
 
@@ -86,6 +86,14 @@ Add these **Build variables and secrets** before the first production build:
 ```text
 NEXT_PUBLIC_SITE_URL=https://codestation.in
 SITE_INDEXING=index
+NEXT_PUBLIC_RAZORPAY_KEY_ID=rzp_test_Tli5WVYM3S0zhH
+```
+
+Add these **Runtime secrets** in Worker Settings → Variables & Secrets:
+
+```text
+RAZORPAY_KEY_ID=rzp_test_Tli5WVYM3S0zhH
+RAZORPAY_KEY_SECRET=oZnLs4H38FXMcI7BHt1WH815
 ```
 
 Advertising is a separate, owner-approved opt-in. Keep these build variables

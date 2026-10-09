@@ -18,7 +18,7 @@ export async function OPTIONS() {
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json().catch(() => ({}));
+    const body = (await request.json().catch(() => ({}))) as Record<string, any>;
     const secret = request.headers.get("X-Webhook-Secret") || body.secret;
     const expectedSecret = process.env.LICENSE_GENERATOR_SECRET;
 

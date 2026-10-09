@@ -59,7 +59,7 @@ export function ProSubscriptionManager() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ key: verifyKeyInput.trim() }),
       });
-      const data = await res.json();
+      const data = (await res.json()) as VerifyResult;
       setVerifyResult(data);
     } catch (err) {
       setVerifyResult({
@@ -90,11 +90,11 @@ export function ProSubscriptionManager() {
       });
 
       if (!orderRes.ok) {
-        const errData = await orderRes.json().catch(() => ({}));
+        const errData = (await orderRes.json().catch(() => ({}))) as Record<string, any>;
         throw new Error(errData.error || `Failed to create order (Status ${orderRes.status})`);
       }
 
-      const orderData = await orderRes.json();
+      const orderData = (await orderRes.json()) as Record<string, any>;
 
       if (!window.Razorpay) {
         throw new Error("Razorpay SDK is loading. Please check your internet connection and try again.");
@@ -126,7 +126,7 @@ export function ProSubscriptionManager() {
               }),
             });
 
-            const verifyData = await verifyRes.json();
+            const verifyData = (await verifyRes.json()) as Record<string, any>;
 
             if (verifyRes.ok && verifyData.success) {
               setGeneratedResult({

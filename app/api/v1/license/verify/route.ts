@@ -16,7 +16,7 @@ export async function OPTIONS() {
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json().catch(() => ({}));
+    const body = (await request.json().catch(() => ({}))) as Record<string, any>;
     const key = body.key || body.licenseKey;
 
     if (!key || typeof key !== "string") {

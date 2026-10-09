@@ -25,7 +25,8 @@
   "kv_namespaces": [
     {
       "binding": "LICENSE_KV",
-      "id": "codestation_license_kv"
+      "id": "8f45dc8ed96b4ccfaa8c90b810ba53ca",
+      "preview_id": "9746b80c30ed44118531786a1fe6d972"
     }
   ],
   "observability": {

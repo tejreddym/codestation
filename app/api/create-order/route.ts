@@ -25,7 +25,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const body = await request.json().catch(() => ({}));
+    const body = (await request.json().catch(() => ({}))) as Record<string, any>;
     const rawAmount = Number(body.amount);
     const currency = (body.currency || "INR").toUpperCase();
     const plan = body.plan === "lifetime" ? "lifetime" : "monthly";
