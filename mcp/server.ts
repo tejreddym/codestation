@@ -53,6 +53,10 @@ import { parseCron } from "../lib/tools/cron/parser";
 import { explainCron } from "../lib/tools/cron/explain";
 import { runSql } from "../lib/tools/sql/engine";
 import { jsonToTypescript, jsonToZod } from "../lib/tools/json-to-types";
+import { curlToCode, type CurlTargetLanguage } from "../lib/tools/curl-to-code";
+import { auditEnv, formatEnvAuditReport } from "../lib/tools/env-audit";
+import { generateMockDataset, type MockTemplate } from "../lib/tools/mock-data";
+import { parseAndResolveGitConflicts, formatConflictReport, type ConflictStrategy } from "../lib/tools/git-conflict";
 
 export function createMcpServer(cliKey?: string) {
   const license: LicenseStatus = resolveLicense(cliKey);
@@ -60,7 +64,7 @@ export function createMcpServer(cliKey?: string) {
   const server = new Server(
     {
       name: "codestation-mcp",
-      version: "1.0.0",
+      version: "1.2.0",
     },
     {
       capabilities: {
@@ -389,6 +393,88 @@ export function createMcpServer(cliKey?: string) {
         required: ["json"],
       },
     },
+    {
+      name: "codestation_curl_to_code",
+      description: "Convert cURL commands to TypeScript fetch/axios, Python requests, or Go net/http. [Pro Tier: ₹199/mo or $2.99/mo]",
+      inputSchema: {
+        type: "object",
+        properties: {
+          curl: { type: "string", description: "cURL command string" },
+          target: {
+            type: "string",
+            enum: ["fetch", "axios", "python", "go"],
+            description: "Target programming language/library (default: 'fetch')",
+          },
+        },
+        required: ["curl"],
+      },
+    },
+    {
+      name: "codestation_env_audit",
+      description: "Scan environment variables for secret leaks (Stripe, AWS, OpenAI, GitHub PAT, private keys) and validate against .env.example. [Pro Tier: ₹199/mo or $2.99/mo]",
+      inputSchema: {
+        type: "object",
+        properties: {
+          env: { type: "string", description: "Contents of the .env file" },
+          example: { type: "string", description: "Optional contents of .env.example to diff against" },
+          format: {
+            type: "string",
+            enum: ["report", "json"],
+            description: "Output format (default: 'report')",
+          },
+        },
+        required: ["env"],
+      },
+    },
+    {
+      name: "codestation_mock_data",
+      description: "Generate realistic mock data and SQL seeders for users, products, orders, or custom schemas. [Pro Tier: ₹199/mo or $2.99/mo]",
+      inputSchema: {
+        type: "object",
+        properties: {
+          template: {
+            type: "string",
+            enum: ["users", "products", "orders", "custom"],
+            description: "Template type (default: 'users')",
+          },
+          count: {
+            type: "integer",
+            minimum: 1,
+            maximum: 1000,
+            description: "Number of records to generate (default: 10)",
+          },
+          format: {
+            type: "string",
+            enum: ["json", "sql"],
+            description: "Output format (default: 'json')",
+          },
+          tableName: {
+            type: "string",
+            description: "Optional SQL table name (defaults to template name)",
+          },
+          customSchema: {
+            type: "object",
+            description: "Optional custom schema mapping field names to types (uuid, name, email, price, date, boolean, number, status, role)",
+          },
+        },
+      },
+    },
+    {
+      name: "codestation_git_conflict",
+      description: "Parse and resolve Git merge conflict markers (<<<<<<< HEAD, =======, >>>>>>>). [Pro Tier: ₹199/mo or $2.99/mo]",
+      inputSchema: {
+        type: "object",
+        properties: {
+          content: { type: "string", description: "File content containing Git conflict markers" },
+          strategy: {
+            type: "string",
+            enum: ["analyze", "ours", "theirs", "both"],
+            description: "Resolution strategy: analyze (report), ours (keep current), theirs (keep incoming), or both (keep both). Default: 'analyze'",
+          },
+        },
+        required: ["content"],
+      },
+    },
   ];
 
   // List tools handler
@@ -594,6 +680,46 @@ export function createMcpServer(cliKey?: string) {
           const json = String(args.json ?? "");
           const rootName = args.rootName ? String(args.rootName) : "rootSchema";
           outputText = jsonToZod(json, rootName);
+          break;
+        }
+
+        case "codestation_curl_to_code": {
+          const curl = String(args.curl ?? "");
+          const target = (args.target ? String(args.target) : "fetch") as CurlTargetLanguage;
+          const result = await curlToCode(curl, target);
+          outputText = result.code;
+          break;
+        }
+
+        case "codestation_env_audit": {
+          const env = String(args.env ?? "");
+          const example = args.example ? String(args.example) : undefined;
+          const format = args.format ? String(args.format) : "report";
+          const result = auditEnv(env, example);
+          outputText = format === "json" ? JSON.stringify(result, null, 2) : formatEnvAuditReport(result);
+          break;
+        }
+
+        case "codestation_mock_data": {
+          const template = (args.template ? String(args.template) : "users") as MockTemplate;
+          const count = args.count ? Number(args.count) : 10;
+          const format = (args.format ? String(args.format) : "json") as "json" | "sql";
+          const tableName = args.tableName ? String(args.tableName) : undefined;
+          const customSchema = args.customSchema as Record<string, any> | undefined;
+          const result = generateMockDataset({ template, count, format, tableName, customSchema });
+          outputText = format === "sql" && result.sql ? result.sql : result.json;
+          break;
+        }
+
+        case "codestation_git_conflict": {
+          const content = String(args.content ?? "");
+          const strategy = (args.strategy ? String(args.strategy) : "analyze") as ConflictStrategy;
+          const result = parseAndResolveGitConflicts(content, strategy);
+          if (strategy === "analyze") {
+            outputText = formatConflictReport(result);
+          } else {
+            outputText = result.resolvedContent ?? content;
+          }
           break;
         }
 

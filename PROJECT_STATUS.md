@@ -1,5 +1,17 @@
 # Project Status
 
+## Code Station MCP v1.2.0 & Killer Pro Suite — 2026-10-09
+
+- Published `codestation-mcp@1.2.0` to npm under `tejreddym`.
+- Added 4 killer tools to both local terminal CLI and stdio MCP server:
+  - `curl-to-code`: TypeScript fetch/axios, Python requests, Go net/http.
+  - `env-audit`: Leaked secret scanner (Stripe, AWS, OpenAI, GitHub PAT, private keys) with `.env.example` sync.
+  - `mock-data`: Realistic mock dataset & SQL INSERT generator.
+  - `git-conflict`: Git merge conflict parser and resolution engine (ours, theirs, both).
+- Redesigned `/pro` page with Tactile Technical perks showcase, live terminal preview, comparison matrix, 15 MCP tools catalog, and FAQ grid.
+- All web tools on `codestation.in` remain 100% free with zero paywalls. Pro tier is strictly for local MCP and terminal developer power tools.
+- Verification: `npm run typecheck` clean, 5,374 vitest tests passing, CLI subcommands verified end-to-end.
+
 ## Razorpay Standard Web Checkout Integration — 2026-10-09
 
 - Integrated official `razorpay` Node SDK for payment order creation and signature verification.

@@ -5,6 +5,13 @@ import { PRICING } from "./config";
 import { runAutoSetup } from "./setup";
 import { handleCliSubcommand } from "./cli-tools";
 
+const PRO_ASCII_BADGE = `
+  ┌──────────────────────────────────────────────────────────┐
+  │  CODE STATION [PRO]  •  LOCAL MCP & DEVELOPER TOOLBOX    │
+  │  Zero-Latency Engine  •  Device Memory  •  Edge Crypto   │
+  └──────────────────────────────────────────────────────────┘
+`;
+
 function printHelp(): void {
   process.stderr.write(`
 Code Station MCP Server & Developer CLI
@@ -24,6 +31,10 @@ Terminal Subcommands:
   hash "<text>" [--alg]         Compute digest (sha256, sha512, md5, sha1, crc32)
   ts "<json_string|file>"       Generate clean TypeScript interfaces from JSON
   zod "<json_string|file>"      Generate production-ready Zod schema from JSON
+  curl "<curl_cmd>" [--target]  Convert cURL to fetch, axios, python, or go
+  env [path/.env] [--example]   Audit .env for leaked secrets & diff with .env.example
+  mock [template] [--count]     Generate realistic mock data (users, products, orders)
+  conflict <file> [--strategy]  Parse & resolve Git merge conflicts (ours, theirs, both)
   uuid [count]                  Generate random RFC 4122 v4 UUIDs
   json "<raw_json>"             Validate & pretty-print JSON
 
@@ -49,7 +60,7 @@ async function main(): Promise<void> {
   }
 
   if (args.includes("--version") || args.includes("-v")) {
-    process.stderr.write("codestation-mcp v1.1.0\n");
+    process.stderr.write("codestation-mcp v1.2.0\n");
     process.exit(0);
   }
 
@@ -99,6 +110,7 @@ async function main(): Promise<void> {
   const { server, license } = createMcpServer(cliKey);
 
   if (license.isPro) {
+    process.stderr.write(PRO_ASCII_BADGE);
     process.stderr.write(`[Code Station MCP] Pro Tier Active (License: ${license.licenseKey?.slice(0, 8)}...). All tools unlocked.\n`);
   } else {
     process.stderr.write(

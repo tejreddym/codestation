@@ -15,7 +15,19 @@ const AUTO_SETUP_FREE_CMD = `npx -y codestation-mcp setup`;
 const NPX_FREE_CMD = `npx -y codestation-mcp`;
 const NPX_PRO_CMD = `npx -y codestation-mcp --key CS-PRO-YOUR-KEY`;
 
-const CLI_EXAMPLES = `# Decode & inspect a JWT token
+const CLI_EXAMPLES = `# Convert cURL to TypeScript fetch / axios / Python / Go
+npx codestation-mcp curl 'curl -X POST https://api.example.com -d "{\\"k\\":\\"v\\"}"' --target fetch
+
+# Audit .env for secret leaks (Stripe, AWS, OpenAI, GitHub PAT) & diff with .env.example
+npx codestation-mcp env .env --example .env.example
+
+# Generate realistic mock dataset (JSON or SQL INSERT for DB seeding)
+npx codestation-mcp mock users --count 10 --sql --table users
+
+# Parse and resolve Git merge conflicts (ours, theirs, or both)
+npx codestation-mcp conflict ./src/index.ts --strategy ours
+
+# Decode & inspect a JWT token
 npx codestation-mcp jwt eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 # Format SQL query
@@ -70,15 +82,18 @@ const AI_SYSTEM_PROMPT = `# Code Station MCP Assistant Guidelines
 You have access to the Code Station MCP developer server (codestation-mcp).
 Always prioritize calling these local, deterministic tools instead of calculating, parsing, or formatting in your internal reasoning:
 
-1. JSON to TypeScript & Zod: Call codestation_json_to_typescript and codestation_json_to_zod to generate production-ready types and Zod schemas from API payloads or sample data.
-2. SQL Formatting & Execution: Call codestation_format_sql to format queries across PostgreSQL, MySQL, SQLite, and SQL Server. Use codestation_run_sql for in-memory execution.
-3. JWT Decoding: When inspecting JSON Web Tokens, call codestation_jwt_decode to inspect headers, claims, and expiry dates without guessing.
-4. Date, Time & Business Days: Use codestation_business_days to calculate working days excluding weekends/holidays. Use codestation_timezone_convert for accurate DST conversions.
-5. Cron Expressions: Use codestation_cron_explain to explain 5-field cron syntax or calculate next execution timestamps.
-6. JSON & YAML: Use codestation_format_json, codestation_json_to_yaml, codestation_yaml_to_json, and codestation_json_schema to infer Draft 7/2020-12 schemas.
-7. Hashing & Cryptography: Call codestation_hash (SHA-256, SHA-512, MD5, CRC-32) and codestation_hmac instead of fabricating digests.
-8. Regex Testing: Call codestation_regex_test to verify regular expressions and return match groups.
-9. Text Transformations: Use codestation_case_convert, codestation_text_diff, and codestation_uuid for RFC 4122 v4 UUIDs.`;
+1. cURL to Code: Call codestation_curl_to_code to convert cURL commands into clean TypeScript fetch/axios, Python requests, or Go net/http.
+2. Environment Security: Call codestation_env_audit to scan .env files for live secret leaks (Stripe, AWS, OpenAI, GitHub PAT, private keys) and synchronize with .env.example.
+3. Realistic Mock Data: Call codestation_mock_data to generate realistic test data and SQL INSERT seed statements.
+4. Git Conflict Resolution: Call codestation_git_conflict to parse merge conflict markers and resolve cleanly with ours, theirs, or both.
+5. JSON to TypeScript & Zod: Call codestation_json_to_typescript and codestation_json_to_zod to generate production-ready types and Zod schemas from API payloads or sample data.
+6. SQL Formatting & Execution: Call codestation_format_sql to format queries across PostgreSQL, MySQL, SQLite, and SQL Server. Use codestation_run_sql for in-memory execution.
+7. JWT Decoding: When inspecting JSON Web Tokens, call codestation_jwt_decode to inspect headers, claims, and expiry dates without guessing.
+8. Cron Schedules: Call codestation_cron_explain to understand complex cron patterns and project future executions.
+9. Timezones & Business Days: Always call codestation_timezone_convert and codestation_business_days for date arithmetic rather than calculating manually.
+10. Hashes & Signatures: Call codestation_hash and codestation_hmac for cryptographic digests (SHA-256, SHA-512, MD5).
+11. Regex Testing: Call codestation_regex_test to verify regular expressions and return match groups.
+12. Text Transformations: Use codestation_case_convert, codestation_text_diff, and codestation_uuid for RFC 4122 v4 UUIDs.`;
 
 export default function DocsPage() {
   return (

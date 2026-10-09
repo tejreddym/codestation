@@ -25,6 +25,18 @@ npx -y codestation-mcp setup
 `codestation-mcp` is also a dual-purpose terminal Swiss-Army knife:
 
 ```bash
+# Convert cURL to TypeScript fetch / axios / Python / Go
+npx codestation-mcp curl "curl -X POST https://api.example.com -d '{\"k\":\"v\"}'" --target fetch
+
+# Audit .env for secret leaks (Stripe, AWS, OpenAI, GitHub PAT) & diff with .env.example
+npx codestation-mcp env .env --example .env.example
+
+# Generate realistic mock dataset (JSON or SQL INSERT for DB seeding)
+npx codestation-mcp mock users --count 10 --sql --table users
+
+# Parse and resolve Git merge conflicts (ours, theirs, or both)
+npx codestation-mcp conflict ./src/index.ts --strategy ours
+
 # Decode & inspect JWT tokens
 npx codestation-mcp jwt <token>
 
@@ -111,6 +123,12 @@ Add to your project's `.cursor/mcp.json` or Cursor Global Settings:
 - `generate_uuid` — v4 UUID generator
 
 ### Pro Tier (Requires License Key)
+- `codestation_curl_to_code` — Convert cURL to TypeScript fetch/axios, Python requests, or Go net/http
+- `codestation_env_audit` — Scan .env for leaked secrets (Stripe, AWS, OpenAI, GitHub PAT) & diff with .env.example
+- `codestation_mock_data` — Realistic mock dataset & SQL INSERT generator for DB seeding
+- `codestation_git_conflict` — Parse and resolve Git merge conflict markers (ours, theirs, both)
+- `codestation_json_to_typescript` — Generate TypeScript interfaces and nested types from sample JSON
+- `codestation_json_to_zod` — Generate production-ready Zod validation schemas and inferred types
 - `decode_jwt` — Parse and decode JWT headers, claims, and expiry dates
 - `generate_json_schema` — Infer JSON Schema Draft 7/2020-12 from sample JSON
 - `test_regex` — Test regex with match groups and capture explanations

@@ -32,7 +32,11 @@ var PRO_TOOLS = /* @__PURE__ */ new Set([
   "codestation_regex_test",
   "codestation_json_schema",
   "codestation_json_to_typescript",
-  "codestation_json_to_zod"
+  "codestation_json_to_zod",
+  "codestation_curl_to_code",
+  "codestation_env_audit",
+  "codestation_mock_data",
+  "codestation_git_conflict"
 ]);
 var CACHE_DIR = path.join(os.homedir(), ".codestation");
 var CACHE_FILE = path.join(CACHE_DIR, "license.json");
@@ -864,30 +868,30 @@ var SPECS = [
   { name: "dayOfWeek", label: "Day of week", min: 0, max: 7 }
 ];
 function parseField(expression, spec) {
-  const fail = (message) => {
+  const fail2 = (message) => {
     throw new Error(`${spec.label}: ${message}`);
   };
-  if (expression.length > 128) fail("field exceeds the 128-character limit.");
-  if (!expression) fail("field cannot be empty.");
+  if (expression.length > 128) fail2("field exceeds the 128-character limit.");
+  if (!expression) fail2("field cannot be empty.");
   const endpoint = (text2) => {
     let value;
     if (/^\d+$/.test(text2)) value = Number(text2);
     else if (spec.name === "month" && MONTH_NAMES.includes(text2.toUpperCase())) value = MONTH_NAMES.indexOf(text2.toUpperCase()) + 1;
     else if (spec.name === "dayOfWeek" && WEEKDAY_NAMES.includes(text2.toUpperCase())) value = WEEKDAY_NAMES.indexOf(text2.toUpperCase());
-    else return fail("use integer values, permitted month/weekday names, *, ranges, lists or steps.");
-    if (!Number.isSafeInteger(value) || value < spec.min || value > spec.max) fail(`value must be between ${spec.min} and ${spec.max}.`);
+    else return fail2("use integer values, permitted month/weekday names, *, ranges, lists or steps.");
+    if (!Number.isSafeInteger(value) || value < spec.min || value > spec.max) fail2(`value must be between ${spec.min} and ${spec.max}.`);
     return value;
   };
   const selected = /* @__PURE__ */ new Set();
   for (const item of expression.split(",")) {
-    if (!item) fail("lists cannot contain empty items.");
+    if (!item) fail2("lists cannot contain empty items.");
     const pieces = item.split("/");
-    if (pieces.length > 2 || !pieces[0]) fail("malformed step notation.");
+    if (pieces.length > 2 || !pieces[0]) fail2("malformed step notation.");
     let step = 1;
     if (pieces.length === 2) {
-      if (!/^\d+$/.test(pieces[1])) fail("step must be a positive integer.");
+      if (!/^\d+$/.test(pieces[1])) fail2("step must be a positive integer.");
       step = Number(pieces[1]);
-      if (!Number.isSafeInteger(step) || step < 1 || step > spec.max - spec.min + 1) fail(`step must be between 1 and ${spec.max - spec.min + 1}.`);
+      if (!Number.isSafeInteger(step) || step < 1 || step > spec.max - spec.min + 1) fail2(`step must be between 1 and ${spec.max - spec.min + 1}.`);
     }
     const base = pieces[0];
     let first;
@@ -897,10 +901,10 @@ function parseField(expression, spec) {
       last = spec.max;
     } else {
       const range = base.split("-");
-      if (range.length > 2 || range.some((value) => !value)) fail("malformed range; negative values are not supported.");
+      if (range.length > 2 || range.some((value) => !value)) fail2("malformed range; negative values are not supported.");
       first = endpoint(range[0]);
       last = range.length === 2 ? endpoint(range[1]) : pieces.length === 2 ? spec.max : first;
-      if (last < first) fail("descending or wrapping ranges are not supported.");
+      if (last < first) fail2("descending or wrapping ranges are not supported.");
     }
     for (let value = first; value <= last; value += step) selected.add(spec.name === "dayOfWeek" && value === 7 ? 0 : value);
   }
@@ -1166,13 +1170,1321 @@ export type ${typeName} = z.infer<typeof ${safeRootName}>;`;
   return header + (schemaDeclarations ? `${schemaDeclarations}${typeExport}` : `export const ${safeRootName} = ${rootResult};${typeExport}`);
 }
 
+// lib/tools/api/types.ts
+var ApiError = class extends Error {
+  constructor(message, field) {
+    super(message);
+    this.field = field;
+    this.name = "ApiError";
+  }
+};
+var apiText = (values, field) => typeof values[field] === "string" ? values[field] : "";
+
+// lib/tools/api/curl.ts
+var MAX_INPUT = 2e5;
+var MAX_OUTPUT = 1e6;
+var MAX_TOKENS = 1e4;
+var MAX_OPTIONS = 1e3;
+var MAX_HEADERS = 200;
+function fail(message) {
+  throw new ApiError(message, "input");
+}
+function boundedInput(values) {
+  const source = apiText(values, "command") || apiText(values, "input") || apiText(values, "source") || apiText(values, "code") || apiText(values, "curl") || apiText(values, "value");
+  if (source.length > MAX_INPUT) fail("Input exceeds the 200,000-character limit. Use a smaller request.");
+  if (/\0/.test(source)) fail("Request input cannot contain NUL characters.");
+  if (/[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/.test(source)) fail("Request input contains an invalid Unicode surrogate.");
+  return source;
+}
+function ensureOutput(text2) {
+  if (text2.length > MAX_OUTPUT) fail("Generated output exceeds the 1,000,000-character limit. Use a smaller request.");
+  return text2;
+}
+function jsonString(value) {
+  return JSON.stringify(value).replace(/\u2028/g, "\\u2028").replace(/\u2029/g, "\\u2029");
+}
+function pyString(value) {
+  return jsonString(value);
+}
+function shellQuote(value) {
+  return `'${value.replace(/'/g, `'"'"'`)}'`;
+}
+function base64Utf8(value) {
+  const bytes2 = new TextEncoder().encode(value);
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+  let out = "";
+  for (let i = 0; i < bytes2.length; i += 3) {
+    const a = bytes2[i], b = bytes2[i + 1] ?? 0, c = bytes2[i + 2] ?? 0;
+    out += alphabet[a >> 2] + alphabet[(a & 3) << 4 | b >> 4] + (i + 1 < bytes2.length ? alphabet[(b & 15) << 2 | c >> 6] : "=") + (i + 2 < bytes2.length ? alphabet[c & 63] : "=");
+  }
+  return out;
+}
+function checkUrl(url, globDisabled = false) {
+  let parsed;
+  try {
+    parsed = new URL(url);
+  } catch {
+    fail("Request URL must be an absolute HTTP or HTTPS URL.");
+  }
+  if (!/^https?:$/.test(parsed.protocol)) fail("Only HTTP and HTTPS request URLs are supported.");
+  if (parsed.username || parsed.password) fail("URL-embedded credentials are unsupported; use explicit cURL --user authentication.");
+  if (/[\r\n\0]/.test(url)) fail("Request URL contains an invalid control character.");
+  if (!globDisabled && /[{}]/.test(url)) fail("cURL URL glob patterns are unsupported; use --globoff or percent-encode literal braces.");
+  if (!globDisabled && /[\[\]]/.test(parsed.pathname + parsed.search + parsed.hash)) fail("cURL URL range patterns are unsupported; use --globoff or percent-encode literal brackets.");
+}
+function validateHeaders(headers) {
+  const seen = /* @__PURE__ */ new Set();
+  for (const [name, value] of headers) {
+    if (!/^[!#$%&'*+.^_`|~0-9A-Za-z-]+$/.test(name)) fail("Invalid header name.");
+    if (name === "__proto__") fail("The __proto__ header name is unsupported in generated object literals.");
+    if (/[\r\n\0]/.test(value)) fail("Header values cannot contain carriage returns, newlines, or NUL.");
+    if (seen.has(name.toLowerCase())) fail("Duplicate header names are unsupported; combine their values explicitly.");
+    seen.add(name.toLowerCase());
+  }
+  if (headers.length > MAX_HEADERS) fail("Too many headers (limit 200).");
+}
+function checkStaticData(value, depth = 0, budget = { nodes: 0 }) {
+  if (depth > 32 || ++budget.nodes > MAX_TOKENS) fail("Static data exceeds the 32-level or 10,000-value limit.");
+  if (typeof value === "number") return Number.isFinite(value) && (!Number.isInteger(value) || Number.isSafeInteger(value));
+  if (Array.isArray(value)) return value.every((item) => checkStaticData(item, depth + 1, budget));
+  if (value && typeof value === "object") return Object.entries(value).every(([key, item]) => key !== "__proto__" && checkStaticData(item, depth + 1, budget));
+  return true;
+}
+function inspectJson(request) {
+  if (request.body === void 0 || !request.headers.some(([name, value]) => name.toLowerCase() === "content-type" && /^application\/(?:[\w.-]+\+)?json(?:\s*;|$)/i.test(value))) return;
+  try {
+    const data = JSON.parse(request.body);
+    if (!checkStaticData(data)) {
+      request.warnings.push("JSON with unsafe numeric precision or __proto__ keys is kept as raw text.");
+      return;
+    }
+    if (request.headers.some(([name]) => name.toLowerCase() === "content-length")) {
+      request.warnings.push("The body is kept as raw text to preserve its explicit Content-Length.");
+      return;
+    }
+    request.jsonBody = data;
+    if (JSON.stringify(data) !== request.body) request.warnings.push("The JSON body is reserialized; formatting and escape spelling may change.");
+  } catch (error) {
+    if (error instanceof ApiError) throw error;
+    request.warnings.push("Content-Type declares JSON, but the body is not valid JSON; it is kept as raw text.");
+  }
+}
+function tokenizeShell(source) {
+  const out = [];
+  let token = "";
+  let quote;
+  let started = false;
+  const push = () => {
+    if (started) {
+      out.push(token);
+      token = "";
+      started = false;
+    }
+  };
+  for (let i = 0; i < source.length; i += 1) {
+    const ch = source[i];
+    if (quote === "single") {
+      if (ch === "'") quote = void 0;
+      else token += ch;
+      started = true;
+      continue;
+    }
+    if (quote === "double") {
+      if (ch === '"') {
+        quote = void 0;
+        started = true;
+        continue;
+      }
+      if (ch === "$") fail("Shell variable expansion is unsupported; use literal cURL values.");
+      if (ch === "`") fail("Shell substitutions and command separators are unsupported.");
+      if (ch === "\\") {
+        const next = source[++i];
+        if (next === void 0) fail("Malformed cURL: unterminated escape.");
+        if (next === "\n") continue;
+        token += ['"', "\\", "$", "`"].includes(next) ? next : `\\${next}`;
+      } else token += ch;
+      started = true;
+      continue;
+    }
+    if (ch === "'") {
+      quote = "single";
+      started = true;
+      continue;
+    }
+    if (ch === '"') {
+      quote = "double";
+      started = true;
+      continue;
+    }
+    if (/\s/.test(ch)) {
+      push();
+      continue;
+    }
+    if (ch === "$") fail("Shell variable expansion is unsupported; use literal cURL values.");
+    if ("`;|><&()".includes(ch)) fail("Shell substitutions, redirections, and command separators are unsupported; quote literal values.");
+    if (ch === "\\") {
+      const next = source[++i];
+      if (next === void 0) fail("Malformed cURL: unterminated escape.");
+      if (next !== "\n") token += next;
+    } else token += ch;
+    started = true;
+    if (out.length > MAX_TOKENS) fail("cURL request has too many tokens (limit 10,000).");
+  }
+  if (quote) fail("Malformed cURL: unterminated quote.");
+  push();
+  if (out.length > MAX_TOKENS) fail("cURL request has too many tokens (limit 10,000).");
+  return out;
+}
+function addHeader(headers, value) {
+  const colon = value.indexOf(":");
+  if (colon < 0 && value.endsWith(";")) {
+    headers.push([value.slice(0, -1), ""]);
+    validateHeaders(headers);
+    return;
+  }
+  if (colon <= 0) fail("Invalid header: expected `Name: value`.");
+  const name = value.slice(0, colon).trim();
+  if (!/^[!#$%&'*+.^_`|~0-9A-Za-z-]+$/.test(name)) fail("Invalid header name.");
+  if (!value.slice(colon + 1).trim()) fail("cURL header suppression or empty headers are unsupported.");
+  headers.push([name, value.slice(colon + 1).trim()]);
+  if (headers.length > MAX_HEADERS) fail("Too many headers (limit 200).");
+}
+function parseCurl(source) {
+  const tokens = tokenizeShell(source.trim());
+  if (!tokens.length) fail("Enter a cURL command.");
+  if (tokens[0].toLowerCase() !== "curl") fail("cURL input must start with `curl`.");
+  const headers = [];
+  const bodyParts = [];
+  let method;
+  let url;
+  let basicAuth;
+  let globDisabled = false;
+  const warnings = [];
+  let optionCount = 0;
+  const need = (index, option) => {
+    const value = tokens[index + 1];
+    if (value === void 0) fail(`Option ${option} requires a value.`);
+    return value;
+  };
+  for (let i = 1; i < tokens.length; i += 1) {
+    const token = tokens[i];
+    if (token.startsWith("-") && ++optionCount > MAX_OPTIONS) fail("cURL request has too many options (limit 1,000).");
+    let option = token;
+    let inline;
+    const equals = option.indexOf("=");
+    if (option.startsWith("--") && equals > 2) {
+      inline = option.slice(equals + 1);
+      option = option.slice(0, equals);
+    }
+    const take = (name) => {
+      if (inline !== void 0) return inline;
+      const value = need(i, name);
+      i += 1;
+      return value;
+    };
+    if ((option === "--globoff" || option === "-g") && inline === void 0) {
+      globDisabled = true;
+      continue;
+    }
+    if (option === "--url") {
+      if (url !== void 0) fail("Multiple URLs are unsupported.");
+      url = take(option);
+      continue;
+    }
+    if (option === "--request") {
+      method = take(option);
+      continue;
+    }
+    if (option === "-X") {
+      method = take(option);
+      continue;
+    }
+    if (option.startsWith("-X") && option.length > 2) {
+      method = option.slice(2);
+      continue;
+    }
+    if (option === "--header") {
+      addHeader(headers, take(option));
+      continue;
+    }
+    if (option === "-H") {
+      addHeader(headers, take(option));
+      continue;
+    }
+    if (option.startsWith("-H") && option.length > 2) {
+      addHeader(headers, option.slice(2));
+      continue;
+    }
+    if (option === "--data" || option === "--data-raw" || option === "--data-binary" || option === "-d") {
+      const value = take(option);
+      if (option !== "--data-raw" && value.startsWith("@")) fail("cURL body file references are unsupported; provide literal data using --data-raw.");
+      bodyParts.push(value);
+      if (bodyParts.length > 200) fail("Too many body options (limit 200).");
+      continue;
+    }
+    if (option.startsWith("-d") && option.length > 2) {
+      if (option[2] === "@") fail("cURL body file references are unsupported; provide literal data using --data-raw.");
+      bodyParts.push(option.slice(2));
+      continue;
+    }
+    if (option === "--data-urlencode") {
+      const value = take(option);
+      const at = value.indexOf("@");
+      if (at >= 0 && (at === 0 || value.slice(0, at).indexOf("=") < 0)) fail("--data-urlencode file references are unsupported; provide literal data.");
+      const eq = value.indexOf("=");
+      const encode = (text2) => encodeURIComponent(text2).replace(/[!'()*]/g, (char) => `%${char.charCodeAt(0).toString(16).toUpperCase()}`);
+      try {
+        bodyParts.push(eq < 0 ? encode(value) : `${eq > 0 ? `${value.slice(0, eq)}=` : ""}${encode(value.slice(eq + 1))}`);
+      } catch {
+        fail("URL-encoded body data contains an invalid Unicode surrogate.");
+      }
+      continue;
+    }
+    if (option === "-u" || option === "--user") {
+      const value = take(option);
+      const colon = value.indexOf(":");
+      if (colon < 0) fail("Basic authentication must use the literal `username:password` form.");
+      basicAuth = [value.slice(0, colon), value.slice(colon + 1)];
+      continue;
+    }
+    if (option.startsWith("-u") && option.length > 2) {
+      const value = option.slice(2);
+      const colon = value.indexOf(":");
+      if (colon < 0) fail("Basic authentication must use the literal `username:password` form.");
+      basicAuth = [value.slice(0, colon), value.slice(colon + 1)];
+      continue;
+    }
+    if (option === "--") {
+      if (tokens.length - i !== 2 || url !== void 0) fail("Expected one URL after --; multiple URLs are unsupported.");
+      url = tokens[++i];
+      continue;
+    }
+    if (option.startsWith("-")) fail(`Unsupported cURL option${/^--?[A-Za-z][A-Za-z-]{0,40}$/.test(option) ? `: ${option}` : ""}. The request was not converted.`);
+    if (url) fail("Multiple URLs are unsupported.");
+    url = token;
+  }
+  if (!url) fail("cURL request is missing a URL.");
+  if (!url.trim()) fail("cURL request URL cannot be empty.");
+  if (bodyParts.length > 200) fail("Too many body options (limit 200).");
+  const body = bodyParts.length ? bodyParts.join("&") : void 0;
+  if (method === void 0) method = body === void 0 ? "GET" : "POST";
+  if (!/^[A-Za-z][A-Za-z0-9!#$%&'*+.^_`|~-]{0,31}$/.test(method)) fail("HTTP method is invalid.");
+  if (body !== void 0 && !headers.some(([name]) => name.toLowerCase() === "content-type")) headers.push(["Content-Type", "application/x-www-form-urlencoded"]);
+  if (basicAuth) {
+    if (headers.some(([name]) => name.toLowerCase() === "authorization")) warnings.push("The explicit Authorization header takes precedence over --user.");
+    else headers.push(["Authorization", `Basic ${base64Utf8(`${basicAuth[0]}:${basicAuth[1]}`)}`]);
+  }
+  checkUrl(url, globDisabled);
+  validateHeaders(headers);
+  const request = { method, url, headers, body, warnings };
+  inspectJson(request);
+  return request;
+}
+function lexJs(source) {
+  const tokens = [];
+  let i = 0;
+  const add = (kind, value) => {
+    tokens.push({ kind, value });
+    if (tokens.length > MAX_TOKENS) fail("Fetch expression has too many tokens (limit 10,000).");
+  };
+  while (i < source.length) {
+    const ch = source[i];
+    if (/\s/.test(ch)) {
+      i += 1;
+      continue;
+    }
+    if (ch === "/" && source[i + 1] === "/") fail("Comments are unsupported in Fetch input; provide a static expression.");
+    if (ch === "'" || ch === '"') {
+      const quote = ch;
+      let value = "";
+      let closed = false;
+      i += 1;
+      while (i < source.length) {
+        const c = source[i++];
+        if (c === quote) {
+          closed = true;
+          break;
+        }
+        if (c === "\\") {
+          const e = source[i++];
+          if (e === void 0) fail("Malformed Fetch expression: unterminated string.");
+          if (e === "n") value += "\n";
+          else if (e === "r") value += "\r";
+          else if (e === "t") value += "	";
+          else if (e === "b") value += "\b";
+          else if (e === "f") value += "\f";
+          else if (e === "v") value += "\v";
+          else if (e === "0") {
+            if (/\d/.test(source[i] ?? "")) fail("Legacy octal string escapes are unsupported.");
+            value += "\0";
+          } else if (e === "u") {
+            if (source[i] === "{") {
+              const end = source.indexOf("}", i + 1);
+              const hex2 = source.slice(i + 1, end);
+              if (end < 0 || !/^[0-9A-Fa-f]{1,6}$/.test(hex2) || parseInt(hex2, 16) > 1114111) fail("Malformed Fetch expression: invalid Unicode escape.");
+              value += String.fromCodePoint(parseInt(hex2, 16));
+              i = end + 1;
+            } else {
+              const hex2 = source.slice(i, i + 4);
+              if (!/^[0-9A-Fa-f]{4}$/.test(hex2)) fail("Malformed Fetch expression: invalid Unicode escape.");
+              value += String.fromCharCode(parseInt(hex2, 16));
+              i += 4;
+            }
+          } else if (e === "x") {
+            const hex2 = source.slice(i, i + 2);
+            if (!/^[0-9A-Fa-f]{2}$/.test(hex2)) fail("Malformed Fetch expression: invalid hexadecimal escape.");
+            value += String.fromCharCode(parseInt(hex2, 16));
+            i += 2;
+          } else if (e === "\n") {
+          } else if (e === "\r") {
+            if (source[i] === "\n") i += 1;
+          } else if (/\d/.test(e)) fail("Legacy octal string escapes are unsupported.");
+          else value += e;
+        } else {
+          if (c === "\n" || c === "\r") fail("Malformed Fetch expression: unescaped newline in string.");
+          value += c;
+        }
+      }
+      if (!closed) fail("Malformed Fetch expression: unterminated string.");
+      add("string", value);
+      continue;
+    }
+    if (ch === "`") fail("Fetch templates are dynamic and unsupported; use a quoted URL/string.");
+    if (/[A-Za-z_$]/.test(ch)) {
+      const start = i++;
+      while (i < source.length && /[A-Za-z0-9_$]/.test(source[i])) i += 1;
+      add("identifier", source.slice(start, i));
+      continue;
+    }
+    if (/[0-9-]/.test(ch)) {
+      const start = i++;
+      while (i < source.length && /[0-9.eE+-]/.test(source[i])) i += 1;
+      const value = source.slice(start, i);
+      if (!/^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?$/.test(value)) fail("Malformed Fetch expression: invalid number.");
+      add("number", value);
+      continue;
+    }
+    if ("{}[]():,;.".includes(ch)) {
+      add("punct", ch);
+      i += 1;
+      continue;
+    }
+    fail(`Unsupported Fetch syntax at character ${i + 1}; use only static literals.`);
+  }
+  add("eof", "");
+  return tokens;
+}
+var StaticJson = class {
+  constructor(value) {
+    this.value = value;
+  }
+};
+var JsReader = class {
+  constructor(tokens) {
+    this.tokens = tokens;
+    this.index = 0;
+    this.nodes = 0;
+  }
+  peek() {
+    return this.tokens[this.index];
+  }
+  take(value) {
+    const token = this.tokens[this.index++];
+    if (value !== void 0 && token.value !== value) fail(`Malformed Fetch expression: expected '${value}'.`);
+    return token;
+  }
+  expression(depth = 0, stringifyAllowed = true) {
+    if (depth > 32 || ++this.nodes > MAX_TOKENS) fail("Static data exceeds the 32-level or 10,000-value limit.");
+    const token = this.peek();
+    if (token.kind === "string") {
+      this.take();
+      return token.value;
+    }
+    if (token.kind === "number") {
+      this.take();
+      const value = Number(token.value);
+      if (!Number.isFinite(value) || Number.isInteger(value) && !Number.isSafeInteger(value)) fail("Static numeric values must be finite and use safe integer precision.");
+      return value;
+    }
+    if (token.kind === "identifier") {
+      if (token.value === "true" || token.value === "false") {
+        this.take();
+        return token.value === "true";
+      }
+      if (token.value === "null") {
+        this.take();
+        return null;
+      }
+      if (token.value === "JSON" && stringifyAllowed) {
+        this.take("JSON");
+        this.take(".");
+        this.take("stringify");
+        this.take("(");
+        const value = this.expression(depth + 1, false);
+        this.take(")");
+        return new StaticJson(value);
+      }
+      fail("Fetch values must be static literals or JSON.stringify(static data).");
+    }
+    if (token.value === "{") {
+      this.take("{");
+      const object = /* @__PURE__ */ Object.create(null);
+      if (this.peek().value !== "}") while (true) {
+        const key = this.take();
+        if (key.kind !== "identifier" && key.kind !== "string") fail("Fetch object keys must be static identifiers or strings.");
+        if (key.value === "__proto__") fail("__proto__ object-literal keys are unsupported; provide a static JSON string body instead.");
+        if (Object.hasOwn(object, key.value)) fail("Duplicate object-literal keys are unsupported.");
+        this.take(":");
+        object[key.value] = this.expression(depth + 1, stringifyAllowed && depth === 0);
+        if (this.peek().value === "}") break;
+        this.take(",");
+        if (this.peek().value === "}") break;
+      }
+      this.take("}");
+      return object;
+    }
+    if (token.value === "[") {
+      this.take("[");
+      const array = [];
+      if (this.peek().value !== "]") while (true) {
+        array.push(this.expression(depth + 1, false));
+        if (this.peek().value === "]") break;
+        this.take(",");
+        if (this.peek().value === "]") break;
+      }
+      this.take("]");
+      return array;
+    }
+    fail("Fetch values must be static literals.");
+  }
+};
+function parseFetch(source) {
+  const tokens = lexJs(source.trim());
+  const reader = new JsReader(tokens);
+  if (reader.peek().value !== "fetch") fail("Fetch input must be a static fetch(...) call.");
+  reader.take("fetch");
+  reader.take("(");
+  const urlToken = reader.take();
+  if (urlToken.kind !== "string") fail("Fetch URL must be a static string literal.");
+  const url = urlToken.value;
+  let method = "GET";
+  let headers = [];
+  let body;
+  let jsonBody;
+  if (reader.peek().value === ",") {
+    reader.take(",");
+    if (reader.peek().value !== ")") {
+      const options = reader.expression();
+      if (!options || typeof options !== "object" || Array.isArray(options) || options instanceof StaticJson) fail("Fetch options must be a static object literal.");
+      for (const [key, value] of Object.entries(options)) {
+        if (key === "method") {
+          if (typeof value !== "string") fail("Fetch method must be a static string.");
+          method = /^(?:delete|get|head|options|post|put)$/i.test(value) ? value.toUpperCase() : value;
+        } else if (key === "headers") {
+          if (!value || typeof value !== "object" || Array.isArray(value) || value instanceof StaticJson) fail("Fetch headers must be a static object literal.");
+          headers = Object.entries(value).map(([name, headerValue]) => {
+            if (typeof headerValue !== "string") fail("Fetch header values must be static strings.");
+            return [name, headerValue];
+          });
+          if (headers.length > MAX_HEADERS) fail("Too many headers (limit 200).");
+        } else if (key === "body") {
+          if (typeof value === "string") body = value;
+          else if (value instanceof StaticJson) {
+            body = JSON.stringify(value.value);
+            jsonBody = value.value;
+          } else fail("Fetch body must be a static string or JSON.stringify(static data).");
+        } else fail(`Unsupported Fetch option: ${key}. Use only method, headers, and body.`);
+      }
+      if (reader.peek().value === ",") reader.take(",");
+    }
+  }
+  reader.take(")");
+  if (reader.peek().value === ";") reader.take(";");
+  if (reader.peek().kind !== "eof") fail("Malformed Fetch expression: trailing syntax is unsupported.");
+  if (body !== void 0 && (method === "GET" || method === "HEAD")) fail("Fetch does not support a body with GET or HEAD; use an explicit body-capable method.");
+  if (!/^[A-Za-z][A-Za-z0-9!#$%&'*+.^_`|~-]{0,31}$/.test(method)) fail("HTTP method is invalid.");
+  if (/^(?:CONNECT|TRACE|TRACK)$/i.test(method)) fail("Fetch forbids CONNECT, TRACE, and TRACK methods.");
+  checkUrl(url, true);
+  if (body !== void 0 && /\0/.test(body)) fail("A NUL-containing Fetch body cannot be represented as a cURL argument.");
+  if (body !== void 0 && /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/.test(body)) fail("Fetch body contains an invalid Unicode surrogate.");
+  if (body !== void 0 && !headers.some(([name]) => name.toLowerCase() === "content-type")) headers.push(["Content-Type", "text/plain;charset=UTF-8"]);
+  validateHeaders(headers);
+  return { method, url, headers, body, jsonBody, warnings: [] };
+}
+function renderHeaders(headers, indent) {
+  return headers.map(([name, value]) => `${indent}${jsonString(name)}: ${jsonString(value)}`).join(",\n");
+}
+function jsData(value, indent) {
+  return JSON.stringify(value, null, 2).replace(/\u2028/g, "\\u2028").replace(/\u2029/g, "\\u2029").split("\n").map((line, index) => index ? " ".repeat(indent) + line : line).join("\n");
+}
+function pythonLiteral(value) {
+  if (value === null) return "None";
+  if (typeof value === "string") return pyString(value);
+  if (typeof value === "boolean") return value ? "True" : "False";
+  if (typeof value === "number") return Number.isFinite(value) ? String(value) : fail("JSON body contains a non-finite number.");
+  if (Array.isArray(value)) return `[${value.map((item) => pythonLiteral(item)).join(", ")}]`;
+  if (value && typeof value === "object") return `{${Object.entries(value).map(([key, item]) => `${pyString(key)}: ${pythonLiteral(item)}`).join(", ")}}`;
+  fail("JSON body contains an unsupported value.");
+}
+function fetchCode(request) {
+  const hasBody = request.body !== void 0;
+  const lines = [`const response = await fetch(${jsonString(request.url)}${hasBody || request.headers.length || request.method !== "GET" ? ", {" : ");"}`];
+  if (lines[0].endsWith(", {")) {
+    lines.push(`  method: ${jsonString(request.method)},`);
+    if (request.headers.length) lines.push("  headers: {", renderHeaders(request.headers, "    "), "  },");
+    if (hasBody) lines.push(`  body: ${request.jsonBody !== void 0 ? `JSON.stringify(${jsData(request.jsonBody, 2)})` : jsonString(request.body ?? "")},`);
+    lines.push("});");
+  }
+  lines.push("const data = await response.text();");
+  return lines.join("\n");
+}
+function axiosCode(request) {
+  const lines = ['import axios from "axios";', "", "const response = await axios({", `  method: ${jsonString(request.method)},`, `  url: ${jsonString(request.url)},`];
+  if (request.headers.length) lines.push("  headers: {", renderHeaders(request.headers, "    "), "  },");
+  if (request.body !== void 0) {
+    const structured = request.jsonBody !== null && typeof request.jsonBody === "object";
+    lines.push(`  data: ${structured ? jsData(request.jsonBody, 2) : jsonString(request.body)},`);
+    if (!structured) lines.push("  transformRequest: [(data) => data],");
+  }
+  lines.push("});", "", "const data = response.data;");
+  return lines.join("\n");
+}
+function pythonCode(request) {
+  const lines = ["import requests"];
+  lines.push("", "headers = {");
+  for (const [name, value] of request.headers) {
+    lines.push(`    ${pyString(name)}: ${pyString(value)},`);
+  }
+  lines.push("}", "", `response = requests.request(`, `    ${pyString(request.method)},`, `    ${pyString(request.url)},`, "    headers=headers,");
+  if (request.body !== void 0) {
+    lines[lines.length - 1] = request.jsonBody !== void 0 && request.jsonBody !== null ? `    headers=headers,
+    json=${pythonLiteral(request.jsonBody)},` : `    headers=headers,
+    data=${pyString(request.body)}.encode("utf-8"),`;
+  }
+  lines.push(")", "", "data = response.text");
+  return lines.join("\n");
+}
+function curlCode(request) {
+  const parts = ["curl", "--request", shellQuote(request.method)];
+  if (/[{}\[\]]/.test(request.url)) parts.push("--globoff");
+  for (const [name, value] of request.headers) parts.push("--header", shellQuote(value ? `${name}: ${value}` : `${name};`));
+  if (request.body !== void 0) parts.push("--data-raw", shellQuote(request.body));
+  parts.push(shellQuote(request.url));
+  return parts.join(" ");
+}
+function resultFor(id, request) {
+  let output;
+  if (id === "curl-to-fetch") {
+    if (request.body !== void 0 && /^(?:GET|HEAD)$/i.test(request.method)) fail("Fetch does not support a body with GET or HEAD; choose another conversion or a body-capable method.");
+    if (/^(?:CONNECT|TRACE|TRACK)$/i.test(request.method)) fail("Fetch forbids CONNECT, TRACE, and TRACK methods.");
+    output = fetchCode(request);
+    if (request.headers.some(([name]) => /^(?:host|cookie|content-length|connection|origin|referer|accept-encoding)$/i.test(name))) request.warnings.push("Browser Fetch may ignore forbidden request headers; run the snippet in a compatible environment to preserve them.");
+    if (/^(?:delete|get|head|options|post|put)$/i.test(request.method) && request.method !== request.method.toUpperCase()) request.warnings.push("Fetch normalizes the casing of standard HTTP methods.");
+  } else if (id === "curl-to-axios") {
+    output = axiosCode(request);
+    if (request.method !== request.method.toUpperCase()) request.warnings.push("Axios transports may normalize HTTP method casing.");
+    if (request.body !== void 0 && /^(?:GET|HEAD)$/i.test(request.method)) request.warnings.push("Browser Axios transports may omit a GET or HEAD body; use a body-capable transport.");
+  } else if (id === "curl-to-python-requests") output = pythonCode(request);
+  else output = curlCode(request);
+  if ((id === "curl-to-fetch" || id === "curl-to-axios") && request.headers.some(([, value]) => /[^\x00-\xFF]/.test(value))) request.warnings.push("Non-Latin-1 header values may be rejected by browser header APIs.");
+  output = ensureOutput(output);
+  return { text: output, copyText: output, data: { method: request.method, url: request.url, headers: request.headers, body: request.body ?? null }, warnings: request.warnings };
+}
+async function convertApi(id, values) {
+  try {
+    if (!["curl-to-fetch", "fetch-to-curl", "curl-to-axios", "curl-to-python-requests"].includes(id)) fail(`Unsupported API conversion: ${id}.`);
+    const source = boundedInput(values);
+    if (!source.trim()) fail("Enter a cURL or Fetch request.");
+    const request = id === "fetch-to-curl" ? parseFetch(source) : parseCurl(source);
+    return resultFor(id, request);
+  } catch (error) {
+    if (error instanceof ApiError) throw new ApiError(error.message, id === "fetch-to-curl" ? "code" : "command");
+    throw error;
+  }
+}
+
+// lib/tools/curl-to-code.ts
+function goEscapeString(str) {
+  return JSON.stringify(str);
+}
+function generateGoHttp(req) {
+  const lines = [
+    "package main",
+    "",
+    "import (",
+    '	"fmt"',
+    '	"io"',
+    '	"net/http"'
+  ];
+  if (req.body !== void 0 && req.body !== "") {
+    lines.push('	"strings"');
+  }
+  lines.push(")", "", "func main() {", "	client := &http.Client{}", "");
+  if (req.body !== void 0 && req.body !== "") {
+    lines.push(`	body := strings.NewReader(${goEscapeString(req.body)})`);
+    lines.push(`	req, err := http.NewRequest(${goEscapeString(req.method)}, ${goEscapeString(req.url)}, body)`);
+  } else {
+    lines.push(`	req, err := http.NewRequest(${goEscapeString(req.method)}, ${goEscapeString(req.url)}, nil)`);
+  }
+  lines.push("	if err != nil {", "		panic(err)", "	}", "");
+  if (req.headers.length > 0) {
+    for (const [name, val] of req.headers) {
+      lines.push(`	req.Header.Set(${goEscapeString(name)}, ${goEscapeString(val)})`);
+    }
+    lines.push("");
+  }
+  lines.push(
+    "	resp, err := client.Do(req)",
+    "	if err != nil {",
+    "		panic(err)",
+    "	}",
+    "	defer resp.Body.Close()",
+    "",
+    "	resBody, err := io.ReadAll(resp.Body)",
+    "	if err != nil {",
+    "		panic(err)",
+    "	}",
+    "",
+    "	fmt.Println(string(resBody))",
+    "}"
+  );
+  return lines.join("\n");
+}
+async function curlToCode(curlCommand, target = "fetch") {
+  const trimmed = curlCommand.trim();
+  if (!trimmed) {
+    throw new Error("cURL command cannot be empty.");
+  }
+  if (target === "go") {
+    const model = parseCurl(trimmed);
+    const code = generateGoHttp(model);
+    return {
+      code,
+      language: "go",
+      target: "go",
+      warnings: model.warnings || []
+    };
+  }
+  const mapTarget = {
+    fetch: "curl-to-fetch",
+    axios: "curl-to-axios",
+    python: "curl-to-python-requests"
+  };
+  const toolId = mapTarget[target] || "curl-to-fetch";
+  const result = await convertApi(toolId, { command: trimmed });
+  const lang = target === "python" ? "python" : "typescript";
+  return {
+    code: result.text,
+    language: lang,
+    target,
+    warnings: result.warnings || []
+  };
+}
+
+// lib/tools/env-audit.ts
+function parseEnvLines(content) {
+  const lines = content.split(/\r?\n/);
+  const entries = [];
+  const errors = [];
+  for (let i = 0; i < lines.length; i++) {
+    const rawLine = lines[i];
+    const trimmed = rawLine.trim();
+    if (!trimmed || trimmed.startsWith("#")) {
+      continue;
+    }
+    const match = trimmed.match(/^(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$/);
+    if (!match) {
+      if (trimmed.includes("=")) {
+        const potentialKey = trimmed.split("=")[0].trim();
+        errors.push({
+          line: i + 1,
+          key: potentialKey,
+          severity: "MEDIUM",
+          category: "SYNTAX_ISSUE",
+          message: `Variable key contains invalid identifier characters: "${potentialKey}"`,
+          recommendation: "Ensure environment variable names only use letters, digits, and underscores."
+        });
+      }
+      continue;
+    }
+    const key = match[1];
+    let value = match[2];
+    if (value.startsWith('"') && value.endsWith('"') || value.startsWith("'") && value.endsWith("'")) {
+      value = value.slice(1, -1);
+    } else {
+      const commentIdx = value.indexOf(" #");
+      if (commentIdx !== -1) {
+        value = value.slice(0, commentIdx).trim();
+      }
+    }
+    entries.push({
+      line: i + 1,
+      key,
+      value,
+      raw: rawLine
+    });
+  }
+  return { entries, errors };
+}
+function maskSecret(val) {
+  if (val.length <= 8) return "\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022";
+  return val.slice(0, 4) + "\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022" + val.slice(-4);
+}
+var WEAK_PASSWORD_PATTERNS = /* @__PURE__ */ new Set([
+  "password",
+  "123456",
+  "12345678",
+  "admin",
+  "secret",
+  "test",
+  "changeme",
+  "root",
+  "qwerty"
+]);
+function auditEnv(envContent, exampleContent) {
+  const { entries, errors } = parseEnvLines(envContent);
+  const findings = [...errors];
+  const seenKeys = /* @__PURE__ */ new Map();
+  for (const entry of entries) {
+    const { line, key, value } = entry;
+    if (seenKeys.has(key)) {
+      findings.push({
+        line,
+        key,
+        severity: "HIGH",
+        category: "DUPLICATE_KEY",
+        message: `Duplicate key "${key}" already defined at line ${seenKeys.get(key)}`,
+        recommendation: "Remove duplicate definitions; the later entry will silently overwrite earlier ones."
+      });
+    } else {
+      seenKeys.set(key, line);
+    }
+    if (value.trim() === "") {
+      findings.push({
+        line,
+        key,
+        severity: "INFO",
+        category: "EMPTY_VALUE",
+        message: `Variable "${key}" has an empty value`,
+        recommendation: "Provide a default or populate the required configuration value."
+      });
+      continue;
+    }
+    if (/(?:AKIA|ABIA|ACCA|ASIA)[0-9A-Z]{16}/.test(value)) {
+      findings.push({
+        line,
+        key,
+        severity: "CRITICAL",
+        category: "SECRET_LEAK",
+        message: `Live AWS Access Key detected in "${key}"`,
+        recommendation: "Revoke key in AWS IAM immediately and use AWS Secrets Manager or IAM roles.",
+        maskedValue: maskSecret(value)
+      });
+    }
+    if (/(?:sk|rk)_live_[0-9a-zA-Z]{24,}/.test(value)) {
+      findings.push({
+        line,
+        key,
+        severity: "CRITICAL",
+        category: "SECRET_LEAK",
+        message: `Live Stripe Secret Key detected in "${key}"`,
+        recommendation: "Roll this key in the Stripe dashboard. Never commit live secret keys to version control.",
+        maskedValue: maskSecret(value)
+      });
+    }
+    if (/gh[pousr]_[0-9a-zA-Z]{36}/.test(value) || /github_pat_[0-9a-zA-Z_]{82}/.test(value)) {
+      findings.push({
+        line,
+        key,
+        severity: "CRITICAL",
+        category: "SECRET_LEAK",
+        message: `GitHub Personal Access Token detected in "${key}"`,
+        recommendation: "Revoke token under GitHub Settings > Developer settings > Personal access tokens.",
+        maskedValue: maskSecret(value)
+      });
+    }
+    if (/sk-(?:proj-|live-)?[a-zA-Z0-9_-]{32,}/.test(value)) {
+      findings.push({
+        line,
+        key,
+        severity: "HIGH",
+        category: "SECRET_LEAK",
+        message: `OpenAI API Key detected in "${key}"`,
+        recommendation: "Rotate this key in OpenAI platform dashboard.",
+        maskedValue: maskSecret(value)
+      });
+    }
+    if (/sk-ant-[a-zA-Z0-9_-]{32,}/.test(value)) {
+      findings.push({
+        line,
+        key,
+        severity: "HIGH",
+        category: "SECRET_LEAK",
+        message: `Anthropic API Key detected in "${key}"`,
+        recommendation: "Rotate this key in Anthropic Console.",
+        maskedValue: maskSecret(value)
+      });
+    }
+    if (/xox[baprs]-[0-9a-zA-Z]{10,48}/.test(value)) {
+      findings.push({
+        line,
+        key,
+        severity: "HIGH",
+        category: "SECRET_LEAK",
+        message: `Slack Token detected in "${key}"`,
+        recommendation: "Rotate token in Slack API app settings.",
+        maskedValue: maskSecret(value)
+      });
+    }
+    if (/-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/.test(value)) {
+      findings.push({
+        line,
+        key,
+        severity: "CRITICAL",
+        category: "SECRET_LEAK",
+        message: `Asymmetric Private Key detected in "${key}"`,
+        recommendation: "Store private keys in a secure key vault or file, never unencrypted in environment variables.",
+        maskedValue: "\u2022\u2022\u2022\u2022\u2022[PRIVATE KEY]\u2022\u2022\u2022\u2022\u2022"
+      });
+    }
+    const lowerKey = key.toLowerCase();
+    if ((lowerKey.includes("pass") || lowerKey.includes("pwd") || lowerKey.includes("secret")) && WEAK_PASSWORD_PATTERNS.has(value.toLowerCase())) {
+      findings.push({
+        line,
+        key,
+        severity: "HIGH",
+        category: "WEAK_VALUE",
+        message: `Weak / default value detected for "${key}": "${value}"`,
+        recommendation: "Generate a cryptographically random secret with at least 32 characters."
+      });
+    }
+  }
+  if (exampleContent) {
+    const { entries: exampleEntries } = parseEnvLines(exampleContent);
+    const exampleKeyMap = /* @__PURE__ */ new Map();
+    for (const e of exampleEntries) {
+      exampleKeyMap.set(e.key, e.line);
+    }
+    for (const [eKey] of exampleKeyMap) {
+      if (!seenKeys.has(eKey)) {
+        findings.push({
+          key: eKey,
+          severity: "HIGH",
+          category: "MISSING_VAR",
+          message: `Variable "${eKey}" documented in .env.example is missing from your environment`,
+          recommendation: `Add "${eKey}" to your .env file or local environment.`
+        });
+      }
+    }
+    for (const [actualKey, line] of seenKeys) {
+      if (!exampleKeyMap.has(actualKey)) {
+        findings.push({
+          line,
+          key: actualKey,
+          severity: "LOW",
+          category: "EXTRA_VAR",
+          message: `Variable "${actualKey}" is present in .env but undocumented in .env.example`,
+          recommendation: `Document "${actualKey}" in .env.example for teammates and CI setups.`
+        });
+      }
+    }
+  }
+  const stats = { critical: 0, high: 0, medium: 0, low: 0, info: 0 };
+  for (const f of findings) {
+    if (f.severity === "CRITICAL") stats.critical++;
+    else if (f.severity === "HIGH") stats.high++;
+    else if (f.severity === "MEDIUM") stats.medium++;
+    else if (f.severity === "LOW") stats.low++;
+    else if (f.severity === "INFO") stats.info++;
+  }
+  const isSecure = stats.critical === 0 && stats.high === 0;
+  const summary = isSecure ? `\u2705 Audit Passed: ${entries.length} variables analyzed. No critical secrets or high-severity vulnerabilities found.` : `\u26A0\uFE0F Audit Warning: Found ${stats.critical} critical and ${stats.high} high severity issues out of ${entries.length} variables.`;
+  return {
+    totalVariables: entries.length,
+    findings,
+    stats,
+    isSecure,
+    summary
+  };
+}
+function formatEnvAuditReport(result) {
+  const lines = [];
+  lines.push("\n=== CODE STATION ENVIRONMENT AUDIT REPORT ===");
+  lines.push(`Total Variables: ${result.totalVariables}`);
+  lines.push(
+    `Findings: ${result.findings.length} (Critical: ${result.stats.critical}, High: ${result.stats.high}, Medium: ${result.stats.medium}, Low: ${result.stats.low}, Info: ${result.stats.info})`
+  );
+  lines.push(`Status: ${result.summary}
+`);
+  if (result.findings.length === 0) {
+    lines.push("\u2728 Clean! No security issues or synchronization discrepancies detected.\n");
+    return lines.join("\n");
+  }
+  lines.push("--- Detailed Findings ---");
+  for (const f of result.findings) {
+    const loc = f.line ? `[Line ${f.line}] ` : "";
+    const badge = `[${f.severity}]`.padEnd(11);
+    lines.push(`${badge} ${loc}${f.key}: ${f.message}`);
+    if (f.maskedValue) {
+      lines.push(`            Masked: ${f.maskedValue}`);
+    }
+    lines.push(`            Fix:    ${f.recommendation}`);
+  }
+  lines.push("");
+  return lines.join("\n");
+}
+
+// lib/tools/mock-data.ts
+var Prng = class {
+  constructor(seed) {
+    this.state = seed !== void 0 ? seed : Math.floor(Math.random() * 2147483647);
+  }
+  next() {
+    this.state = this.state * 16807 % 2147483647;
+    return (this.state - 1) / 2147483646;
+  }
+  int(min, max) {
+    return Math.floor(this.next() * (max - min + 1)) + min;
+  }
+  pick(items) {
+    return items[Math.floor(this.next() * items.length)];
+  }
+  uuid() {
+    const hex2 = "0123456789abcdef";
+    let s = "";
+    for (let i = 0; i < 36; i++) {
+      if (i === 8 || i === 13 || i === 18 || i === 23) {
+        s += "-";
+      } else if (i === 14) {
+        s += "4";
+      } else if (i === 19) {
+        s += hex2[Math.floor(this.next() * 4) + 8];
+      } else {
+        s += hex2[Math.floor(this.next() * 16)];
+      }
+    }
+    return s;
+  }
+};
+var FIRST_NAMES = [
+  "Ada",
+  "Alan",
+  "Linus",
+  "Grace",
+  "Tim",
+  "Margaret",
+  "Donald",
+  "Barbara",
+  "Guido",
+  "Ken",
+  "Dennis",
+  "Bjarne",
+  "James",
+  "Brendan",
+  "Sophie",
+  "Leslie",
+  "Edsger",
+  "Claude",
+  "Radia",
+  "Katherine"
+];
+var LAST_NAMES = [
+  "Lovelace",
+  "Turing",
+  "Torvalds",
+  "Hopper",
+  "Berners-Lee",
+  "Hamilton",
+  "Knuth",
+  "Liskov",
+  "van Rossum",
+  "Thompson",
+  "Ritchie",
+  "Stroustrup",
+  "Gosling",
+  "Eich",
+  "Wilson",
+  "Lamport",
+  "Dijkstra",
+  "Shannon",
+  "Perlman",
+  "Johnson"
+];
+var DOMAINS = ["example.com", "codestation.in", "acme.dev", "testmail.org", "infra.net"];
+var CITIES = ["San Francisco", "London", "Bengaluru", "Berlin", "Tokyo", "Seattle", "Toronto", "Sydney", "Singapore", "Amsterdam"];
+var COUNTRIES = ["United States", "United Kingdom", "India", "Germany", "Japan", "Canada", "Australia", "Singapore", "Netherlands", "France"];
+var PRODUCT_PREFIXES = ["Pro", "Cloud", "Hyper", "Ultra", "Tactile", "Quantum", "Nexus", "Dev", "Micro", "Turbo"];
+var PRODUCT_NOUNS = ["Station", "Terminal", "Gateway", "Engine", "Workspace", "Proxy", "Optimizer", "Parser", "Vault", "Pipeline"];
+var CATEGORIES = ["Developer Tools", "Cloud Services", "Security & Auth", "Database", "Networking", "Analytics"];
+var ROLES = ["admin", "developer", "maintainer", "viewer", "operator"];
+var STATUSES = ["active", "pending", "suspended", "archived"];
+var ORDER_STATUSES = ["completed", "processing", "shipped", "refunded"];
+var PAYMENT_METHODS = ["card", "upi", "netbanking", "wire"];
+function generateFieldValue(type, prng, context) {
+  switch (type) {
+    case "uuid":
+      return prng.uuid();
+    case "firstName":
+      return prng.pick(FIRST_NAMES);
+    case "lastName":
+      return prng.pick(LAST_NAMES);
+    case "name": {
+      const f = prng.pick(FIRST_NAMES);
+      const l = prng.pick(LAST_NAMES);
+      return `${f} ${l}`;
+    }
+    case "email": {
+      const f = (context.firstName || prng.pick(FIRST_NAMES)).toLowerCase();
+      const l = (context.lastName || prng.pick(LAST_NAMES)).toLowerCase();
+      const num = prng.int(10, 99);
+      const domain = prng.pick(DOMAINS);
+      return `${f}.${l}${num}@${domain}`;
+    }
+    case "number":
+      return prng.int(1, 1e3);
+    case "price":
+      return parseFloat((prng.int(10, 500) + prng.int(0, 99) / 100).toFixed(2));
+    case "boolean":
+      return prng.next() > 0.5;
+    case "date": {
+      const pastDays = prng.int(1, 180);
+      const d = new Date(Date.now() - pastDays * 24 * 60 * 60 * 1e3);
+      return d.toISOString();
+    }
+    case "status":
+      return prng.pick(STATUSES);
+    case "role":
+      return prng.pick(ROLES);
+    case "city":
+      return prng.pick(CITIES);
+    case "country":
+      return prng.pick(COUNTRIES);
+    case "sku": {
+      const prefix = prng.pick(PRODUCT_PREFIXES).toUpperCase().slice(0, 3);
+      return `${prefix}-${prng.int(1e3, 9999)}`;
+    }
+    case "phone":
+      return `+1-555-${prng.int(100, 999)}-${prng.int(1e3, 9999)}`;
+    default:
+      return "mock_value";
+  }
+}
+function escapeSqlValue(val) {
+  if (val === null || val === void 0) return "NULL";
+  if (typeof val === "number") return String(val);
+  if (typeof val === "boolean") return val ? "TRUE" : "FALSE";
+  if (typeof val === "object") return `'${JSON.stringify(val).replace(/'/g, "''")}'`;
+  return `'${String(val).replace(/'/g, "''")}'`;
+}
+function generateMockDataset(options = {}) {
+  const {
+    template = "users",
+    count = 10,
+    format = "json",
+    tableName = template,
+    customSchema,
+    seed
+  } = options;
+  const validCount = Math.max(1, Math.min(count, 1e3));
+  const prng = new Prng(seed);
+  const records = [];
+  for (let i = 0; i < validCount; i++) {
+    const row = {};
+    if (template === "users") {
+      const first = prng.pick(FIRST_NAMES);
+      const last = prng.pick(LAST_NAMES);
+      row.id = prng.uuid();
+      row.first_name = first;
+      row.last_name = last;
+      row.name = `${first} ${last}`;
+      row.email = `${first.toLowerCase()}.${last.toLowerCase()}${prng.int(10, 99)}@${prng.pick(DOMAINS)}`;
+      row.role = prng.pick(ROLES);
+      row.status = prng.pick(STATUSES);
+      row.created_at = new Date(Date.now() - prng.int(1, 180) * 864e5).toISOString();
+    } else if (template === "products") {
+      const pName = `${prng.pick(PRODUCT_PREFIXES)} ${prng.pick(PRODUCT_NOUNS)}`;
+      row.id = prng.uuid();
+      row.sku = `SKU-${prng.int(1e3, 9999)}`;
+      row.title = pName;
+      row.category = prng.pick(CATEGORIES);
+      row.price = parseFloat((prng.int(19, 499) + 0.99).toFixed(2));
+      row.stock = prng.int(0, 250);
+      row.in_stock = row.stock > 0;
+    } else if (template === "orders") {
+      row.id = prng.uuid();
+      row.order_number = `ORD-${prng.int(1e4, 99999)}`;
+      row.customer_email = `${prng.pick(FIRST_NAMES).toLowerCase()}@${prng.pick(DOMAINS)}`;
+      row.total = parseFloat((prng.int(25, 1200) + prng.int(0, 99) / 100).toFixed(2));
+      row.status = prng.pick(ORDER_STATUSES);
+      row.payment_method = prng.pick(PAYMENT_METHODS);
+      row.items_count = prng.int(1, 8);
+      row.created_at = new Date(Date.now() - prng.int(1, 90) * 864e5).toISOString();
+    } else if (template === "custom" && customSchema) {
+      for (const [col, colType] of Object.entries(customSchema)) {
+        row[col] = generateFieldValue(colType, prng, row);
+      }
+    } else {
+      row.id = prng.uuid();
+      row.name = `${prng.pick(FIRST_NAMES)} ${prng.pick(LAST_NAMES)}`;
+    }
+    records.push(row);
+  }
+  const jsonStr = JSON.stringify(records, null, 2);
+  let sqlStr;
+  if (format === "sql" || options.tableName) {
+    if (records.length > 0) {
+      const columns = Object.keys(records[0]);
+      const colList = columns.join(", ");
+      const valueRows = records.map((r) => {
+        const rowVals = columns.map((c) => escapeSqlValue(r[c])).join(", ");
+        return `  (${rowVals})`;
+      });
+      sqlStr = `INSERT INTO ${tableName} (${colList})
+VALUES
+${valueRows.join(",\n")};`;
+    }
+  }
+  return {
+    data: records,
+    json: jsonStr,
+    sql: sqlStr,
+    count: records.length
+  };
+}
+
+// lib/tools/git-conflict.ts
+function parseAndResolveGitConflicts(content, strategy = "analyze") {
+  const lines = content.split(/\r?\n/);
+  const hunks = [];
+  let inConflict = false;
+  let inBase = false;
+  let inTheirs = false;
+  let currentHunkStart = 0;
+  let currentOursBranch = "";
+  let currentTheirsBranch = "";
+  let currentOursLines = [];
+  let currentBaseLines = [];
+  let currentTheirsLines = [];
+  const outputLines = [];
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (line.startsWith("<<<<<<<")) {
+      if (inConflict) {
+        throw new Error(`Malformed Git conflict: Nested <<<<<<< marker at line ${i + 1}`);
+      }
+      inConflict = true;
+      inBase = false;
+      inTheirs = false;
+      currentHunkStart = i + 1;
+      currentOursBranch = line.slice(7).trim() || "HEAD";
+      currentOursLines = [];
+      currentBaseLines = [];
+      currentTheirsLines = [];
+      continue;
+    }
+    if (inConflict && !inTheirs && line.startsWith("|||||||")) {
+      inBase = true;
+      continue;
+    }
+    if (inConflict && !inTheirs && line.startsWith("=======")) {
+      inBase = false;
+      inTheirs = true;
+      continue;
+    }
+    if (inConflict && inTheirs && line.startsWith(">>>>>>>")) {
+      currentTheirsBranch = line.slice(7).trim() || "incoming";
+      const hunk = {
+        hunkIndex: hunks.length + 1,
+        startLine: currentHunkStart,
+        endLine: i + 1,
+        oursBranch: currentOursBranch,
+        theirsBranch: currentTheirsBranch,
+        oursLines: currentOursLines,
+        theirsLines: currentTheirsLines,
+        ...currentBaseLines.length > 0 ? { baseLines: currentBaseLines } : {}
+      };
+      hunks.push(hunk);
+      if (strategy === "ours") {
+        outputLines.push(...currentOursLines);
+      } else if (strategy === "theirs") {
+        outputLines.push(...currentTheirsLines);
+      } else if (strategy === "both") {
+        outputLines.push(...currentOursLines);
+        outputLines.push(...currentTheirsLines);
+      }
+      inConflict = false;
+      inBase = false;
+      inTheirs = false;
+      continue;
+    }
+    if (inConflict) {
+      if (inTheirs) {
+        currentTheirsLines.push(line);
+      } else if (inBase) {
+        currentBaseLines.push(line);
+      } else {
+        currentOursLines.push(line);
+      }
+    } else {
+      outputLines.push(line);
+    }
+  }
+  if (inConflict) {
+    throw new Error(`Malformed Git conflict: Unclosed conflict marker starting at line ${currentHunkStart}`);
+  }
+  const hasConflicts = hunks.length > 0;
+  const resolvedContent = strategy !== "analyze" ? outputLines.join("\n") : void 0;
+  let summary = "";
+  if (!hasConflicts) {
+    summary = "No merge conflict markers detected in input.";
+  } else if (strategy === "analyze") {
+    summary = `Found ${hunks.length} conflict hunk${hunks.length === 1 ? "" : "s"}. Inspect branches and choose a resolution strategy (ours, theirs, or both).`;
+  } else {
+    summary = `Successfully resolved ${hunks.length} conflict hunk${hunks.length === 1 ? "" : "s"} using "${strategy}" strategy.`;
+  }
+  return {
+    hasConflicts,
+    conflictCount: hunks.length,
+    hunks,
+    resolvedContent,
+    summary
+  };
+}
+function formatConflictReport(result) {
+  const lines = [];
+  lines.push("\n=== CODE STATION GIT CONFLICT RESOLVER ===");
+  lines.push(`Total Conflicts: ${result.conflictCount}`);
+  lines.push(`Status: ${result.summary}
+`);
+  if (!result.hasConflicts) {
+    return lines.join("\n");
+  }
+  for (const hunk of result.hunks) {
+    lines.push(`[Hunk #${hunk.hunkIndex}] Lines ${hunk.startLine} to ${hunk.endLine}`);
+    lines.push(`  Ours (${hunk.oursBranch}):    ${hunk.oursLines.length} lines`);
+    lines.push(`  Theirs (${hunk.theirsBranch}): ${hunk.theirsLines.length} lines`);
+    lines.push("  Preview Ours:");
+    for (const l of hunk.oursLines.slice(0, 3)) {
+      lines.push(`    | ${l}`);
+    }
+    if (hunk.oursLines.length > 3) lines.push(`    | ... (+${hunk.oursLines.length - 3} more lines)`);
+    lines.push("  Preview Theirs:");
+    for (const l of hunk.theirsLines.slice(0, 3)) {
+      lines.push(`    | ${l}`);
+    }
+    if (hunk.theirsLines.length > 3) lines.push(`    | ... (+${hunk.theirsLines.length - 3} more lines)`);
+    lines.push("");
+  }
+  return lines.join("\n");
+}
+
 // mcp/server.ts
 function createMcpServer(cliKey) {
   const license = resolveLicense(cliKey);
   const server = new Server(
     {
       name: "codestation-mcp",
-      version: "1.0.0"
+      version: "1.2.0"
     },
     {
       capabilities: {
@@ -1498,6 +2810,88 @@ function createMcpServer(cliKey) {
         },
         required: ["json"]
       }
+    },
+    {
+      name: "codestation_curl_to_code",
+      description: "Convert cURL commands to TypeScript fetch/axios, Python requests, or Go net/http. [Pro Tier: \u20B9199/mo or $2.99/mo]",
+      inputSchema: {
+        type: "object",
+        properties: {
+          curl: { type: "string", description: "cURL command string" },
+          target: {
+            type: "string",
+            enum: ["fetch", "axios", "python", "go"],
+            description: "Target programming language/library (default: 'fetch')"
+          }
+        },
+        required: ["curl"]
+      }
+    },
+    {
+      name: "codestation_env_audit",
+      description: "Scan environment variables for secret leaks (Stripe, AWS, OpenAI, GitHub PAT, private keys) and validate against .env.example. [Pro Tier: \u20B9199/mo or $2.99/mo]",
+      inputSchema: {
+        type: "object",
+        properties: {
+          env: { type: "string", description: "Contents of the .env file" },
+          example: { type: "string", description: "Optional contents of .env.example to diff against" },
+          format: {
+            type: "string",
+            enum: ["report", "json"],
+            description: "Output format (default: 'report')"
+          }
+        },
+        required: ["env"]
+      }
+    },
+    {
+      name: "codestation_mock_data",
+      description: "Generate realistic mock data and SQL seeders for users, products, orders, or custom schemas. [Pro Tier: \u20B9199/mo or $2.99/mo]",
+      inputSchema: {
+        type: "object",
+        properties: {
+          template: {
+            type: "string",
+            enum: ["users", "products", "orders", "custom"],
+            description: "Template type (default: 'users')"
+          },
+          count: {
+            type: "integer",
+            minimum: 1,
+            maximum: 1e3,
+            description: "Number of records to generate (default: 10)"
+          },
+          format: {
+            type: "string",
+            enum: ["json", "sql"],
+            description: "Output format (default: 'json')"
+          },
+          tableName: {
+            type: "string",
+            description: "Optional SQL table name (defaults to template name)"
+          },
+          customSchema: {
+            type: "object",
+            description: "Optional custom schema mapping field names to types (uuid, name, email, price, date, boolean, number, status, role)"
+          }
+        }
+      }
+    },
+    {
+      name: "codestation_git_conflict",
+      description: "Parse and resolve Git merge conflict markers (<<<<<<< HEAD, =======, >>>>>>>). [Pro Tier: \u20B9199/mo or $2.99/mo]",
+      inputSchema: {
+        type: "object",
+        properties: {
+          content: { type: "string", description: "File content containing Git conflict markers" },
+          strategy: {
+            type: "string",
+            enum: ["analyze", "ours", "theirs", "both"],
+            description: "Resolution strategy: analyze (report), ours (keep current), theirs (keep incoming), or both (keep both). Default: 'analyze'"
+          }
+        },
+        required: ["content"]
+      }
     }
   ];
   server.setRequestHandler(ListToolsRequestSchema, async () => {
@@ -1674,6 +3068,42 @@ function createMcpServer(cliKey) {
           const json = String(args.json ?? "");
           const rootName = args.rootName ? String(args.rootName) : "rootSchema";
           outputText = jsonToZod(json, rootName);
+          break;
+        }
+        case "codestation_curl_to_code": {
+          const curl = String(args.curl ?? "");
+          const target = args.target ? String(args.target) : "fetch";
+          const result = await curlToCode(curl, target);
+          outputText = result.code;
+          break;
+        }
+        case "codestation_env_audit": {
+          const env = String(args.env ?? "");
+          const example = args.example ? String(args.example) : void 0;
+          const format = args.format ? String(args.format) : "report";
+          const result = auditEnv(env, example);
+          outputText = format === "json" ? JSON.stringify(result, null, 2) : formatEnvAuditReport(result);
+          break;
+        }
+        case "codestation_mock_data": {
+          const template = args.template ? String(args.template) : "users";
+          const count = args.count ? Number(args.count) : 10;
+          const format = args.format ? String(args.format) : "json";
+          const tableName = args.tableName ? String(args.tableName) : void 0;
+          const customSchema = args.customSchema;
+          const result = generateMockDataset({ template, count, format, tableName, customSchema });
+          outputText = format === "sql" && result.sql ? result.sql : result.json;
+          break;
+        }
+        case "codestation_git_conflict": {
+          const content = String(args.content ?? "");
+          const strategy = args.strategy ? String(args.strategy) : "analyze";
+          const result = parseAndResolveGitConflicts(content, strategy);
+          if (strategy === "analyze") {
+            outputText = formatConflictReport(result);
+          } else {
+            outputText = result.resolvedContent ?? content;
+          }
           break;
         }
         default:
@@ -2108,12 +3538,125 @@ Expression:  ${input}
       }
       return true;
     }
+    case "curl": {
+      const input = await readInput(args[0]);
+      if (!input) {
+        process.stderr.write('Usage: npx codestation-mcp curl "<curl_command>" [--target fetch|axios|python|go]\n');
+        return true;
+      }
+      let target = "fetch";
+      const targetIdx = args.indexOf("--target");
+      if (targetIdx !== -1 && args[targetIdx + 1]) {
+        target = args[targetIdx + 1].toLowerCase();
+      }
+      try {
+        const res = await curlToCode(input, target);
+        process.stdout.write(res.code + "\n");
+      } catch (err) {
+        process.stderr.write(`[Error] ${err instanceof Error ? err.message : String(err)}
+`);
+      }
+      return true;
+    }
+    case "env": {
+      let envPath = args[0] && !args[0].startsWith("-") ? args[0] : ".env";
+      let envContent = "";
+      if (fs3.existsSync(envPath)) {
+        envContent = fs3.readFileSync(envPath, "utf-8");
+      } else {
+        envContent = await readInput(args[0]);
+      }
+      if (!envContent) {
+        process.stderr.write("Usage: npx codestation-mcp env [path/to/.env] [--example path/to/.env.example] [--json]\n");
+        return true;
+      }
+      let exampleContent;
+      const exIdx = args.indexOf("--example");
+      if (exIdx !== -1 && args[exIdx + 1] && fs3.existsSync(args[exIdx + 1])) {
+        exampleContent = fs3.readFileSync(args[exIdx + 1], "utf-8");
+      } else if (fs3.existsSync(".env.example")) {
+        exampleContent = fs3.readFileSync(".env.example", "utf-8");
+      }
+      const isJson = args.includes("--json");
+      try {
+        const res = auditEnv(envContent, exampleContent);
+        if (isJson) {
+          process.stdout.write(JSON.stringify(res, null, 2) + "\n");
+        } else {
+          process.stdout.write(formatEnvAuditReport(res) + "\n");
+        }
+      } catch (err) {
+        process.stderr.write(`[Error] ${err instanceof Error ? err.message : String(err)}
+`);
+      }
+      return true;
+    }
+    case "mock": {
+      let template = "users";
+      if (args[0] && !args[0].startsWith("-")) {
+        template = args[0].toLowerCase();
+      }
+      let count = 10;
+      const countIdx = args.indexOf("--count");
+      if (countIdx !== -1 && args[countIdx + 1]) {
+        count = parseInt(args[countIdx + 1], 10) || 10;
+      }
+      const isSql = args.includes("--sql");
+      let tableName;
+      const tableIdx = args.indexOf("--table");
+      if (tableIdx !== -1 && args[tableIdx + 1]) {
+        tableName = args[tableIdx + 1];
+      }
+      try {
+        const res = generateMockDataset({
+          template,
+          count,
+          format: isSql ? "sql" : "json",
+          tableName
+        });
+        process.stdout.write((isSql && res.sql ? res.sql : res.json) + "\n");
+      } catch (err) {
+        process.stderr.write(`[Error] ${err instanceof Error ? err.message : String(err)}
+`);
+      }
+      return true;
+    }
+    case "conflict": {
+      const input = await readInput(args[0]);
+      if (!input) {
+        process.stderr.write("Usage: npx codestation-mcp conflict <file_or_content> [--strategy analyze|ours|theirs|both]\n");
+        return true;
+      }
+      let strategy = "analyze";
+      const stratIdx = args.indexOf("--strategy");
+      if (stratIdx !== -1 && args[stratIdx + 1]) {
+        strategy = args[stratIdx + 1].toLowerCase();
+      }
+      try {
+        const res = parseAndResolveGitConflicts(input, strategy);
+        if (strategy === "analyze") {
+          process.stdout.write(formatConflictReport(res) + "\n");
+        } else {
+          process.stdout.write((res.resolvedContent ?? input) + "\n");
+        }
+      } catch (err) {
+        process.stderr.write(`[Error] ${err instanceof Error ? err.message : String(err)}
+`);
+      }
+      return true;
+    }
     default:
       return false;
   }
 }
 
 // mcp/cli.ts
+var PRO_ASCII_BADGE = `
+  \u250C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+  \u2502  CODE STATION [PRO]  \u2022  LOCAL MCP & DEVELOPER TOOLBOX    \u2502
+  \u2502  Zero-Latency Engine  \u2022  Device Memory  \u2022  Edge Crypto   \u2502
+  \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518
+`;
 function printHelp() {
   process.stderr.write(`
 Code Station MCP Server & Developer CLI
@@ -2133,6 +3676,10 @@ Terminal Subcommands:
   hash "<text>" [--alg]         Compute digest (sha256, sha512, md5, sha1, crc32)
   ts "<json_string|file>"       Generate clean TypeScript interfaces from JSON
   zod "<json_string|file>"      Generate production-ready Zod schema from JSON
+  curl "<curl_cmd>" [--target]  Convert cURL to fetch, axios, python, or go
+  env [path/.env] [--example]   Audit .env for leaked secrets & diff with .env.example
+  mock [template] [--count]     Generate realistic mock data (users, products, orders)
+  conflict <file> [--strategy]  Parse & resolve Git merge conflicts (ours, theirs, both)
   uuid [count]                  Generate random RFC 4122 v4 UUIDs
   json "<raw_json>"             Validate & pretty-print JSON
 
@@ -2156,7 +3703,7 @@ async function main() {
     process.exit(0);
   }
   if (args.includes("--version") || args.includes("-v")) {
-    process.stderr.write("codestation-mcp v1.1.0\n");
+    process.stderr.write("codestation-mcp v1.2.0\n");
     process.exit(0);
   }
   if (args[0] === "setup") {
@@ -2198,6 +3745,7 @@ async function main() {
   }
   const { server, license } = createMcpServer(cliKey);
   if (license.isPro) {
+    process.stderr.write(PRO_ASCII_BADGE);
     process.stderr.write(`[Code Station MCP] Pro Tier Active (License: ${license.licenseKey?.slice(0, 8)}...). All tools unlocked.
 `);
   } else {

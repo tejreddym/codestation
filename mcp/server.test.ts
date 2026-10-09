@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { createMcpServer } from "./server";
-import { validateLicenseKey, resolveLicense, clearCachedLicense, PRICING } from "./config";
+import { validateLicenseKey, resolveLicense, clearCachedLicense, PRICING, PRO_TOOLS } from "./config";
 
 describe("MCP License System", () => {
   beforeEach(() => {
@@ -54,6 +54,13 @@ describe("MCP Server Tools", () => {
   it("registers new JSON to TypeScript and Zod tools", () => {
     const { server } = createMcpServer("CS-PRO-TEST-KEY");
     expect(server).toBeDefined();
+  });
+
+  it("includes all killer tools in PRO_TOOLS set", () => {
+    expect(PRO_TOOLS.has("codestation_curl_to_code")).toBe(true);
+    expect(PRO_TOOLS.has("codestation_env_audit")).toBe(true);
+    expect(PRO_TOOLS.has("codestation_mock_data")).toBe(true);
+    expect(PRO_TOOLS.has("codestation_git_conflict")).toBe(true);
   });
 });
 

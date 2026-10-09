@@ -1,0 +1,396 @@
+.proContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 56px;
+  margin-top: 16px;
+  margin-bottom: 64px;
+}
+
+/* --- Hero Banner --- */
+.heroBanner {
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-lg);
+  padding: 36px 32px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+.heroBanner::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 240px;
+  height: 240px;
+  background: radial-gradient(circle, color-mix(in srgb, var(--accent) 15%, transparent) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.badgeRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.pillBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+.pillDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--green) 25%, transparent);
+}
+
+.heroTitle {
+  font-size: clamp(26px, 3.5vw, 36px);
+  line-height: 1.15;
+  letter-spacing: -0.04em;
+  margin: 0;
+  color: var(--ink);
+}
+
+.heroLead {
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--secondary);
+  max-width: 780px;
+  margin: 0;
+}
+
+/* --- Terminal Preview --- */
+.terminalBox {
+  background: var(--code);
+  border: 1px solid #30353d;
+  border-radius: var(--radius-md);
+  padding: 18px 20px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--code-ink);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  overflow-x: auto;
+}
+
+.terminalHeader {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #202630;
+}
+
+.termDot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+}
+.termDotRed { background: #ef5350; }
+.termDotYellow { background: #ffca28; }
+.termDotGreen { background: #66bb6a; }
+
+.termTitle {
+  margin-left: 8px;
+  font-size: 11px;
+  color: #7d8799;
+  letter-spacing: 0.05em;
+}
+
+.termPrompt {
+  color: #81c784;
+  margin-right: 8px;
+}
+
+.termSuccess {
+  color: #66bb6a;
+}
+
+.termAccent {
+  color: #64b5f6;
+}
+
+.termMuted {
+  color: #8892b0;
+}
+
+/* --- Section Titles --- */
+.sectionHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 24px;
+}
+
+.sectionKicker {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.sectionTitle {
+  font-size: 24px;
+  letter-spacing: -0.035em;
+  margin: 0;
+  color: var(--ink);
+}
+
+.sectionSubtitle {
+  font-size: 15px;
+  color: var(--muted);
+  margin: 0;
+  max-width: 680px;
+}
+
+/* --- Perks Grid --- */
+.perksGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+}
+
+.perkCard {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: var(--shadow-tactile);
+  transition: transform 0.16s cubic-bezier(0.2, 0.8, 0.2, 1), border-color 0.16s ease, box-shadow 0.16s ease;
+}
+
+.perkCard:hover {
+  transform: translateY(-2px);
+  border-color: var(--line-strong);
+  box-shadow: var(--shadow);
+}
+
+.perkIconWrap {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  background: var(--surface-alt);
+  border: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+}
+
+.perkTitle {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.perkDesc {
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--secondary);
+  margin: 0;
+}
+
+.perkTag {
+  display: inline-block;
+  align-self: flex-start;
+  margin-top: auto;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: ui-monospace, monospace;
+  padding: 3px 7px;
+  border-radius: 4px;
+  background: var(--surface-alt);
+  color: var(--muted);
+  border: 1px solid var(--line);
+}
+
+/* --- Tools Explorer Grid --- */
+.toolsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  gap: 14px;
+}
+
+.toolItem {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: border-color 0.15s;
+}
+
+.toolItem:hover {
+  border-color: var(--accent);
+}
+
+.toolNameRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.toolCodeName {
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.toolCliBadge {
+  font-family: ui-monospace, monospace;
+  font-size: 10px;
+  padding: 2px 5px;
+  border-radius: 4px;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.toolPurpose {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.45;
+  margin: 0;
+}
+
+/* --- Matrix Comparison Table --- */
+.tableWrap {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: var(--shadow-tactile);
+}
+
+.matrixTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  text-align: left;
+}
+
+.matrixTable th {
+  background: var(--surface-alt);
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--line-strong);
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.matrixTable td {
+  padding: 13px 18px;
+  border-bottom: 1px solid var(--line);
+  color: var(--secondary);
+}
+
+.matrixTable tr:last-child td {
+  border-bottom: none;
+}
+
+.featureCol {
+  font-weight: 600;
+  color: var(--ink);
+  width: 44%;
+}
+
+.freeCol {
+  width: 28%;
+  color: var(--muted);
+}
+
+.proCol {
+  width: 28%;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.check {
+  color: var(--green);
+  font-weight: 800;
+  margin-right: 4px;
+}
+
+.cross {
+  color: var(--muted);
+  opacity: 0.6;
+  margin-right: 4px;
+}
+
+/* --- FAQ Grid --- */
+.faqGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 18px;
+}
+
+.faqCard {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  padding: 20px;
+}
+
+.faqQuestion {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0 0 8px;
+}
+
+.faqAnswer {
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--secondary);
+  margin: 0;
+}
+
+/* --- Responsive Adjustments --- */
+@media (max-width: 900px) {
+  .perksGrid {
+    grid-template-columns: 1fr;
+  }
+  .faqGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .heroBanner {
+    padding: 24px 18px;
+  }
+  .toolsGrid {
+    grid-template-columns: 1fr;
+  }
+  .matrixTable th, .matrixTable td {
+    padding: 10px 12px;
+    font-size: 12px;
+  }
+}

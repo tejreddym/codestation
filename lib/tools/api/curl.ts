@@ -6,7 +6,7 @@ const MAX_TOKENS = 10_000;
 const MAX_OPTIONS = 1_000;
 const MAX_HEADERS = 200;
 
-type RequestModel = {
+export type RequestModel = {
   method: string;
   url: string;
   headers: Array<[string, string]>;
@@ -150,7 +150,7 @@ function addHeader(headers: Array<[string, string]>, value: string): void {
   if (headers.length > MAX_HEADERS) fail("Too many headers (limit 200).");
 }
 
-function parseCurl(source: string): RequestModel {
+export function parseCurl(source: string): RequestModel {
   const tokens = tokenizeShell(source.trim());
   if (!tokens.length) fail("Enter a cURL command.");
   if (tokens[0].toLowerCase() !== "curl") fail("cURL input must start with `curl`.");

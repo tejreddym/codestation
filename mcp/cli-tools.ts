@@ -6,6 +6,10 @@ import { explainCron } from "../lib/tools/cron/explain";
 import { nextCronRun } from "../lib/tools/cron/engine";
 import { md5, sha1, sha256, sha512, crc32 } from "../lib/tools/security-station";
 import { jsonToTypescript, jsonToZod } from "../lib/tools/json-to-types";
+import { curlToCode, type CurlTargetLanguage } from "../lib/tools/curl-to-code";
+import { auditEnv, formatEnvAuditReport } from "../lib/tools/env-audit";
+import { generateMockDataset, type MockTemplate } from "../lib/tools/mock-data";
+import { parseAndResolveGitConflicts, formatConflictReport, type ConflictStrategy } from "../lib/tools/git-conflict";
 
 async function readInput(arg?: string): Promise<string> {
   if (arg && arg !== "-") {
@@ -184,6 +188,116 @@ export async function handleCliSubcommand(command: string, args: string[]): Prom
       try {
         const formatted = formatJson(input, 2);
         process.stdout.write(formatted + "\n");
+      } catch (err) {
+        process.stderr.write(`[Error] ${err instanceof Error ? err.message : String(err)}\n`);
+      }
+      return true;
+    }
+
+    case "curl": {
+      const input = await readInput(args[0]);
+      if (!input) {
+        process.stderr.write("Usage: npx codestation-mcp curl \"<curl_command>\" [--target fetch|axios|python|go]\n");
+        return true;
+      }
+      let target: CurlTargetLanguage = "fetch";
+      const targetIdx = args.indexOf("--target");
+      if (targetIdx !== -1 && args[targetIdx + 1]) {
+        target = args[targetIdx + 1].toLowerCase() as CurlTargetLanguage;
+      }
+      try {
+        const res = await curlToCode(input, target);
+        process.stdout.write(res.code + "\n");
+      } catch (err) {
+        process.stderr.write(`[Error] ${err instanceof Error ? err.message : String(err)}\n`);
+      }
+      return true;
+    }
+
+    case "env": {
+      let envPath = args[0] && !args[0].startsWith("-") ? args[0] : ".env";
+      let envContent = "";
+      if (fs.existsSync(envPath)) {
+        envContent = fs.readFileSync(envPath, "utf-8");
+      } else {
+        envContent = await readInput(args[0]);
+      }
+
+      if (!envContent) {
+        process.stderr.write("Usage: npx codestation-mcp env [path/to/.env] [--example path/to/.env.example] [--json]\n");
+        return true;
+      }
+
+      let exampleContent: string | undefined;
+      const exIdx = args.indexOf("--example");
+      if (exIdx !== -1 && args[exIdx + 1] && fs.existsSync(args[exIdx + 1])) {
+        exampleContent = fs.readFileSync(args[exIdx + 1], "utf-8");
+      } else if (fs.existsSync(".env.example")) {
+        exampleContent = fs.readFileSync(".env.example", "utf-8");
+      }
+
+      const isJson = args.includes("--json");
+      try {
+        const res = auditEnv(envContent, exampleContent);
+        if (isJson) {
+          process.stdout.write(JSON.stringify(res, null, 2) + "\n");
+        } else {
+          process.stdout.write(formatEnvAuditReport(res) + "\n");
+        }
+      } catch (err) {
+        process.stderr.write(`[Error] ${err instanceof Error ? err.message : String(err)}\n`);
+      }
+      return true;
+    }
+
+    case "mock": {
+      let template: MockTemplate = "users";
+      if (args[0] && !args[0].startsWith("-")) {
+        template = args[0].toLowerCase() as MockTemplate;
+      }
+      let count = 10;
+      const countIdx = args.indexOf("--count");
+      if (countIdx !== -1 && args[countIdx + 1]) {
+        count = parseInt(args[countIdx + 1], 10) || 10;
+      }
+      const isSql = args.includes("--sql");
+      let tableName: string | undefined;
+      const tableIdx = args.indexOf("--table");
+      if (tableIdx !== -1 && args[tableIdx + 1]) {
+        tableName = args[tableIdx + 1];
+      }
+      try {
+        const res = generateMockDataset({
+          template,
+          count,
+          format: isSql ? "sql" : "json",
+          tableName,
+        });
+        process.stdout.write((isSql && res.sql ? res.sql : res.json) + "\n");
+      } catch (err) {
+        process.stderr.write(`[Error] ${err instanceof Error ? err.message : String(err)}\n`);
+      }
+      return true;
+    }
+
+    case "conflict": {
+      const input = await readInput(args[0]);
+      if (!input) {
+        process.stderr.write("Usage: npx codestation-mcp conflict <file_or_content> [--strategy analyze|ours|theirs|both]\n");
+        return true;
+      }
+      let strategy: ConflictStrategy = "analyze";
+      const stratIdx = args.indexOf("--strategy");
+      if (stratIdx !== -1 && args[stratIdx + 1]) {
+        strategy = args[stratIdx + 1].toLowerCase() as ConflictStrategy;
+      }
+      try {
+        const res = parseAndResolveGitConflicts(input, strategy);
+        if (strategy === "analyze") {
+          process.stdout.write(formatConflictReport(res) + "\n");
+        } else {
+          process.stdout.write((res.resolvedContent ?? input) + "\n");
+        }
       } catch (err) {
         process.stderr.write(`[Error] ${err instanceof Error ? err.message : String(err)}\n`);
       }

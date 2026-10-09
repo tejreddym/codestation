@@ -1,5 +1,18 @@
 # Changelog
 
+## Code Station MCP v1.2.0 & Killer Pro Suite — 2026-10-09
+
+- Published `codestation-mcp@1.2.0` to npm under `tejreddym`.
+- Added 4 high-utility developer tools across local CLI and MCP server:
+  - `curl-to-code` (`npx codestation-mcp curl` / `codestation_curl_to_code`): Universal generator producing TypeScript fetch/axios, Python requests, and idiomatic Go `net/http`.
+  - `env-audit` (`npx codestation-mcp env` / `codestation_env_audit`): Secret leak scanner detecting live Stripe, AWS, OpenAI, GitHub PAT, private keys, and synchronizing with `.env.example`.
+  - `mock-data` (`npx codestation-mcp mock` / `codestation_mock_data`): Realistic mock dataset and SQL INSERT seeder for users, products, orders, and custom schemas.
+  - `git-conflict` (`npx codestation-mcp conflict` / `codestation_git_conflict`): Automated Git merge conflict parser and resolver supporting `ours`, `theirs`, and `both`.
+- Redesigned `/pro` page with rich Tactile Technical perks showcase, live terminal preview, 15 MCP tools catalog, comparison matrix, and FAQ grid.
+- Added tactile ASCII Pro badge when running CLI in Pro tier.
+- Updated documentation across `/docs`, `docs/MCP_SERVER.md`, and package README.
+- Added comprehensive Vitest unit tests in `lib/tools/curl-to-code.test.ts`, `lib/tools/env-audit.test.ts`, `lib/tools/mock-data.test.ts`, `lib/tools/git-conflict.test.ts`, and `mcp/server.test.ts`.
+
 ## Razorpay Standard Web Checkout Integration — 2026-10-09
 
 - Integrated official `razorpay` Node SDK for order creation and HMAC-SHA256 signature verification.

@@ -29,6 +29,18 @@ npx codestation-mcp
 
 ### Terminal CLI Subcommands
 ```bash
+# Convert cURL to TypeScript fetch / axios / Python / Go
+npx codestation-mcp curl "curl -X POST https://api.example.com -d '{\"k\":\"v\"}'" --target fetch
+
+# Audit .env for secret leaks (Stripe, AWS, OpenAI, GitHub PAT) & diff with .env.example
+npx codestation-mcp env .env --example .env.example
+
+# Generate realistic mock dataset (JSON or SQL INSERT for DB seeding)
+npx codestation-mcp mock users --count 10 --sql --table users
+
+# Parse and resolve Git merge conflicts (ours, theirs, or both)
+npx codestation-mcp conflict ./src/index.ts --strategy ours
+
 # Decode JWT token
 npx codestation-mcp jwt <token>
 
@@ -97,7 +109,13 @@ Published on npm: [`codestation-mcp`](https://www.npmjs.com/package/codestation-
 - `codestation_text_diff`: Line-by-line unified diff between text files.
 - `codestation_slugify`: Generate clean, URL-friendly slugs.
 
-### Pro Tier (₹199 / month in India • $2.99 / month Global)
+### Pro Tier (₹199 / month in India • $2.99 / month Global • ₹999 Lifetime)
+- `codestation_curl_to_code`: Convert cURL commands to TypeScript fetch/axios, Python requests, or Go net/http.
+- `codestation_env_audit`: Scan `.env` files for secret leaks (Stripe, AWS, OpenAI, GitHub PAT, private keys) and validate against `.env.example`.
+- `codestation_mock_data`: Realistic mock dataset and SQL INSERT generator for users, products, orders, and custom schemas.
+- `codestation_git_conflict`: Parse and resolve Git merge conflict markers (`<<<<<<< HEAD`, `=======`, `>>>>>>>`).
+- `codestation_json_to_typescript`: Generate TypeScript interfaces and nested types from sample JSON data.
+- `codestation_json_to_zod`: Generate production-ready Zod validation schemas and inferred types from JSON.
 - `codestation_hash`: SHA-256, SHA-512, MD5, SHA-1, CRC-32 checksums.
 - `codestation_hmac`: HMAC message authentication codes.
 - `codestation_jwt_decode`: In-memory inspection of JWT headers, claims, and signatures.
