@@ -20,7 +20,11 @@
     "mode": "smart"
   },
   "vars": {
-    "SITE_INDEXING": "index"
+    "SITE_INDEXING": "index",
+    "NEXT_PUBLIC_ADS_ENABLED": "true",
+    "NEXT_PUBLIC_ADS_SOCIAL_BAR_ENABLED": "true",
+    "NEXT_PUBLIC_ADS_NATIVE_ENABLED": "true",
+    "NEXT_PUBLIC_ADS_BANNER_ENABLED": "true"
   },
   "kv_namespaces": [
     {

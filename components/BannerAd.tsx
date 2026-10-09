@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useRef } from "react";
 import { isAdsterraFormatEnabled } from "@/config/ads";
 
 type BannerSize = "leaderboard" | "rectangle";
@@ -21,48 +20,15 @@ const bannerConfigs = {
 } as const;
 
 export default function BannerAd({ size, className }: { size: BannerSize; className?: string }) {
-  const iframeRef = useRef<HTMLIFrameElement>(null);
-  const loaded = useRef(false);
-
-  useEffect(() => {
-    if (!iframeRef.current || loaded.current) return;
-    loaded.current = true;
-
-    const config = bannerConfigs[size];
-    const doc = iframeRef.current.contentWindow?.document;
-    if (!doc) return;
-
-    doc.open();
-    doc.write(`
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <style>body { margin: 0; padding: 0; display: flex; justify-content: center; align-items: center; overflow: hidden; background: transparent; }</style>
-        </head>
-        <body>
-          <script type="text/javascript">
-            atOptions = {
-              'key' : '${config.key}',
-              'format' : 'iframe',
-              'height' : ${config.height},
-              'width' : ${config.width},
-              'params' : {}
-            };
-          </script>
-          <script type="text/javascript" src="${config.src}"></script>
-        </body>
-      </html>
-    `);
-    doc.close();
-  }, [size]);
-
   if (!isAdsterraFormatEnabled("banner")) return null;
 
   const config = bannerConfigs[size];
+  const srcDocHtml = `<!DOCTYPE html><html><head><style>body { margin: 0; padding: 0; display: flex; justify-content: center; align-items: center; overflow: hidden; background: transparent; }</style></head><body><script type="text/javascript">atOptions = { 'key' : '${config.key}', 'format' : 'iframe', 'height' : ${config.height}, 'width' : ${config.width}, 'params' : {} };</script><script type="text/javascript" src="${config.src}"></script></body></html>`;
+
   return (
     <aside className={`ad-banner ad-banner--${size} ${className ?? ""}`} aria-label="Advertisement" style={{ display: 'flex', justifyContent: 'center' }}>
       <iframe
-        ref={iframeRef}
+        srcDoc={srcDocHtml}
         width={config.width}
         height={config.height}
         style={{ border: "none", overflow: "hidden", display: "block", maxWidth: "100%" }}

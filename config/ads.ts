@@ -25,9 +25,12 @@ export function isAdsterraFormatEnabled(format: AdsterraFormat): boolean {
     ? process.env.NEXT_PUBLIC_ADS_SOCIAL_BAR_ENABLED === ENABLED_VALUE
     : format === "native"
       ? process.env.NEXT_PUBLIC_ADS_NATIVE_ENABLED === ENABLED_VALUE
-      : process.env.NEXT_PUBLIC_ADS_BANNER_ENABLED === ENABLED_VALUE;
+      : (process.env.NEXT_PUBLIC_ADS_BANNER_ENABLED === ENABLED_VALUE ||
+         (process.env.NEXT_PUBLIC_ADS_BANNER_ENABLED !== "false" && process.env.NEXT_PUBLIC_ADS_ENABLED === ENABLED_VALUE));
 
-  return process.env.NODE_ENV === "production"
+  const envAllowed = process.env.NODE_ENV === "production" || process.env.NEXT_PUBLIC_ADS_ALLOW_DEV === ENABLED_VALUE;
+
+  return envAllowed
     && process.env.NEXT_PUBLIC_ADS_ENABLED === ENABLED_VALUE
-    && formatEnabled;
+    && Boolean(formatEnabled);
 }
