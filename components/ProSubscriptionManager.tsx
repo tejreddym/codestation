@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import styles from "./ProSubscriptionManager.module.css";
 
 interface VerifyResult {
@@ -19,15 +19,32 @@ interface GenerateResult {
   message?: string;
 }
 
+declare global {
+  interface Window {
+    Razorpay: any;
+  }
+}
+
 export function ProSubscriptionManager() {
   const [verifyKeyInput, setVerifyKeyInput] = useState("");
   const [verifyLoading, setVerifyLoading] = useState(false);
   const [verifyResult, setVerifyResult] = useState<VerifyResult | null>(null);
 
   const [selectedPlan, setSelectedPlan] = useState<"monthly" | "lifetime">("monthly");
-  const [generateLoading, setGenerateLoading] = useState(false);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [generatedResult, setGeneratedResult] = useState<GenerateResult | null>(null);
   const [copiedKey, setCopiedKey] = useState(false);
+
+  // Load Razorpay checkout script on mount
+  useEffect(() => {
+    if (typeof window !== "undefined" && !window.Razorpay) {
+      const script = document.createElement("script");
+      script.src = "https://checkout.razorpay.com/v1/checkout.js";
+      script.async = true;
+      document.body.appendChild(script);
+    }
+  }, []);
 
   async function handleVerify(e: React.FormEvent) {
     e.preventDefault();
@@ -54,26 +71,101 @@ export function ProSubscriptionManager() {
     }
   }
 
-  async function handleGenerate(e: React.FormEvent) {
-    e.preventDefault();
-    setGenerateLoading(true);
+  async function handleRazorpayCheckout() {
+    setCheckoutLoading(true);
+    setCheckoutError(null);
     setGeneratedResult(null);
 
     try {
-      const res = await fetch("/api/v1/license/create", {
+      // 1. Create order on backend
+      const amountPaise = selectedPlan === "monthly" ? 19900 : 99900;
+      const orderRes = await fetch("/api/create-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan: selectedPlan }),
+        body: JSON.stringify({
+          amount: amountPaise,
+          currency: "INR",
+          plan: selectedPlan,
+        }),
       });
-      const data = await res.json();
-      setGeneratedResult(data);
-    } catch (err) {
-      setGeneratedResult({
-        success: false,
-        message: err instanceof Error ? err.message : "Failed to generate key",
+
+      if (!orderRes.ok) {
+        const errData = await orderRes.json().catch(() => ({}));
+        throw new Error(errData.error || `Failed to create order (Status ${orderRes.status})`);
+      }
+
+      const orderData = await orderRes.json();
+
+      if (!window.Razorpay) {
+        throw new Error("Razorpay SDK is loading. Please check your internet connection and try again.");
+      }
+
+      // 2. Open Razorpay Checkout modal
+      const options = {
+        key: orderData.key_id || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: "Code Station Pro",
+        description: selectedPlan === "monthly" ? "Monthly Pro Subscription" : "Lifetime Pro License",
+        order_id: orderData.order_id,
+        handler: async function (response: {
+          razorpay_payment_id: string;
+          razorpay_order_id: string;
+          razorpay_signature: string;
+        }) {
+          try {
+            // 3. Verify signature on backend and issue license key
+            const verifyRes = await fetch("/api/verify-payment", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                plan: selectedPlan,
+              }),
+            });
+
+            const verifyData = await verifyRes.json();
+
+            if (verifyRes.ok && verifyData.success) {
+              setGeneratedResult({
+                success: true,
+                key: verifyData.licenseKey,
+                plan: verifyData.plan,
+                expiresAt: verifyData.expiresAt,
+                message: "Payment successful! Your Code Station Pro key has been generated.",
+              });
+            } else {
+              setCheckoutError(verifyData.error || "Payment signature verification failed.");
+            }
+          } catch (err: any) {
+            setCheckoutError(err.message || "Network error while verifying payment.");
+          } finally {
+            setCheckoutLoading(false);
+          }
+        },
+        modal: {
+          ondismiss: function () {
+            setCheckoutLoading(false);
+          },
+        },
+        theme: {
+          color: "#476511",
+        },
+      };
+
+      const rzp = new window.Razorpay(options);
+
+      rzp.on("payment.failed", function (response: any) {
+        setCheckoutError(response.error?.description || "Payment failed. Please try again.");
+        setCheckoutLoading(false);
       });
-    } finally {
-      setGenerateLoading(false);
+
+      rzp.open();
+    } catch (err: any) {
+      setCheckoutError(err.message || "Failed to initiate Razorpay checkout.");
+      setCheckoutLoading(false);
     }
   }
 
@@ -141,13 +233,13 @@ export function ProSubscriptionManager() {
         </div>
       </div>
 
-      {/* Instant Checkout / Generation Box */}
+      {/* Razorpay Standard Web Checkout Action Box */}
       <section className={styles.actionBox}>
         <div className={styles.boxHeader}>
-          <h4>Get Your Pro License Key (Login-Free)</h4>
+          <h4>Pay with Razorpay (Instant Login-Free Key)</h4>
           <p>
-            No registration or account creation needed. Your key is generated instantly upon payment
-            and stored securely in Cloudflare using one-way SHA-256 hashing.
+            No registration or account creation needed. Complete the checkout via UPI, Cards, NetBanking,
+            or Wallets. Your cryptographic key is issued immediately and verified via Cloudflare edge one-way hashing.
           </p>
         </div>
 
@@ -155,17 +247,24 @@ export function ProSubscriptionManager() {
           <button
             type="button"
             className={styles.generateButton}
-            onClick={handleGenerate}
-            disabled={generateLoading}
+            onClick={handleRazorpayCheckout}
+            disabled={checkoutLoading}
           >
-            {generateLoading ? "Generating..." : `Activate ${selectedPlan === "monthly" ? "Monthly (₹199)" : "Lifetime (₹999)"} Key`}
+            {checkoutLoading ? "Opening Razorpay..." : `Pay ${selectedPlan === "monthly" ? "₹199 with Razorpay" : "₹999 with Razorpay"}`}
           </button>
         </div>
+
+        {checkoutError && (
+          <div className={`${styles.resultBanner} ${styles.invalid}`}>
+            <strong>Payment Notice</strong>
+            <p>{checkoutError}</p>
+          </div>
+        )}
 
         {generatedResult?.success && generatedResult.key && (
           <div className={styles.generatedKeyBox}>
             <div className={styles.keyNotice}>
-              <strong>Save your key now!</strong> This plaintext key is shown only once and will never be displayed again.
+              <strong>Payment Verified! Save your key now:</strong> This plaintext key is shown only once and will never be displayed again.
             </div>
             <div className={styles.keyDisplay}>
               <code>{generatedResult.key}</code>

@@ -1,5 +1,14 @@
 # Changelog
 
+## Razorpay Standard Web Checkout Integration — 2026-10-09
+
+- Integrated official `razorpay` Node SDK for order creation and HMAC-SHA256 signature verification.
+- Backend order creation endpoint `POST /api/create-order` creates orders in INR with validation (>= 100 paise).
+- Backend verification endpoint `POST /api/verify-payment` verifies HMAC-SHA256 signatures with timing-safe comparison, generating Pro license keys directly upon payment and saving their one-way SHA-256 hash in Cloudflare KV.
+- Frontend Razorpay Standard Checkout in `components/ProSubscriptionManager.tsx` loads `checkout.js`, handles modal dismissal and payment failure notifications, and displays newly issued keys with one-click copy.
+- Added environment variable configuration in `.env`, `.env.local`, and `.env.example`.
+- Added unit test suite in `lib/razorpay.test.ts`.
+
 ## Code Station Local MCP Server & Pro Licensing — 2026-10-09
 
 - Built `codestation-mcp` CLI supporting the Model Context Protocol (MCP) over `stdio`.

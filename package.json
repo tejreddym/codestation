@@ -34,6 +34,7 @@
     "lucide-react": "^1.50.0",
     "next": "^15.5.0",
     "node-sql-parser": "5.4.0",
+    "razorpay": "^2.9.8",
     "react": "^19.1.0",
     "react-calendar": "^6.0.1",
     "react-clock": "^6.0.0",

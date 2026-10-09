@@ -1,5 +1,14 @@
 # Project Status
 
+## Razorpay Standard Web Checkout Integration — 2026-10-09
+
+- Integrated official `razorpay` Node SDK for payment order creation and signature verification.
+- Backend order creation at `POST /api/create-order` validates amounts, receipts, and currency.
+- Backend payment verification at `POST /api/verify-payment` validates `HMAC-SHA256(order_id + "|" + payment_id, secret)` using timing-safe buffer comparison.
+- On verified payment, automatically generates Code Station Pro license key and stores one-way SHA-256 hash in Cloudflare KV.
+- Frontend Razorpay Standard Checkout in `components/ProSubscriptionManager.tsx` loads `checkout.js`, handles modal events, and exposes instant key copy after payment.
+- Verification: unit tests pass in `lib/razorpay.test.ts`, real API order creation tested against Razorpay test credentials, `npm run typecheck` clean.
+
 ## Local MCP Server & Pro Tier (`codestation-mcp`) — 2026-10-09
 
 - Built and verified local `codestation-mcp` CLI using `@modelcontextprotocol/sdk` and `esbuild`.
