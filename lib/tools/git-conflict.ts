@@ -14,6 +14,7 @@ export interface ConflictHunk {
 export interface ConflictResolutionResult {
   hasConflicts: boolean;
   conflictCount: number;
+  unresolvedCount: number;
   hunks: ConflictHunk[];
   resolvedContent?: string;
   summary: string;
@@ -23,7 +24,9 @@ export function parseAndResolveGitConflicts(
   content: string,
   strategy: ConflictStrategy = "analyze"
 ): ConflictResolutionResult {
-  const lines = content.split(/\r?\n/);
+  // Normalize mixed line endings (\r\n -> \n)
+  const normalized = content.replace(/\r\n/g, "\n");
+  const lines = normalized.split("\n");
   const hunks: ConflictHunk[] = [];
 
   let inConflict = false;
@@ -69,6 +72,11 @@ export function parseAndResolveGitConflicts(
       inBase = false;
       inTheirs = true;
       continue;
+    }
+
+    // Orphan separator outside conflict
+    if (!inConflict && (line.startsWith("=======") || line.startsWith(">>>>>>>") || line.startsWith("|||||||"))) {
+      throw new Error(`Malformed Git conflict: Unexpected ${line.slice(0, 7)} marker outside of conflict block at line ${i + 1}`);
     }
 
     // Conflict end: >>>>>>> branch_name
@@ -120,20 +128,22 @@ export function parseAndResolveGitConflicts(
   }
 
   const hasConflicts = hunks.length > 0;
+  const unresolvedCount = strategy === "analyze" ? hunks.length : 0;
   const resolvedContent = strategy !== "analyze" ? outputLines.join("\n") : undefined;
 
   let summary = "";
   if (!hasConflicts) {
     summary = "No merge conflict markers detected in input.";
   } else if (strategy === "analyze") {
-    summary = `Found ${hunks.length} conflict hunk${hunks.length === 1 ? "" : "s"}. Inspect branches and choose a resolution strategy (ours, theirs, or both).`;
+    summary = `Found ${hunks.length} conflict hunk${hunks.length === 1 ? "" : "s"} (${unresolvedCount} unresolved). Inspect branches and choose a resolution strategy (ours, theirs, or both).`;
   } else {
-    summary = `Successfully resolved ${hunks.length} conflict hunk${hunks.length === 1 ? "" : "s"} using "${strategy}" strategy.`;
+    summary = `Successfully resolved ${hunks.length} conflict hunk${hunks.length === 1 ? "" : "s"} using "${strategy}" strategy. 0 conflicts remaining.`;
   }
 
   return {
     hasConflicts,
     conflictCount: hunks.length,
+    unresolvedCount,
     hunks,
     resolvedContent,
     summary,
@@ -144,7 +154,8 @@ export function formatConflictReport(result: ConflictResolutionResult): string {
   const lines: string[] = [];
   lines.push("\n=== CODE STATION GIT CONFLICT RESOLVER ===");
   lines.push(`Total Conflicts: ${result.conflictCount}`);
-  lines.push(`Status: ${result.summary}\n`);
+  lines.push(`Unresolved:      ${result.unresolvedCount}`);
+  lines.push(`Status:          ${result.summary}\n`);
 
   if (!result.hasConflicts) {
     return lines.join("\n");
@@ -154,6 +165,9 @@ export function formatConflictReport(result: ConflictResolutionResult): string {
     lines.push(`[Hunk #${hunk.hunkIndex}] Lines ${hunk.startLine} to ${hunk.endLine}`);
     lines.push(`  Ours (${hunk.oursBranch}):    ${hunk.oursLines.length} lines`);
     lines.push(`  Theirs (${hunk.theirsBranch}): ${hunk.theirsLines.length} lines`);
+    if (hunk.baseLines) {
+      lines.push(`  Base (diff3):         ${hunk.baseLines.length} lines`);
+    }
     lines.push("  Preview Ours:");
     for (const l of hunk.oursLines.slice(0, 3)) {
       lines.push(`    | ${l}`);

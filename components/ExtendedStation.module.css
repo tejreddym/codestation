@@ -1,0 +1,147 @@
+.station {
+  min-width: 0;
+}
+
+.form {
+  padding: 17px;
+  display: grid;
+  gap: 16px;
+}
+
+.field {
+  display: grid;
+  gap: 8px;
+}
+
+.field label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--secondary);
+}
+
+.field input:not([type="checkbox"]),
+.field select,
+.field textarea {
+  width: 100%;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--ink);
+  font: 14px/1.5 inherit;
+}
+
+.field textarea {
+  min-height: 140px;
+  font-family: ui-monospace, monospace;
+}
+
+.field input:focus-visible,
+.field select:focus-visible,
+.field textarea:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 0;
+}
+
+.outputHeading {
+  padding: 17px 17px 0;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.output {
+  padding: 17px;
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+
+.output pre {
+  margin: 0;
+  max-width: 100%;
+  overflow: auto;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  background: var(--code);
+  color: var(--code-ink);
+  border-radius: var(--radius-sm);
+  padding: 14px;
+  font: 14px/1.6 ui-monospace, monospace;
+}
+
+.badgeSecure {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 4px;
+  background: #10b981;
+  color: #fff;
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.badgeAlert {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 4px;
+  background: #ef4444;
+  color: #fff;
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.findingCard {
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  background: var(--surface);
+  display: grid;
+  gap: 6px;
+}
+
+.findingHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.findingSeverity {
+  font-weight: 700;
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  text-transform: uppercase;
+}
+
+.severityCritical {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.severityHigh {
+  background: #ffedd5;
+  color: #9a3412;
+}
+
+.severityMedium {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.severityLow, .severityInfo {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.noticeBar {
+  font-size: 13px;
+  color: var(--secondary);
+  margin-top: 4px;
+}

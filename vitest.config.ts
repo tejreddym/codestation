@@ -4,5 +4,8 @@ import { defineConfig } from "vitest/config";
 export default defineConfig({
   resolve: { alias: { "@": fileURLToPath(new URL("./", import.meta.url)) } },
   esbuild: { jsx: "automatic" },
-  test: { exclude: ["**/node_modules/**", "**/.next/**"] },
+  test: {
+    exclude: ["**/node_modules/**", "**/.next/**"],
+    setupFiles: ["./vitest.setup.ts"],
+  },
 });

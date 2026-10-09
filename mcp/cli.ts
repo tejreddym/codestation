@@ -54,11 +54,6 @@ Pricing:
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
 
-  if (args.includes("--help") || args.includes("-h")) {
-    printHelp();
-    process.exit(0);
-  }
-
   if (args.includes("--version") || args.includes("-v")) {
     process.stderr.write("codestation-mcp v1.2.0\n");
     process.exit(0);
@@ -92,12 +87,17 @@ async function main(): Promise<void> {
     process.exit(0);
   }
 
-  // 2. Terminal subcommands (jwt, sql, cron, hash, ts, zod, uuid, json)
+  // 2. Terminal subcommands (status, curl-to-any-language, env-audit, mock-data, conflict-parse, etc.)
   if (args.length > 0 && !args[0].startsWith("-")) {
-    const handled = await handleCliSubcommand(args[0], args.slice(1));
-    if (handled) {
-      process.exit(0);
+    const res = await handleCliSubcommand(args[0], args.slice(1));
+    if (res.handled) {
+      process.exit(res.exitCode);
     }
+  }
+
+  if (args.includes("--help") || args.includes("-h")) {
+    printHelp();
+    process.exit(0);
   }
 
   // 3. Stdio MCP Server mode

@@ -16,7 +16,12 @@ import { isSpreadsheetToolId } from "@/config/spreadsheet-tools";
 import { isMarkdownToolId } from "@/config/markdown-tools";
 import { isColorToolId } from "@/config/color-tools";
 import { isNumericToolId } from "@/config/numeric-contracts";
+import { isExtendedToolId } from "@/config/extended-tools";
 import type { RegisteredToolId } from "@/config/tools";
+
+const ExtendedStation = dynamic(() => import("./ExtendedStation"), {
+  loading: () => <p role="status">Loading tool controls…</p>,
+});
 
 const DateTimeStation = dynamic(() => import("./DateTimeStation"), {
   loading: () => <p role="status">Loading Date &amp; Time controls…</p>,
@@ -57,6 +62,7 @@ const NumericStation = dynamic(() => import("./NumericStation"), {
   loading: () => <p role="status">Loading numeric converter controls…</p>,
 });
 export default function ToolWorkspace({ toolId }: { toolId: RegisteredToolId }) {
+  if (isExtendedToolId(toolId)) return <ExtendedStation key={toolId} toolId={toolId} />;
   if (isNumericToolId(toolId)) return <NumericStation key={toolId} toolId={toolId} />;
   if (isSpreadsheetToolId(toolId)) return <SpreadsheetStation key={toolId} toolId={toolId} />;
   if (isMarkdownToolId(toolId)) return <MarkdownStation key={toolId} toolId={toolId} />;
@@ -73,7 +79,7 @@ export default function ToolWorkspace({ toolId }: { toolId: RegisteredToolId }) 
   if (isJsonDataToolId(toolId)) return <JsonDataStation key={toolId} toolId={toolId} />;
   return isDateTimeToolId(toolId)
     ? <DateTimeStation key={toolId} toolId={toolId} />
-    : <ToolWorkbench key={toolId} toolId={toolId} />;
+    : <ToolWorkbench key={toolId} toolId={toolId as any} />;
 }
 const ImageStation = dynamic(() => import("./ImageStation"), { loading: () => <p role="status">Loading Image controls…</p> });
 const SpreadsheetStation = dynamic(() => import("./SpreadsheetStation"), { loading: () => <p role="status">Loading Spreadsheet controls…</p> });

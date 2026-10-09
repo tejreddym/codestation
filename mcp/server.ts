@@ -4,12 +4,14 @@ import {
   ListToolsRequestSchema,
   type Tool,
 } from "@modelcontextprotocol/sdk/types.js";
+import { z } from "zod";
 import {
   resolveLicense,
   PRO_TOOLS,
   getProUpgradeNotice,
   type LicenseStatus,
 } from "./config";
+import { checkToolAccess } from "../config/shared-registry";
 
 // Direct imports from Code Station engine
 import {
@@ -58,22 +60,7 @@ import { auditEnv, formatEnvAuditReport } from "../lib/tools/env-audit";
 import { generateMockDataset, type MockTemplate } from "../lib/tools/mock-data";
 import { parseAndResolveGitConflicts, formatConflictReport, type ConflictStrategy } from "../lib/tools/git-conflict";
 
-export function createMcpServer(cliKey?: string) {
-  const license: LicenseStatus = resolveLicense(cliKey);
-
-  const server = new Server(
-    {
-      name: "codestation-mcp",
-      version: "1.2.0",
-    },
-    {
-      capabilities: {
-        tools: {},
-      },
-    }
-  );
-
-  const tools: Tool[] = [
+export const MCP_TOOLS: Tool[] = [
     // ----------------- FREE TOOLS -----------------
     {
       name: "codestation_uuid",
@@ -477,30 +464,31 @@ export function createMcpServer(cliKey?: string) {
     },
   ];
 
-  // List tools handler
-  server.setRequestHandler(ListToolsRequestSchema, async () => {
-    return { tools };
-  });
+export function getMcpTools(): Tool[] {
+  return MCP_TOOLS;
+}
 
-  // Call tool handler
-  server.setRequestHandler(CallToolRequestSchema, async (request) => {
-    const { name, arguments: args = {} } = request.params;
+export async function executeMcpTool(
+  name: string,
+  args: Record<string, any> = {},
+  license: LicenseStatus
+): Promise<{ content: Array<{ type: "text"; text: string }>; isError?: boolean }> {
+  // Check Pro gate using checkToolAccess and PRO_TOOLS
+  const access = checkToolAccess(name, license);
+  if (!access.allowed || (PRO_TOOLS.has(name) && !license.isPro)) {
+    return {
+      content: [
+        {
+          type: "text",
+          text: access.reason || getProUpgradeNotice(name),
+        },
+      ],
+      isError: true,
+    };
+  }
 
-    // Check Pro gate
-    if (PRO_TOOLS.has(name) && !license.isPro) {
-      return {
-        content: [
-          {
-            type: "text",
-            text: getProUpgradeNotice(name),
-          },
-        ],
-        isError: true,
-      };
-    }
-
-    try {
-      let outputText = "";
+  try {
+    let outputText = "";
 
       switch (name) {
         // --- Free tools ---
@@ -737,7 +725,110 @@ export function createMcpServer(cliKey?: string) {
         isError: true,
       };
     }
-  });
+  }
 
-  return { server, license };
-}
+  export function createMcpServer(cliKey?: string) {
+    const license: LicenseStatus = resolveLicense(cliKey);
+    const server = new Server(
+      {
+        name: "codestation-mcp",
+        version: "1.2.0",
+      },
+      {
+        capabilities: {
+          tools: {},
+        },
+      }
+    );
+
+    const tools = MCP_TOOLS;
+
+    // Standard MCP List tools handler
+    server.setRequestHandler(ListToolsRequestSchema, async () => {
+      return { tools };
+    });
+
+    // Standard MCP Call tool handler
+    server.setRequestHandler(CallToolRequestSchema, async (request) => {
+      return executeMcpTool(request.params.name, request.params.arguments || {}, license);
+    });
+
+    // Extended JSON-RPC tools.list
+    server.setRequestHandler(
+      z.object({ method: z.literal("tools.list"), params: z.any().optional() }),
+      async () => {
+        return { tools };
+      }
+    );
+
+    // Extended JSON-RPC tools.describe
+    server.setRequestHandler(
+      z.object({ method: z.literal("tools.describe"), params: z.any().optional() }),
+      async (request) => {
+        const params = (request.params as any) || {};
+        const toolName = params.name || params.tool;
+        const found = tools.find((t) => t.name === toolName);
+        if (!found) {
+          throw new Error(`Unknown tool: ${toolName}`);
+        }
+        const isPro = PRO_TOOLS.has(found.name);
+        return {
+          tool: found,
+          accessLevel: isPro ? "pro" : "free",
+          tier: isPro ? "pro" : "free",
+        };
+      }
+    );
+
+    // Extended JSON-RPC tools.execute
+    server.setRequestHandler(
+      z.object({ method: z.literal("tools.execute"), params: z.any().optional() }),
+      async (request) => {
+        const params = (request.params as any) || {};
+        const toolName = params.name || params.tool;
+        const toolArgs = params.arguments || params.parameters || {};
+        return executeMcpTool(toolName, toolArgs, license);
+      }
+    );
+
+    // Extended JSON-RPC auth.status
+    server.setRequestHandler(
+      z.object({ method: z.literal("auth.status"), params: z.any().optional() }),
+      async () => {
+        return {
+          authenticated: license.isPro,
+          tier: license.tier,
+          isPro: license.isPro,
+          licenseKey: license.licenseKey ? license.licenseKey.slice(0, 8) + "..." : null,
+        };
+      }
+    );
+
+    // Extended JSON-RPC entitlements.status
+    server.setRequestHandler(
+      z.object({ method: z.literal("entitlements.status"), params: z.any().optional() }),
+      async () => {
+        return {
+          tier: license.tier,
+          isPro: license.isPro,
+          active: true,
+          entitlements: license.isPro
+            ? ["all-tools", "offline-crypto", "high-volume-seeding", "pro-converters"]
+            : ["free-tools", "standard-rate-limit"],
+        };
+      }
+    );
+
+    // Extended JSON-RPC capabilities.list
+    server.setRequestHandler(
+      z.object({ method: z.literal("capabilities.list"), params: z.any().optional() }),
+      async () => {
+        return {
+          capabilities: ["tools", "crypto", "offline", "pro-access", "zero-latency"],
+        };
+      }
+    );
+
+    return { server, license };
+  }
+

@@ -16,9 +16,10 @@ import { spreadsheetTools, type SpreadsheetToolId } from "./spreadsheet-tools";
 import { markdownTools, type MarkdownToolId } from "./markdown-tools";
 import { colorTools, type ColorToolId } from "./color-tools";
 import { numericTools, type NumericToolId } from "./numeric-tools";
+import { extendedTools, type ExtendedToolId } from "./extended-tools";
 
 /** Includes the legacy catalog plus typed station metadata; no browser code. */
-export type RegisteredToolId = ToolId | DateTimeToolId | JsonDataToolId | EncodingToolId | SecurityToolId | RegexToolId | TextToolId | CronToolId | SqlToolId | WebToolId | ApiToolId | ImageToolId | SpreadsheetToolId | MarkdownToolId | ColorToolId | NumericToolId;
+export type RegisteredToolId = ToolId | DateTimeToolId | JsonDataToolId | EncodingToolId | SecurityToolId | RegexToolId | TextToolId | CronToolId | SqlToolId | WebToolId | ApiToolId | ImageToolId | SpreadsheetToolId | MarkdownToolId | ColorToolId | NumericToolId | ExtendedToolId;
 export type ToolDefinition = { id: RegisteredToolId; slug: string; name: string; description: string; category: string; keywords: readonly string[]; featured?: boolean; pairId?: string; direction?: "forward" | "reverse"; pairedTool?: RegisteredToolId; inputFormat?: string; outputFormat?: string; inputType?: string; outputType?: string; dataContract?: DataToolContract; encodingContract?: EncodingToolContract; securityContract?: SecurityToolContract; regexContract?: RegexToolContract; dateTimeContract?: DateTimeToolContract; textContract?: TextToolContract; cronContract?: CronToolContract; sqlContract?: SqlToolContract; webContract?: WebToolContract; apiContract?: ApiToolContract; localContract?: LocalContract; relatedTools?: readonly string[]; seo?: { title?: string; description?: string }; };
 
 export const tools: ToolDefinition[] = [
@@ -37,6 +38,7 @@ export const tools: ToolDefinition[] = [
   ...markdownTools,
   ...colorTools,
   ...numericTools,
+  ...(extendedTools as unknown as ToolDefinition[]),
 ];
 
 export function getTool(slug: string) { return tools.find((tool) => tool.slug === slug); }
