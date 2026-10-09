@@ -11,7 +11,6 @@ import { getStationByName } from "@/config/stations";
 import { metadataForRoute } from "@/config/site";
 import { JsonLd } from "@/components/StructuredData";
 import BannerAd from "@/components/BannerAd";
-import { ProGate } from "@/components/ProGate";
 
 export function generateStaticParams() { return tools.map((tool) => ({ slug: tool.slug })); }
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
@@ -42,9 +41,7 @@ export default async function ToolPage({ params }: { params: Promise<{ slug: str
     <div className="workspace-heading"><div><div className="eyebrow"><span className="bracket-label">{tool.category}</span></div>
     <h1>{tool.name}</h1><p className="lead">{tool.description}</p></div><span className="workspace-symbol" aria-hidden="true"><StationMark large label={tool.category} /></span></div>
     <div className="tool-utility-bar"><FavoriteButton slug={tool.slug} /><span>Keep this tool in your workbench</span><Link href={`/feedback?tool=${tool.slug}`}>Report a problem</Link></div>
-    <ProGate toolId={tool.id} toolName={tool.name}>
-      <ToolWorkspace toolId={tool.id} />
-    </ProGate>
+    <ToolWorkspace toolId={tool.id} />
     <div style={{ display: "flex", flexWrap: "wrap", gap: "32px", alignItems: "flex-start", marginTop: "32px" }}>
       <div style={{ flex: "1 1 0%", minWidth: "min(100%, 600px)" }}>
         <ToolHelp tool={tool} />

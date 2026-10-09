@@ -143,32 +143,20 @@ export default function DocsPage() {
       </section>
 
       <section>
-        <h2>5. Web App Pro Tools &amp; In-Browser Unlocking</h2>
+        <h2>5. 100% Free &amp; Private Web Application</h2>
         <p>
-          On the Code Station web application, power tools are tagged with a <code>[PRO]</code> badge:
+          Every single one of the <strong>250+ developer tools</strong> on the Code Station web application
+          is completely <strong>free, unrestricted, and unlimited</strong>.
         </p>
         <ul>
-          <li><strong>JWT Decoder:</strong> In-browser inspection of JSON Web Tokens, verification headers, claims, and expiry dates.</li>
-          <li><strong>SQL Formatter:</strong> Multi-dialect SQL query formatter supporting PostgreSQL, MySQL, SQLite, and SQL Server.</li>
-          <li><strong>ER Diagram Generator:</strong> Interactive entity-relationship diagram visualization from DDL schemas.</li>
-          <li><strong>HMAC Generator:</strong> Keyed-hash message authentication with SHA-256 and SHA-512.</li>
-          <li><strong>Cron Next Run Calculator:</strong> Forward projection of Unix cron schedules with timezone awareness.</li>
-          <li><strong>Business Days Calculator:</strong> Working day calculations excluding weekends and custom holiday lists.</li>
-          <li><strong>Regex Match Inspector:</strong> Regular expression debugger with match group captures.</li>
-          <li><strong>JSON Schema Generator:</strong> Draft 7 / 2020-12 schema generation from sample JSON.</li>
+          <li><strong>Zero Paywalls on the Web:</strong> Format JSON, beautify SQL, inspect JWT tokens, generate ER diagrams, test regex, and calculate business days with zero restrictions directly in your browser.</li>
+          <li><strong>Zero Tracking or Storage:</strong> All computation occurs purely inside your browser&apos;s client memory. Code, tokens, and data never touch a remote server.</li>
+          <li><strong>No Login Required:</strong> Bookmark any tool and start building immediately without an account.</li>
         </ul>
-
-        <h3>How Unlocking Works on the Web</h3>
-        <ol>
-          <li>When you open a Pro tool, a lock gate is presented.</li>
-          <li>If you do not have a key, click <strong>Get Code Station Pro (₹199)</strong> to purchase via Razorpay (UPI, Cards, NetBanking).</li>
-          <li>If you have a key, paste your <code>CS-PRO-...</code> key into the input field and click <strong>Unlock Tool</strong>.</li>
-          <li>
-            The web app verifies the key with device binding and securely saves the unlocked state in your browser&apos;s <code>localStorage</code>.
-            All Pro tools across the site unlock instantly.
-          </li>
-          <li>You can re-lock the tool at any time with the &ldquo;Lock&rdquo; button.</li>
-        </ol>
+        <p>
+          <strong>What is Code Station Pro for?</strong> Pro is built specifically for <strong>developers using AI coding assistants</strong>.
+          It gives Cursor, Claude Desktop, Windsurf, and terminal agents instant, programmatic access to these deterministic engines locally over <code>stdio</code> via <code>codestation-mcp</code>, eliminating hallucinations and latency during AI-assisted development.
+        </p>
       </section>
 
       <section>

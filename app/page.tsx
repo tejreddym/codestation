@@ -65,9 +65,9 @@ export default function HomePage() {
       <section className={styles.proSection} aria-labelledby="pro-title">
         <div className={styles.proCopy}>
           <span className={styles.kicker}>LEVEL UP YOUR WORKFLOW</span>
-          <h2 id="pro-title">Code Station Pro &amp; Local MCP CLI</h2>
+          <h2 id="pro-title">Code Station Pro: Local MCP for AI Agents</h2>
           <p>
-            Unlock advanced browser utilities (JWT Decoder, SQL Formatter, ER Diagrams, HMAC &amp; Cron) plus full CLI &amp; Model Context Protocol integration for Claude Desktop, Cursor, and AI coding agents.
+            All 250+ browser developer tools are 100% free, private, and unlimited. Upgrade to Code Station Pro to supercharge Cursor, Claude Desktop, Windsurf, and AI coding agents with our local Model Context Protocol server.
           </p>
         </div>
         <div className={styles.proActions}>
@@ -76,7 +76,7 @@ export default function HomePage() {
           </div>
           <div className={styles.proButtons}>
             <Link href="/pro" className={styles.proBtnPrimary}>
-              Upgrade to Pro <ArrowUpRight size={16} aria-hidden="true" />
+              Get Pro for AI <ArrowUpRight size={16} aria-hidden="true" />
             </Link>
             <Link href="/docs" className={styles.proBtnSecondary}>
               Explore Docs &amp; MCP <ArrowUpRight size={16} aria-hidden="true" />
