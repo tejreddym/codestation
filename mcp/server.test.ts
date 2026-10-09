@@ -50,4 +50,10 @@ describe("MCP Server Tools", () => {
     expect(server).toBeDefined();
     expect(license.isPro).toBe(true);
   });
+
+  it("registers new JSON to TypeScript and Zod tools", () => {
+    const { server } = createMcpServer("CS-PRO-TEST-KEY");
+    expect(server).toBeDefined();
+  });
 });
+

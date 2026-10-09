@@ -27,6 +27,8 @@ export const PRO_TOOLS = new Set([
   "codestation_business_days",
   "codestation_regex_test",
   "codestation_json_schema",
+  "codestation_json_to_typescript",
+  "codestation_json_to_zod",
 ]);
 
 const CACHE_DIR = path.join(os.homedir(), ".codestation");

@@ -52,6 +52,7 @@ import {
 import { parseCron } from "../lib/tools/cron/parser";
 import { explainCron } from "../lib/tools/cron/explain";
 import { runSql } from "../lib/tools/sql/engine";
+import { jsonToTypescript, jsonToZod } from "../lib/tools/json-to-types";
 
 export function createMcpServer(cliKey?: string) {
   const license: LicenseStatus = resolveLicense(cliKey);
@@ -364,6 +365,30 @@ export function createMcpServer(cliKey?: string) {
         required: ["json"],
       },
     },
+    {
+      name: "codestation_json_to_typescript",
+      description: "Generate clean TypeScript interfaces and types from sample JSON data. [Pro Tier: ₹199/mo or $2.99/mo]",
+      inputSchema: {
+        type: "object",
+        properties: {
+          json: { type: "string", description: "Sample JSON string or object representation" },
+          rootName: { type: "string", description: "Name for the root interface (default: 'Root')" },
+        },
+        required: ["json"],
+      },
+    },
+    {
+      name: "codestation_json_to_zod",
+      description: "Generate production-ready Zod validation schema and inferred types from sample JSON data. [Pro Tier: ₹199/mo or $2.99/mo]",
+      inputSchema: {
+        type: "object",
+        properties: {
+          json: { type: "string", description: "Sample JSON string or object representation" },
+          rootName: { type: "string", description: "Name for the root schema (default: 'rootSchema')" },
+        },
+        required: ["json"],
+      },
+    },
   ];
 
   // List tools handler
@@ -507,9 +532,19 @@ export function createMcpServer(cliKey?: string) {
 
         case "codestation_format_sql": {
           const sql = String(args.sql ?? "");
-          const dialect = String(args.dialect ?? "PostgreSQL") as any;
-          const res = await runSql("sql-formatter", { sql, dialect });
-          outputText = res.rows?.find((r) => r.label === "Formatted SQL")?.value ?? "";
+          const dialect = String(args.dialect ?? "PostgreSQL").toLowerCase();
+          const { format } = await import("sql-formatter");
+          const dialectMap: Record<string, string> = {
+            postgresql: "postgresql",
+            postgres: "postgresql",
+            mysql: "mysql",
+            sqlite: "sqlite",
+            sqlserver: "transactsql",
+            tsql: "transactsql",
+            "sql server": "transactsql",
+          };
+          const lang = dialectMap[dialect] || "sql";
+          outputText = format(sql, { language: lang as any, tabWidth: 2 });
           break;
         }
 
@@ -545,6 +580,20 @@ export function createMcpServer(cliKey?: string) {
 
         case "codestation_json_schema": {
           outputText = generateJsonSchema(String(args.json ?? ""));
+          break;
+        }
+
+        case "codestation_json_to_typescript": {
+          const json = String(args.json ?? "");
+          const rootName = args.rootName ? String(args.rootName) : "Root";
+          outputText = jsonToTypescript(json, rootName);
+          break;
+        }
+
+        case "codestation_json_to_zod": {
+          const json = String(args.json ?? "");
+          const rootName = args.rootName ? String(args.rootName) : "rootSchema";
+          outputText = jsonToZod(json, rootName);
           break;
         }
 

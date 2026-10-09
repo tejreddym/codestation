@@ -6,18 +6,58 @@
 
 ---
 
-## Quick Start
+## 1-Click Auto Setup
 
-You can run `codestation-mcp` instantly without installation using `npx`:
+Automatically configure **Claude Desktop**, **Cursor IDE**, and **Windsurf** in 1 click:
+
+```bash
+# With Pro license
+npx -y codestation-mcp setup --key CS-PRO-YOUR-KEY
+
+# Or Free Tier
+npx -y codestation-mcp setup
+```
+
+---
+
+## Terminal Developer CLI Subcommands
+
+`codestation-mcp` is also a dual-purpose terminal Swiss-Army knife:
+
+```bash
+# Decode & inspect JWT tokens
+npx codestation-mcp jwt <token>
+
+# Format SQL queries (Postgres, MySQL, SQLite, SQL Server)
+npx codestation-mcp sql "SELECT * FROM users"
+
+# Explain Cron expression & next 5 runtimes
+npx codestation-mcp cron "0 9 * * 1-5"
+
+# Generate TypeScript interfaces from JSON
+npx codestation-mcp ts '{"id":1,"name":"Ada"}' User
+
+# Generate Zod validation schema from JSON
+npx codestation-mcp zod '{"id":1,"name":"Ada"}'
+
+# Hash string with SHA-256 / SHA-512 / MD5 / CRC32
+npx codestation-mcp hash "secret" --alg sha256
+```
+
+---
+
+## Quick Start (Stdio MCP Server)
+
+You can run `codestation-mcp` as an MCP server using `npx`:
 
 ```bash
 npx -y codestation-mcp
 ```
 
-Or pass your Pro license key to unlock all premium tools:
+Or with your Pro license key:
 
 ```bash
-npx -y codestation-mcp --key cs_pro_YOUR_KEY
+npx -y codestation-mcp --key CS-PRO-YOUR-KEY
 ```
 
 ---

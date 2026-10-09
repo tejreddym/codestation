@@ -17,18 +17,35 @@
 
 ## Usage
 
-### Quick Run
+### 1-Click Auto Setup (Claude Desktop, Cursor & Windsurf)
+```bash
+npx codestation-mcp setup --key CS-PRO-YOURKEY
+```
+
+### Quick Run (MCP Server Mode)
 ```bash
 npx codestation-mcp
 ```
 
-### With Pro License
+### Terminal CLI Subcommands
 ```bash
-npx codestation-mcp --key CS-PRO-YOURKEY
-```
-Or via environment variable:
-```bash
-export CODESTATION_LICENSE_KEY=CS-PRO-YOURKEY
+# Decode JWT token
+npx codestation-mcp jwt <token>
+
+# Format SQL query
+npx codestation-mcp sql "SELECT * FROM users"
+
+# Explain Cron expression & next 5 runtimes
+npx codestation-mcp cron "0 9 * * 1-5"
+
+# Generate TypeScript interfaces from JSON
+npx codestation-mcp ts '{"id":1,"name":"Ada"}' User
+
+# Generate Zod validation schema from JSON
+npx codestation-mcp zod '{"id":1,"name":"Ada"}'
+
+# Hash string with SHA-256
+npx codestation-mcp hash "text" --alg sha256
 ```
 
 ---

@@ -5,13 +5,36 @@ import Link from "next/link";
 
 export const metadata = metadataForPage(
   "/docs",
-  "Documentation — Code Station MCP, AI Setups & Developer Tools",
-  "Complete guide to Code Station Local MCP server on npm, 1-click copy-pastable AI assistant configurations for Claude, Cursor, and Windsurf, plus system prompts."
+  "Documentation — Code Station MCP, CLI Subcommands & AI Integration",
+  "Complete guide to Code Station Local MCP server on npm, 1-click auto setup for Claude & Cursor, dual-purpose terminal CLI, and TypeScript/Zod generators."
 );
 
-const NPX_FREE_CMD = `npx -y codestation-mcp`;
+const AUTO_SETUP_CMD = `npx -y codestation-mcp setup --key CS-PRO-YOUR-KEY`;
+const AUTO_SETUP_FREE_CMD = `npx -y codestation-mcp setup`;
 
+const NPX_FREE_CMD = `npx -y codestation-mcp`;
 const NPX_PRO_CMD = `npx -y codestation-mcp --key CS-PRO-YOUR-KEY`;
+
+const CLI_EXAMPLES = `# Decode & inspect a JWT token
+npx codestation-mcp jwt eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+# Format SQL query
+npx codestation-mcp sql "SELECT id, name FROM users WHERE active = true ORDER BY name;"
+
+# Explain Cron expression and calculate next 5 runtimes
+npx codestation-mcp cron "0 9 * * 1-5"
+
+# Generate TypeScript interfaces from JSON (pipe or pass argument)
+npx codestation-mcp ts '{"id":1,"name":"Ada","address":{"city":"London"}}' User
+
+# Generate production-ready Zod schema from JSON
+npx codestation-mcp zod '{"id":1,"name":"Ada","address":{"city":"London"}}' userSchema
+
+# Hash string with SHA-256 / SHA-512 / MD5
+npx codestation-mcp hash "secret-token" --alg sha256
+
+# Generate random UUIDs
+npx codestation-mcp uuid 3`;
 
 const CLAUDE_DESKTOP_CONFIG = `{
   "mcpServers": {
@@ -47,20 +70,21 @@ const AI_SYSTEM_PROMPT = `# Code Station MCP Assistant Guidelines
 You have access to the Code Station MCP developer server (codestation-mcp).
 Always prioritize calling these local, deterministic tools instead of calculating, parsing, or formatting in your internal reasoning:
 
-1. SQL Formatting & Execution: Call codestation_format_sql to format queries across PostgreSQL, MySQL, SQLite, and SQL Server. Use codestation_run_sql for in-memory execution.
-2. JWT Decoding: When inspecting JSON Web Tokens, call codestation_jwt_decode to inspect headers, claims, and expiry dates without guessing.
-3. Date, Time & Business Days: Use codestation_business_days to calculate working days excluding weekends/holidays. Use codestation_timezone_convert for accurate DST conversions.
-4. Cron Expressions: Use codestation_cron_explain to explain 5-field cron syntax or calculate next execution timestamps.
-5. JSON & YAML: Use codestation_format_json, codestation_json_to_yaml, codestation_yaml_to_json, and codestation_json_schema to infer Draft 7/2020-12 schemas.
-6. Hashing & Cryptography: Call codestation_hash (SHA-256, SHA-512, MD5, CRC-32) and codestation_hmac instead of fabricating digests.
-7. Regex Testing: Call codestation_regex_test to verify regular expressions and return match groups.
-8. Text Transformations: Use codestation_case_convert, codestation_text_diff, and codestation_uuid for RFC 4122 v4 UUIDs.`;
+1. JSON to TypeScript & Zod: Call codestation_json_to_typescript and codestation_json_to_zod to generate production-ready types and Zod schemas from API payloads or sample data.
+2. SQL Formatting & Execution: Call codestation_format_sql to format queries across PostgreSQL, MySQL, SQLite, and SQL Server. Use codestation_run_sql for in-memory execution.
+3. JWT Decoding: When inspecting JSON Web Tokens, call codestation_jwt_decode to inspect headers, claims, and expiry dates without guessing.
+4. Date, Time & Business Days: Use codestation_business_days to calculate working days excluding weekends/holidays. Use codestation_timezone_convert for accurate DST conversions.
+5. Cron Expressions: Use codestation_cron_explain to explain 5-field cron syntax or calculate next execution timestamps.
+6. JSON & YAML: Use codestation_format_json, codestation_json_to_yaml, codestation_yaml_to_json, and codestation_json_schema to infer Draft 7/2020-12 schemas.
+7. Hashing & Cryptography: Call codestation_hash (SHA-256, SHA-512, MD5, CRC-32) and codestation_hmac instead of fabricating digests.
+8. Regex Testing: Call codestation_regex_test to verify regular expressions and return match groups.
+9. Text Transformations: Use codestation_case_convert, codestation_text_diff, and codestation_uuid for RFC 4122 v4 UUIDs.`;
 
 export default function DocsPage() {
   return (
     <InformationalPage
       title="Code Station Documentation"
-      intro="Complete guide to the Local Model Context Protocol (MCP) server, 1-click copy-pastable AI configurations, and Pro licensing."
+      intro="Complete guide to the Local Model Context Protocol (MCP) server, 1-click auto setup, terminal developer CLI, and AI assistant configurations."
     >
       <section>
         <h2>1. Overview &amp; Philosophy</h2>
@@ -71,10 +95,12 @@ export default function DocsPage() {
         <ul>
           <li>
             <strong>Web Application:</strong> Over 250 browser-first developer tools running client-side with zero backend data persistence.
+            100% free and unlimited for all developers.
           </li>
           <li>
-            <strong>Local MCP Server (npm):</strong> An offline Model Context Protocol server (<code>codestation-mcp</code>) that connects
-            directly to AI assistants like Claude Desktop, Cursor, and Windsurf via standard I/O (<code>stdio</code>).
+            <strong>Local MCP Server &amp; Developer CLI (npm):</strong> An offline Model Context Protocol server and terminal Swiss-Army knife
+            (<code>codestation-mcp</code>) that connects directly to AI assistants like Claude Desktop, Cursor, and Windsurf, while also serving
+            as an everyday terminal utility.
           </li>
         </ul>
         <p>
@@ -86,22 +112,31 @@ export default function DocsPage() {
       </section>
 
       <section>
-        <h2>2. npm Quick Start</h2>
+        <h2>2. 1-Click Auto Setup (Claude, Cursor &amp; Windsurf)</h2>
         <p>
-          The Code Station MCP server is published on npm as <code>codestation-mcp</code>.
-          Run it instantly using <code>npx</code>:
+          No manual JSON editing required. Run this command in your terminal to automatically detect and configure
+          <strong> Claude Desktop</strong>, <strong>Cursor IDE</strong>, and <strong>Windsurf</strong> in one click:
         </p>
-        <CopySnippet code={NPX_FREE_CMD} title="Terminal (Free Tier)" language="bash" />
+        <CopySnippet code={AUTO_SETUP_CMD} title="Terminal (1-Click Pro Setup)" language="bash" />
         <p>
-          To unlock all Pro utilities (JWT decoding, SQL formatting &amp; execution, ER diagram generation, HMAC signatures, etc.), pass your license key:
+          Or run without a key to configure the Free Tier:
         </p>
-        <CopySnippet code={NPX_PRO_CMD} title="Terminal (Pro Tier)" language="bash" />
+        <CopySnippet code={AUTO_SETUP_FREE_CMD} title="Terminal (1-Click Free Setup)" language="bash" />
       </section>
 
       <section>
-        <h2>3. 1-Click Copy-Pastable AI Setups</h2>
+        <h2>3. Terminal Developer CLI Subcommands</h2>
         <p>
-          Click <strong>Copy</strong> on any of the configurations below to instantly paste into your AI assistant settings:
+          In addition to acting as an MCP server for AI models, <code>codestation-mcp</code> functions as a standalone
+          terminal tool for your everyday workflow:
+        </p>
+        <CopySnippet code={CLI_EXAMPLES} title="Terminal One-Liners" language="bash" />
+      </section>
+
+      <section>
+        <h2>4. Manual AI Assistant Configurations</h2>
+        <p>
+          If you prefer to configure your assistants manually, click <strong>Copy</strong> on any of the configuration blocks below:
         </p>
 
         <h3>Claude Desktop</h3>
@@ -134,7 +169,7 @@ export default function DocsPage() {
       </section>
 
       <section>
-        <h2>4. Copy-Pastable AI System Prompt &amp; Rules</h2>
+        <h2>5. Copy-Pastable AI System Prompt &amp; Rules</h2>
         <p>
           Paste this prompt into your assistant&apos;s Custom Instructions, <code>.cursorrules</code>, or <code>CLAUDE.md</code>.
           It instructs your AI model to automatically use Code Station tools instead of guessing math, hashes, or syntax:
@@ -143,7 +178,7 @@ export default function DocsPage() {
       </section>
 
       <section>
-        <h2>5. 100% Free &amp; Private Web Application</h2>
+        <h2>6. 100% Free &amp; Private Web Application</h2>
         <p>
           Every single one of the <strong>250+ developer tools</strong> on the Code Station web application
           is completely <strong>free, unrestricted, and unlimited</strong>.
@@ -153,17 +188,13 @@ export default function DocsPage() {
           <li><strong>Zero Tracking or Storage:</strong> All computation occurs purely inside your browser&apos;s client memory. Code, tokens, and data never touch a remote server.</li>
           <li><strong>No Login Required:</strong> Bookmark any tool and start building immediately without an account.</li>
         </ul>
-        <p>
-          <strong>What is Code Station Pro for?</strong> Pro is built specifically for <strong>developers using AI coding assistants</strong>.
-          It gives Cursor, Claude Desktop, Windsurf, and terminal agents instant, programmatic access to these deterministic engines locally over <code>stdio</code> via <code>codestation-mcp</code>, eliminating hallucinations and latency during AI-assisted development.
-        </p>
       </section>
 
       <section>
-        <h2>6. Anti-Key-Sharing Protection (Device Binding)</h2>
+        <h2>7. Anti-Key-Sharing Protection (Device Binding)</h2>
         <p>
           To prevent public sharing and resale of license keys while remaining flexible for developers, Code Station enforces
-          an automated, privacy-respecting <strong>device binding policy</strong>:
+          an automated, privacy-respecting <strong>device binding policy</strong> for Pro MCP users:
         </p>
         <ul>
           <li>
@@ -177,10 +208,6 @@ export default function DocsPage() {
             <strong>Automatic 30-Day Pruning:</strong> Devices inactive for over 30 days are automatically removed, freeing up slots for new machines without manual intervention.
           </li>
           <li>
-            <strong>Excess Device Blocking:</strong> If a 4th device attempts to activate with the key, verification returns <code>HTTP 403 Forbidden</code>:
-            <em>&ldquo;Device limit exceeded (maximum 3 active devices).&rdquo;</em>
-          </li>
-          <li>
             <strong>Self-Service Device Reset:</strong> If you upgrade laptops or wipe a hard drive, you can instantly unbind your existing devices
             using the <strong>Reset Active Devices</strong> button on the <Link href="/pro">Pro page</Link>.
           </li>
@@ -192,7 +219,7 @@ export default function DocsPage() {
       </section>
 
       <section>
-        <h2>7. Tool Catalog &amp; Capability Matrix</h2>
+        <h2>8. Tool Catalog &amp; Capability Matrix</h2>
         <table style={{ width: "100%", borderCollapse: "collapse", marginTop: "12px", fontSize: "14px" }}>
           <thead>
             <tr style={{ borderBottom: "2px solid var(--line)", textAlign: "left" }}>
@@ -202,6 +229,16 @@ export default function DocsPage() {
             </tr>
           </thead>
           <tbody>
+            <tr style={{ borderBottom: "1px solid var(--line)" }}>
+              <td style={{ padding: "8px 12px" }}><code>codestation_json_to_typescript</code></td>
+              <td style={{ padding: "8px 12px" }}><strong>Pro</strong></td>
+              <td style={{ padding: "8px 12px" }}>Generate clean, nested TypeScript interfaces and types from sample JSON</td>
+            </tr>
+            <tr style={{ borderBottom: "1px solid var(--line)" }}>
+              <td style={{ padding: "8px 12px" }}><code>codestation_json_to_zod</code></td>
+              <td style={{ padding: "8px 12px" }}><strong>Pro</strong></td>
+              <td style={{ padding: "8px 12px" }}>Generate production-ready Zod schema declarations and inferred types from JSON</td>
+            </tr>
             <tr style={{ borderBottom: "1px solid var(--line)" }}>
               <td style={{ padding: "8px 12px" }}><code>codestation_format_json</code></td>
               <td style={{ padding: "8px 12px" }}>Free</td>
@@ -302,7 +339,7 @@ export default function DocsPage() {
       </section>
 
       <section>
-        <h2>8. Pricing &amp; Plans</h2>
+        <h2>9. Pricing &amp; Plans</h2>
         <p>
           Code Station Pro is priced accessibly for developers:
         </p>
