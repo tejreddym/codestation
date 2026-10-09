@@ -1,0 +1,310 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  margin-top: 24px;
+}
+
+.pricingGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.planCard {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  box-shadow: var(--shadow);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.planCard:hover {
+  border-color: var(--line-strong);
+}
+
+.planCard.selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
+
+.planHeader {
+  margin-bottom: 20px;
+}
+
+.badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  margin-bottom: 12px;
+}
+
+.badgeAlt {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--yellow) 15%, transparent);
+  color: var(--yellow);
+  margin-bottom: 12px;
+}
+
+.planHeader h3 {
+  font-size: 20px;
+  margin: 0 0 10px;
+  color: var(--ink);
+}
+
+.priceContainer {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.priceInr {
+  font-size: 32px;
+  font-weight: 800;
+  color: var(--ink);
+  letter-spacing: -0.03em;
+}
+
+.pricePeriod {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.priceGlobal {
+  font-size: 12px;
+  color: var(--secondary);
+  margin-top: 4px;
+}
+
+.featuresList {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-size: 13.5px;
+  color: var(--secondary);
+  line-height: 1.4;
+}
+
+.selectBtn {
+  width: 100%;
+  padding: 10px;
+  border-radius: var(--radius-sm);
+  font-weight: 700;
+  font-size: 13px;
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--ink);
+  transition: all 0.15s;
+}
+
+.planCard.selected .selectBtn {
+  background: var(--action-bg);
+  color: var(--action-ink);
+  border-color: var(--action-bg);
+}
+
+.selectBtn:hover {
+  border-color: var(--accent);
+}
+
+/* Action Box */
+.actionBox {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  padding: 24px;
+  box-shadow: var(--shadow);
+}
+
+.boxHeader h4 {
+  margin: 0 0 8px;
+  font-size: 17px;
+  color: var(--ink);
+}
+
+.boxHeader p {
+  margin: 0 0 16px;
+  font-size: 13.5px;
+  color: var(--secondary);
+  line-height: 1.5;
+}
+
+.checkoutAction {
+  margin-bottom: 16px;
+}
+
+.generateButton {
+  background: var(--accent);
+  color: white;
+  border: 1px solid var(--accent);
+  padding: 12px 24px;
+  border-radius: var(--radius-sm);
+  font-weight: 700;
+  font-size: 14px;
+  transition: opacity 0.15s, transform 0.1s;
+}
+
+.generateButton:hover:not(:disabled) {
+  opacity: 0.95;
+  transform: translateY(-1px);
+}
+
+.generateButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.generatedKeyBox {
+  margin-top: 20px;
+  padding: 18px;
+  border: 1px solid var(--green);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--green) 8%, var(--surface));
+}
+
+.keyNotice {
+  font-size: 13px;
+  color: var(--green);
+  margin-bottom: 12px;
+}
+
+.keyDisplay {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.keyDisplay code {
+  flex: 1;
+  font-size: 18px;
+  font-weight: 700;
+  padding: 10px 14px;
+  background: var(--code);
+  color: var(--code-ink);
+  border-radius: var(--radius-sm);
+  letter-spacing: 0.05em;
+  user-select: all;
+}
+
+.copyBtn {
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  color: var(--ink);
+  font-weight: 700;
+  padding: 10px 16px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.copyBtn:hover {
+  border-color: var(--accent);
+}
+
+.expiryInfo {
+  font-size: 12.5px;
+  color: var(--secondary);
+  margin-bottom: 16px;
+}
+
+.cliSnippet {
+  margin-top: 14px;
+}
+
+.cliSnippet label {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+.cliSnippet pre {
+  margin: 0;
+  padding: 12px;
+  background: var(--code);
+  color: var(--code-ink);
+  border-radius: var(--radius-sm);
+  font-size: 12.5px;
+  overflow-x: auto;
+}
+
+/* Verifier Form */
+.verifyForm {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.inputField {
+  flex: 1;
+  padding: 10px 14px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--ink);
+  font-family: monospace;
+  font-size: 14px;
+}
+
+.verifyBtn {
+  background: var(--surface-alt);
+  color: var(--ink);
+  border: 1px solid var(--line-strong);
+  padding: 10px 20px;
+  border-radius: var(--radius-sm);
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.verifyBtn:hover {
+  border-color: var(--accent);
+}
+
+.resultBanner {
+  margin-top: 16px;
+  padding: 14px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+}
+
+.resultBanner.valid {
+  background: color-mix(in srgb, var(--green) 10%, var(--surface));
+  border: 1px solid var(--green);
+  color: var(--green);
+}
+
+.resultBanner.invalid {
+  background: color-mix(in srgb, var(--red) 10%, var(--surface));
+  border: 1px solid var(--red);
+  color: var(--red);
+}
+
+.resultBanner p {
+  margin: 4px 0 6px;
+  color: var(--secondary);
+}
+
+.resultBanner small {
+  display: block;
+  color: var(--muted);
+}

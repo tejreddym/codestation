@@ -8,6 +8,13 @@
 - **100% Privacy**: Code and payloads remain in local device memory and never hit external servers.
 - **Zero Hallucinations**: Gives AI models access to exact timestamp conversions, business day arithmetic, JWT payload inspections, SQL formatting, and cryptographic hashes without hallucinating mathematical or date edge cases.
 
+## Architecture & Security (Login-Free + One-Way Hashing)
+
+- **Login-Free:** Users do not need an account, password, or OAuth sign-in. A cryptographically random license key (`CS-PRO-XXXX-XXXX-XXXX`) is generated directly upon payment.
+- **One-Way Hashing in Cloudflare KV:** The server never stores the raw plaintext key. Only a one-way **SHA-256** hash (`lic_${sha256(key)}`) is stored in Cloudflare KV alongside validity metadata (`status`, `plan`, `expiresAt`).
+- **Edge Verification:** Verification (`POST /api/v1/license/verify`) computes the SHA-256 digest of the presented key and does an exact O(1) hash lookup in Cloudflare KV.
+- **Offline Caching:** Validated keys are cached in `~/.codestation/license.json` for up to 30 days, permitting full offline usage.
+
 ## Usage
 
 ### Quick Run

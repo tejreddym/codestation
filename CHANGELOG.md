@@ -5,8 +5,12 @@
 - Built `codestation-mcp` CLI supporting the Model Context Protocol (MCP) over `stdio`.
 - Exposes 20 core tools directly to AI assistants (Claude Desktop, Cursor, Antigravity) running locally with zero network latency and 100% privacy.
 - Introduced dual-tier model: Free tier with unlimited standard tools, and Pro tier priced at ₹199/month (or ₹999 lifetime) in India, $2.99/month (or $19 lifetime) globally.
+- Implemented **login-free** purchase architecture: users receive an instant cryptographic key (`CS-PRO-XXXX-XXXX-XXXX`) without passwords or accounts.
+- Security: Raw keys are never stored on the server; only a **one-way SHA-256 hash** is saved in Cloudflare KV alongside validity and expiry metadata.
+- Added API endpoints: `POST /api/v1/license/verify` and `POST /api/v1/license/create`.
+- Added dedicated login-free upgrade page at `/pro` with interactive key generation and status verifier.
 - Implemented offline-first license verification caching in `~/.codestation/license.json` with fallback grace modes.
-- Added automated unit test suite in `mcp/server.test.ts` and documentation in `docs/MCP_SERVER.md`.
+- Added automated unit test suites in `mcp/server.test.ts` and `lib/license/license.test.ts`, and documentation in `docs/MCP_SERVER.md`.
 
 ## Commit SITE_INDEXING runtime variable — 2026-10-08
 

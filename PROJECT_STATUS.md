@@ -5,8 +5,12 @@
 - Built and verified local `codestation-mcp` CLI using `@modelcontextprotocol/sdk` and `esbuild`.
 - Exposes 20 core tools (UUID, Base64, JSON, YAML, diff, case, hashes, HMAC, JWT, SQL format, cron explain, timezone conversions, business days) over `stdio`.
 - Implemented Free tier + Pro licensing model: ₹199/month in India, $2.99/month globally.
+- Login-free architecture: users receive an instant key without accounts or passwords.
+- Cloudflare KV security: keys are stored exclusively as one-way SHA-256 hashes (`lic_${sha256(key)}`), keeping plaintext keys completely off the server.
+- Added API endpoints at `/api/v1/license/verify` and `/api/v1/license/create`.
+- Added interactive `/pro` page for instant license generation, checkout selection, and key verification.
 - Offline-first cached license validation with zero disruption to free tier tools.
-- Verification: unit tests pass in `mcp/server.test.ts`, JSON-RPC stdio protocol verified end-to-end, `npm run typecheck` clean.
+- Verification: unit tests pass in `mcp/server.test.ts` and `lib/license/license.test.ts`, JSON-RPC stdio protocol verified end-to-end, `npm run typecheck` clean.
 
 ## Opt-in advertising integration — 2026-10-08
 

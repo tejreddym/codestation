@@ -22,6 +22,12 @@
   "vars": {
     "SITE_INDEXING": "index"
   },
+  "kv_namespaces": [
+    {
+      "binding": "LICENSE_KV",
+      "id": "codestation_license_kv"
+    }
+  ],
   "observability": {
     "enabled": true
   }
