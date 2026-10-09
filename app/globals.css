@@ -405,3 +405,17 @@ input[type="checkbox"], input[type="radio"], input[type="range"] { accent-color:
 @media(max-width:360px){.nav{display:grid;grid-template-columns:1fr auto auto;gap:6px}.nav .brand{grid-column:1;grid-row:1;white-space:nowrap}.nav .mobile-nav-toggle{grid-column:2;grid-row:1}.nav .theme-switch{grid-column:3;grid-row:1}.nav>.launcher-button{width:100%;grid-row:2}.nav>.launcher-button:first-of-type{grid-column:1}.nav>.launcher-button:has(svg.lucide-search){grid-column:1}.nav>.launcher-button:has(svg.lucide-lightbulb){grid-column:2/4}.nav>.launcher-button:has(svg.lucide-lightbulb)::after{content:'Detect';font-size:12px}.nav>.launcher-button>span{display:inline;font-size:12px}.nav .nav-links{grid-column:1/-1;grid-row:3}.nav .theme-filter-defs{position:absolute}.nav>.launcher-button:has(svg.lucide-search){justify-content:center}}
 
 @media(max-width:600px){.tool-launcher>.actions{display:flex;gap:8px;margin:14px 0}.tool-launcher>.actions>.button{width:auto;flex:1;padding:8px;font-size:13px}.tool-launcher>.actions>a{flex-basis:100%;font-size:13px}.tool-launcher>p{font-size:13px;line-height:1.5}.tool-launcher textarea{min-height:96px}.tool-launcher .field-label{margin-top:12px}.tool-launcher .launcher-results button{padding:10px 4px}}
+
+/* Product Hunt badge responsive light & dark display */
+.footer-producthunt { margin-top: 18px; display: block; }
+.ph-badge-link { display: inline-block; line-height: 0; vertical-align: middle; border-radius: 10px; transition: opacity .15s ease, transform .15s ease; }
+.ph-badge-link:hover { opacity: .92; transform: translateY(-1px); }
+.ph-badge-img { display: block; max-width: 100%; height: auto; }
+.ph-badge-light-wrap { display: inline-block; }
+.ph-badge-dark-wrap { display: none; }
+[data-theme="dark"] .ph-badge-light-wrap { display: none !important; }
+[data-theme="dark"] .ph-badge-dark-wrap { display: inline-block !important; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .ph-badge-light-wrap { display: none; }
+  :root:not([data-theme="light"]) .ph-badge-dark-wrap { display: inline-block; }
+}
