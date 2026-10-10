@@ -30,7 +30,8 @@ describe("homepage discovery contracts", () => {
     expect(links.map(link => link.getAttribute("href"))).toEqual(stations.map(station => station.route));
     links.forEach((link, i) => expect(link.textContent).toContain(`${stations[i].toolCount} available tools`));
     expect(directory.getByText("Pending — not yet available or included in counts.")).toBeTruthy();
-    expect(links.some(link => link.getAttribute("href")?.includes("math"))).toBe(false);
+    expect(links.some(link => link.getAttribute("href")?.includes("hardware"))).toBe(false);
+    expect(links.some(link => link.getAttribute("href")?.includes("developer-math"))).toBe(true);
   });
   it("links all three illustrative previews to existing canonical tools", () => {
     render(<HomePage />);

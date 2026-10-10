@@ -1,0 +1,240 @@
+.container {
+  padding: 24px 0 48px;
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+
+.header {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-alt);
+}
+
+.header h2 {
+  margin: 0 0 6px;
+  font-size: 20px;
+  color: var(--ink);
+  letter-spacing: -0.02em;
+}
+
+.header p {
+  margin: 0;
+  font-size: 13.5px;
+  color: var(--secondary);
+  line-height: 1.5;
+}
+
+.body {
+  padding: 24px;
+}
+
+.formGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.hint {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.dropzone {
+  border: 2px dashed var(--line-strong);
+  border-radius: var(--radius-sm);
+  padding: 32px 20px;
+  text-align: center;
+  background: var(--surface-alt);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.dropzone:hover {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 5%, var(--surface-alt));
+}
+
+.dropzoneText {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 4px;
+}
+
+.dropzoneSub {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.fileInput {
+  display: none;
+}
+
+.fileList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.fileItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+}
+
+.fileName {
+  font-weight: 700;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 380px;
+}
+
+.fileSize {
+  color: var(--muted);
+  font-size: 12px;
+  margin-left: 8px;
+}
+
+.removeBtn {
+  background: transparent;
+  border: none;
+  color: var(--red);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 8px;
+}
+
+.removeBtn:hover {
+  text-decoration: underline;
+}
+
+.input,
+.select {
+  padding: 10px 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 14px;
+}
+
+.input:focus,
+.select:focus {
+  outline: 2px solid var(--focus);
+  border-color: var(--focus);
+}
+
+.actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-top: 10px;
+}
+
+.primaryBtn {
+  background: var(--action-bg, #d9f975);
+  color: var(--action-ink, #151713);
+  border: 1.5px solid var(--line-strong);
+  box-shadow: var(--shadow-tactile);
+  padding: 11px 24px;
+  border-radius: var(--radius-sm);
+  font-weight: 800;
+  font-size: 14px;
+  cursor: pointer;
+  transition: transform 0.1s, opacity 0.15s;
+}
+
+.primaryBtn:hover:not(:disabled) {
+  opacity: 0.94;
+  transform: translateY(-1px);
+}
+
+.primaryBtn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.resultBox {
+  margin-top: 24px;
+  padding: 18px 20px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+  background: var(--surface-alt);
+}
+
+.successTitle {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--green);
+  margin-bottom: 8px;
+}
+
+.metaGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.metaItem {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+}
+
+.metaLabel {
+  font-size: 11px;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+}
+
+.metaValue {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+  word-break: break-word;
+}
+
+.errorBanner {
+  background: color-mix(in srgb, var(--red) 12%, var(--surface));
+  border: 1px solid var(--red);
+  color: var(--red);
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 700;
+}

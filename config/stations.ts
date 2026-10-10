@@ -24,9 +24,15 @@ const localStations: Record<string, { description: string; related: string[]; sh
   Markdown: { description: "Format, preview, convert, inspect, and generate Markdown locally.", related: ["json-data", "text"] },
   "Color & CSS": { description: "Convert colors, check text contrast, and generate editable CSS visuals locally in your browser.", related: ["image", "web", "text"] },
   Converters: { description: "Discover canonical browser-local conversion tools by format family, without duplicating their owning stations.", related: ["json-data", "encoding", "image", "spreadsheet", "markdown", "color-css", "date-time", "text", "sql-database", "api"] },
+  PDF: { description: "Merge, split, rotate, convert, and inspect PDF documents locally in your browser with zero server uploads.", related: ["image", "spreadsheet", "text"] },
+  "QR & Barcode": { description: "Generate and scan custom QR codes, standard barcodes, and digital signatures locally in your browser.", related: ["web", "image", "security"] },
+  "Code Generation": { description: "Generate TypeScript types, Zod schemas, Go structs, Python Pydantic models, Rust Serde structs, and React JSX components locally.", related: ["json-data", "sql-database", "web"] },
+  "Network & DevOps": { description: "Calculate CIDR subnets, convert IPv4/IPv6, decode SSL certificates, generate Dockerfiles, and compose configurations locally.", related: ["security", "web", "api"] },
+  "Frontend & CSS": { description: "Build and preview CSS Grid, Flexbox layouts, keyframe animations, glassmorphism, clip-paths, and custom scrollbars visually.", related: ["color-css", "web", "image"] },
+  "Developer Math": { description: "Inspect IEEE-754 floats, test bitwise operators, compute arbitrary-precision BigInts, and perform matrix operations locally.", related: ["encoding", "security", "numeric"] },
 };
 /** Explicitly implemented stations are the only public station destinations. */
-const implementedStationNames = ["JSON & Data", "Encoding", "Security", "Regex", "Date & Time", "Text", "Cron", "SQL & Database", "Web", "API", "Image", "Spreadsheet", "Markdown", "Color & CSS", "Converters"] as const;
+const implementedStationNames = ["JSON & Data", "Encoding", "Security", "Regex", "Date & Time", "Text", "Cron", "SQL & Database", "Web", "API", "Image", "Spreadsheet", "Markdown", "Color & CSS", "Converters", "PDF", "QR & Barcode", "Code Generation", "Network & DevOps", "Frontend & CSS", "Developer Math"] as const;
 const canonicalRoutes: Record<string, string> = Object.fromEntries(implementedStationNames.map(name => [name, `/stations/${stationId(name)}`]));
 const unique = (ids: readonly string[]) => [...new Set(ids)];
 

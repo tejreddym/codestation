@@ -1,0 +1,235 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  width: 100%;
+}
+
+.playgroundGrid {
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  gap: 1.5rem;
+}
+
+@media (max-width: 900px) {
+  .playgroundGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.controlsPanel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.panelTitle {
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--foreground-muted);
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.5rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.field label {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--foreground-muted);
+  display: flex;
+  justify-content: space-between;
+}
+
+.input,
+.select {
+  background: var(--canvas);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  color: var(--foreground);
+}
+
+.slider {
+  width: 100%;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.previewSection {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.previewCanvas {
+  background: var(--canvas);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  min-height: 280px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.gradientBackdrop {
+  background: linear-gradient(135deg, #6366f1 0%, #ec4899 50%, #f59e0b 100%);
+  min-height: 280px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  position: relative;
+}
+
+.codePanel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.codeHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.codeTitle {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--foreground-muted);
+}
+
+.codeBox {
+  background: var(--canvas);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.75rem;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.825rem;
+  line-height: 1.45;
+  color: var(--foreground);
+  white-space: pre-wrap;
+  word-break: break-all;
+  overflow: auto;
+  max-height: 260px;
+}
+
+.actionButton {
+  background: var(--surface-hover);
+  border: 1px solid var(--border);
+  color: var(--foreground);
+  padding: 0.35rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.actionButton:hover {
+  background: var(--action-bg);
+  color: var(--foreground-contrast, #fff);
+  border-color: var(--accent);
+}
+
+.chipGroup {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.chip {
+  background: var(--canvas);
+  border: 1px solid var(--border);
+  color: var(--foreground);
+  padding: 0.3rem 0.65rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.chipActive {
+  background: var(--accent);
+  color: var(--accent-contrast, #000);
+  border-color: var(--accent);
+}
+
+.gridItem {
+  background: rgba(99, 102, 241, 0.15);
+  border: 1px dashed #6366f1;
+  color: var(--foreground);
+  padding: 1rem;
+  border-radius: 6px;
+  text-align: center;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.flexItem {
+  background: var(--accent);
+  color: var(--accent-contrast, #000);
+  padding: 1rem 1.5rem;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  min-width: 60px;
+  text-align: center;
+}
+
+.animatedBox {
+  width: 90px;
+  height: 90px;
+  background: var(--accent);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent-contrast, #000);
+  font-weight: 700;
+}
+
+.clippedBox {
+  width: 180px;
+  height: 180px;
+  background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 600;
+}
+
+.scrollBox {
+  width: 100%;
+  max-width: 360px;
+  height: 160px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 1rem;
+  overflow-y: scroll;
+  font-size: 0.85rem;
+  line-height: 1.5;
+}

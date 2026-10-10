@@ -17,9 +17,38 @@ import { markdownTools, type MarkdownToolId } from "./markdown-tools";
 import { colorTools, type ColorToolId } from "./color-tools";
 import { numericTools, type NumericToolId } from "./numeric-tools";
 import { extendedTools, type ExtendedToolId } from "./extended-tools";
+import { pdfTools, type PdfToolId } from "./pdf-tools";
+import { qrBarcodeTools, type QrBarcodeToolId } from "./qr-barcode-tools";
+import { codeTools, type CodeToolId } from "./code-tools";
+import { networkTools, type NetworkToolId } from "./network-tools";
+import { cssPlaygroundTools, type CssPlaygroundToolId } from "./css-playground-tools";
+import { devMathTools, type DevMathToolId } from "./dev-math-tools";
 
 /** Includes the legacy catalog plus typed station metadata; no browser code. */
-export type RegisteredToolId = ToolId | DateTimeToolId | JsonDataToolId | EncodingToolId | SecurityToolId | RegexToolId | TextToolId | CronToolId | SqlToolId | WebToolId | ApiToolId | ImageToolId | SpreadsheetToolId | MarkdownToolId | ColorToolId | NumericToolId | ExtendedToolId;
+export type RegisteredToolId =
+  | ToolId
+  | DateTimeToolId
+  | JsonDataToolId
+  | EncodingToolId
+  | SecurityToolId
+  | RegexToolId
+  | TextToolId
+  | CronToolId
+  | SqlToolId
+  | WebToolId
+  | ApiToolId
+  | ImageToolId
+  | SpreadsheetToolId
+  | MarkdownToolId
+  | ColorToolId
+  | NumericToolId
+  | ExtendedToolId
+  | PdfToolId
+  | QrBarcodeToolId
+  | CodeToolId
+  | NetworkToolId
+  | CssPlaygroundToolId
+  | DevMathToolId;
 export type ToolDefinition = { id: RegisteredToolId; slug: string; name: string; description: string; category: string; keywords: readonly string[]; featured?: boolean; pairId?: string; direction?: "forward" | "reverse"; pairedTool?: RegisteredToolId; inputFormat?: string; outputFormat?: string; inputType?: string; outputType?: string; dataContract?: DataToolContract; encodingContract?: EncodingToolContract; securityContract?: SecurityToolContract; regexContract?: RegexToolContract; dateTimeContract?: DateTimeToolContract; textContract?: TextToolContract; cronContract?: CronToolContract; sqlContract?: SqlToolContract; webContract?: WebToolContract; apiContract?: ApiToolContract; localContract?: LocalContract; relatedTools?: readonly string[]; seo?: { title?: string; description?: string }; };
 
 export const tools: ToolDefinition[] = [
@@ -39,6 +68,12 @@ export const tools: ToolDefinition[] = [
   ...colorTools,
   ...numericTools,
   ...(extendedTools as unknown as ToolDefinition[]),
+  ...(pdfTools as unknown as ToolDefinition[]),
+  ...(qrBarcodeTools as unknown as ToolDefinition[]),
+  ...(codeTools as unknown as ToolDefinition[]),
+  ...(networkTools as unknown as ToolDefinition[]),
+  ...(cssPlaygroundTools as unknown as ToolDefinition[]),
+  ...(devMathTools as unknown as ToolDefinition[]),
 ];
 
 export function getTool(slug: string) { return tools.find((tool) => tool.slug === slug); }

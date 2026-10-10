@@ -1,6 +1,45 @@
 # TODO
 
-## Advertising integration — 2026-10-08
+## Universal Utility Expansion (Phases 1-5) — 2026-10-10
+
+- [x] **Phase 1: Mass Traffic Anchors (PDF & QR/Barcode Suite)**
+  - [x] Client-side PDF tools (`pdf-merge`, `pdf-split`, `pdf-rotate`, `pdf-page-delete`, `pdf-page-extract`) using `pdf-lib` with 100% in-browser security.
+  - [x] QR code generator (URL, text, WiFi, vCard), live camera/image scanner with `jsqr`, and Barcode generator (Code128, EAN13).
+  - [x] Registered `/stations/pdf` and `/stations/qr-barcode` with full search and metadata.
+- [x] **Phase 2: Code Generation Powerhouse**
+  - [x] High-precision converters: JSON to TypeScript, Zod schema, Go Struct, Python Pydantic v2, Rust Serde struct.
+  - [x] SQL DDL to TypeScript interface converter.
+  - [x] HTML to JSX component transformer.
+  - [x] SVG to React component converter with camelCase attributes.
+  - [x] Registered `/stations/code-generation` with live preview and syntax copying.
+- [x] **Phase 3: Network, DevOps & Cloud Engineering**
+  - [x] Subnet & CIDR calculator (broadcast, usable host range, netmask, wildcard).
+  - [x] IPv4 ⇄ IPv6 mapping (mapped, 6to4, hex).
+  - [x] X.509 certificate inspector (ASN.1 DER/PEM parser: validity, issuer, SANs, serial).
+  - [x] Common TCP/UDP port directory with instant protocol lookup.
+  - [x] Multi-language `.gitignore` builder with curated profiles.
+  - [x] Multi-stage `Dockerfile` wizard (Node, Python, Go, Rust).
+  - [x] `docker run` to `docker-compose.yml` converter.
+  - [x] SemVer calculator & version comparison engine.
+  - [x] Registered `/stations/network-devops`.
+- [x] **Phase 4: Frontend & Visual CSS Playground**
+  - [x] Interactive CSS Grid builder with template areas and tracks.
+  - [x] Visual Flexbox layout sandbox with live alignment and direction controls.
+  - [x] Keyframe animation designer with cubic-bezier timing and preview.
+  - [x] Glassmorphism frosted-glass CSS generator.
+  - [x] Clip-path polygon generator with interactive coordinates.
+  - [x] Cross-browser custom scrollbar styling engine.
+  - [x] Registered `/stations/frontend-css`.
+- [x] **Phase 5: Technical Developer Math Station**
+  - [x] Multi-radix bitwise calculator with binary alignment.
+  - [x] IEEE-754 floating-point visualizer (32-bit single and 64-bit double precision).
+  - [x] Two's complement calculator with range and overflow analysis.
+  - [x] Arbitrary-precision BigInt arithmetic engine.
+  - [x] Matrix arithmetic (addition, subtraction, multiplication, determinant, transpose).
+  - [x] Number theory suite (GCD, LCM, prime factorization).
+  - [x] High-precision fraction ⇄ decimal converter.
+  - [x] Completed and activated `/stations/developer-math`.
+
 
 - [x] Add production-only, independently gated Adsterra Social Bar, Popunder,
   and one responsive Native Banner placement with stable `next/script` IDs,

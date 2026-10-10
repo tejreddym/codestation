@@ -40,7 +40,8 @@ describe("public XML sitemap", () => {
     const urls = entries.map(entry => entry.url);
     expect(urls.every(url => !new URL(url).search && !new URL(url).hash)).toBe(true);
     expect(urls.some(url => url.endsWith("/tools/timestamp-converter"))).toBe(false);
-    expect(urls.some(url => url.includes("/stations/developer-math"))).toBe(false);
+    expect(urls.some(url => url.includes("/stations/developer-math"))).toBe(true);
+    expect(urls.some(url => url.includes("/stations/hardware"))).toBe(false);
     expect(urls.every(url => !url.includes(".test//"))).toBe(true);
   });
 

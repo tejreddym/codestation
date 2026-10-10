@@ -1,6 +1,45 @@
 # Handoff
 
-## Opt-in advertising integration — 2026-10-08
+## Universal Utility Expansion (Phases 1-5) — 2026-10-10
+
+- Completed full implementation of the 5-phase expansion plan (`expansion_implementation_plan.md`):
+  - **Phase 1: PDF & QR/Barcode Suite** (`/stations/pdf`, `/stations/qr-barcode`):
+    - PDF Merge, Split, Rotate, Delete Pages, Extract Pages (`pdf-lib`, 100% in-browser, drag-and-drop UI).
+    - QR Generator (URL, WiFi, vCard, text), QR Scanner (`jsqr` camera/upload detection), Barcode Generator (Code128, EAN13).
+  - **Phase 2: Code Generation Powerhouse** (`/stations/code-generation`):
+    - JSON to TypeScript, Zod, Go Struct, Python Pydantic v2, Rust Serde.
+    - SQL DDL to TypeScript interfaces.
+    - HTML to JSX component transformer.
+    - SVG to React component converter.
+  - **Phase 3: Network, DevOps & Cloud Engineering** (`/stations/network-devops`):
+    - CIDR / Subnet calculator (network address, usable host ranges, broadcast, mask).
+    - IPv4 ⇄ IPv6 converter.
+    - X.509 certificate inspector (ASN.1 DER/PEM parser: validity, issuer, SANs, serial).
+    - Common ports directory with search.
+    - Curated `.gitignore` generator for major ecosystems.
+    - Multi-stage `Dockerfile` generator (Node, Python, Go, Rust).
+    - `docker run` to `docker-compose.yml` converter.
+    - SemVer comparator & bump calculator.
+  - **Phase 4: Frontend & Visual CSS Playground** (`/stations/frontend-css`):
+    - Visual CSS Grid generator with interactive track controls.
+    - Visual Flexbox playground with live controls and code export.
+    - CSS Keyframe animation builder with cubic-bezier timing.
+    - Glassmorphism frosted-glass CSS studio.
+    - CSS Clip-path polygon maker with interactive points.
+    - Cross-browser custom scrollbar generator.
+  - **Phase 5: Technical Developer Math Station** (`/stations/developer-math`):
+    - Multi-radix Bitwise calculator (AND, OR, XOR, NOT, shifts across 64-bit binaries).
+    - IEEE-754 floating-point visualizer (32-bit single, 64-bit double).
+    - Two's complement calculator with range and sign breakdown.
+    - Arbitrary-precision BigInt arithmetic engine.
+    - Matrix arithmetic (add, subtract, multiply, transpose, determinant).
+    - Number theory tools (GCD, LCM, prime factorization).
+    - High-precision fraction ⇄ decimal converter.
+- **Verification & Health**:
+  - `npm test -- --run`: 121 test files, 5,543 tests passed (0 failures).
+  - `npm run typecheck`: Clean pass with 0 errors.
+  - `npm run build`: Clean pass, all 383 static routes prerendered, offline asset manifest built.
+
 
 - Added `config/ads.ts`, `components/AdsterraGlobalScripts.tsx`, and
   `components/NativeAd.tsx` for the exact Social Bar, Popunder, and Native

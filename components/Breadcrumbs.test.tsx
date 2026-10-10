@@ -5,6 +5,8 @@ import ToolsPage from "@/app/tools/page";
 import ToolPage from "@/app/tools/[slug]/page";
 import { tools } from "@/config/tools";
 
+import { getStationByName } from "@/config/stations";
+
 vi.mock("@/components/ToolWorkspace", () => ({ default: () => null }));
 afterEach(cleanup);
 
@@ -30,7 +32,8 @@ describe("clickable breadcrumbs", () => {
 
   it.each(tools.map((tool) => [tool.slug, tool] as const))("links every segment on %s", async (slug, tool) => {
     render(await ToolPage({ params: Promise.resolve({ slug }) }));
-    const categoryRoute = tool.category === "API" ? "/stations/api" : tool.category === "Web" ? "/stations/web" : ["Image", "Spreadsheet", "Markdown"].includes(tool.category) ? `/stations/${tool.category.toLowerCase()}` : ["Color & CSS", "Converters"].includes(tool.category) ? `/stations/${tool.category.toLowerCase().replace(/ & /g, "-")}` : `/tools?category=${encodeURIComponent(tool.category)}`;
+    const station = getStationByName(tool.category);
+    const categoryRoute = tool.localContract && station ? station.route : tool.apiContract ? "/stations/api" : tool.webContract ? "/stations/web" : `/tools?category=${encodeURIComponent(tool.category)}`;
     checkBreadcrumbs([["Home", "/"], ["Tools", "/tools"], [tool.category, categoryRoute], [tool.name, `/tools/${slug}`]]);
   });
 });

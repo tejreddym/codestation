@@ -17,7 +17,37 @@ import { isMarkdownToolId } from "@/config/markdown-tools";
 import { isColorToolId } from "@/config/color-tools";
 import { isNumericToolId } from "@/config/numeric-contracts";
 import { isExtendedToolId } from "@/config/extended-tools";
+import { isPdfToolId } from "@/config/pdf-tools";
+import { isQrBarcodeToolId } from "@/config/qr-barcode-tools";
+import { isCodeToolId } from "@/config/code-tools";
+import { isNetworkToolId } from "@/config/network-tools";
+import { isCssPlaygroundToolId } from "@/config/css-playground-tools";
+import { isDevMathToolId } from "@/config/dev-math-tools";
 import type { RegisteredToolId } from "@/config/tools";
+
+const DevMathStation = dynamic(() => import("./DevMathStation"), {
+  loading: () => <p role="status">Loading Developer Math controls…</p>,
+});
+
+const CssPlaygroundStation = dynamic(() => import("./CssPlaygroundStation"), {
+  loading: () => <p role="status">Loading CSS playground controls…</p>,
+});
+
+const NetworkStation = dynamic(() => import("./NetworkStation"), {
+  loading: () => <p role="status">Loading Network &amp; DevOps controls…</p>,
+});
+
+const CodeGenStation = dynamic(() => import("./CodeGenStation"), {
+  loading: () => <p role="status">Loading Code Generation controls…</p>,
+});
+
+const PdfStation = dynamic(() => import("./PdfStation"), {
+  loading: () => <p role="status">Loading PDF controls…</p>,
+});
+
+const QrBarcodeStation = dynamic(() => import("./QrBarcodeStation"), {
+  loading: () => <p role="status">Loading QR &amp; Barcode controls…</p>,
+});
 
 const ExtendedStation = dynamic(() => import("./ExtendedStation"), {
   loading: () => <p role="status">Loading tool controls…</p>,
@@ -62,6 +92,12 @@ const NumericStation = dynamic(() => import("./NumericStation"), {
   loading: () => <p role="status">Loading numeric converter controls…</p>,
 });
 export default function ToolWorkspace({ toolId }: { toolId: RegisteredToolId }) {
+  if (isDevMathToolId(toolId)) return <DevMathStation key={toolId} toolId={toolId} />;
+  if (isCssPlaygroundToolId(toolId)) return <CssPlaygroundStation key={toolId} toolId={toolId} />;
+  if (isNetworkToolId(toolId)) return <NetworkStation key={toolId} toolId={toolId} />;
+  if (isCodeToolId(toolId)) return <CodeGenStation key={toolId} toolId={toolId} />;
+  if (isPdfToolId(toolId)) return <PdfStation key={toolId} toolId={toolId} />;
+  if (isQrBarcodeToolId(toolId)) return <QrBarcodeStation key={toolId} toolId={toolId} />;
   if (isExtendedToolId(toolId)) return <ExtendedStation key={toolId} toolId={toolId} />;
   if (isNumericToolId(toolId)) return <NumericStation key={toolId} toolId={toolId} />;
   if (isSpreadsheetToolId(toolId)) return <SpreadsheetStation key={toolId} toolId={toolId} />;

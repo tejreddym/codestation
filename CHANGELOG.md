@@ -1,5 +1,28 @@
 # Changelog
 
+## Code Station Universal Utility Expansion (Phases 1-5) — 2026-10-10
+
+- **Phase 1: Mass Traffic Anchors (PDF & QR/Barcode Suite)**:
+  - Added 5 local PDF manipulation tools (`pdf-merge`, `pdf-split`, `pdf-rotate`, `pdf-page-delete`, `pdf-page-extract`) powered by `pdf-lib` with 100% in-browser security, zero cloud telemetry, drag-and-drop page reorganization, and download management.
+  - Added 3 QR and Barcode tools (`qr-generator`, `qr-scanner`, `barcode-generator`) supporting URL, text, WiFi, and vCard types, PNG/SVG export, live canvas-based camera/upload scanning with `jsqr`, and Code128 / EAN13 barcode symbologies.
+  - Added dedicated `/stations/pdf` and `/stations/qr-barcode` station landing hubs.
+- **Phase 2: Code Generation Powerhouse**:
+  - Added 8 code generators: JSON to TypeScript, Zod schema, Go Struct, Python Pydantic v2, Rust Serde struct; SQL DDL table to TypeScript; HTML to JSX; SVG to React component.
+  - Added dedicated `/stations/code-generation` hub with real-time conversion and copy-ready syntax highlighting.
+- **Phase 3: Network, DevOps & Cloud Engineering**:
+  - Added 8 network and cloud tools: Subnet & CIDR calculator, IPv4 ⇄ IPv6 converter, X.509 certificate inspector (ASN.1 DER/PEM parser), TCP/UDP common port directory, `.gitignore` builder with curated multi-language templates, multi-stage `Dockerfile` generator, `docker run` to `docker-compose.yml` converter, and SemVer comparator.
+  - Added dedicated `/stations/network-devops` hub.
+- **Phase 4: Frontend & Visual CSS Playground**:
+  - Added 6 visual CSS utilities: interactive CSS Grid builder, Flexbox sandbox, CSS keyframe animation generator, frosted-glass Glassmorphism maker, Clip-path polygon generator, and cross-browser custom scrollbar styling studio.
+  - Added dedicated `/stations/frontend-css` hub.
+- **Phase 5: Technical Developer Math Station**:
+  - Added 7 developer math engines: Bitwise calculator (AND, OR, XOR, NOT, shifts across 64-bit binaries), IEEE-754 floating-point visualizer, Two's complement calculator, arbitrary-precision BigInt algebra, matrix math (addition, subtraction, multiplication, determinant, transpose), number theory (GCD, LCM, prime factorization), and fraction ⇄ decimal converter.
+  - Resolved and activated `/stations/developer-math` hub.
+- **System & Quality**:
+  - 121 Vitest test suites (5,543 tests) passing with 100% success rate.
+  - Next.js production build prerendering 383 static routes and generating offline bundle (168 assets, 5.8MB).
+  - TypeScript strict typecheck passing cleanly with 0 errors.
+
 ## Code Station MCP v1.2.0 & Killer Pro Suite — 2026-10-09
 
 - Published `codestation-mcp@1.2.0` to npm under `tejreddym`.

@@ -59,7 +59,7 @@ export default function HomePage() {
 
       <section className={styles.directory} id="categories" aria-labelledby="categories-title">
         <div className={styles.directoryIntro}><span className={styles.kicker}>THE STATION INDEX</span><h2 id="categories-title">Choose a station</h2><p>Different tasks.<br />A place for each.</p><span className={styles.indexCount}>{String(stations.length).padStart(2, "0")} stations <ArrowDown size={17} aria-hidden="true" /></span></div>
-        <div><div className={styles.stationList}>{stations.map(station => <Link className={styles.station} href={station.route} key={station.id}><StationMark large label={station.name} /><div><h3>{station.name}</h3><p>{station.description}</p><span className={styles.count}>{station.toolCount} available tools</span></div><ArrowUpRight className={styles.stationArrow} size={18} aria-hidden="true" /></Link>)}</div><p className={styles.pending}><strong>Developer Math</strong><span>Pending — not yet available or included in counts.</span></p></div>
+        <div><div className={styles.stationList}>{stations.map(station => <Link className={styles.station} href={station.route} key={station.id}><StationMark large label={station.name} /><div><h3>{station.name}</h3><p>{station.description}</p><span className={styles.count}>{station.toolCount} available tools</span></div><ArrowUpRight className={styles.stationArrow} size={18} aria-hidden="true" /></Link>)}</div><p className={styles.pending}><strong>Hardware &amp; IoT</strong><span>Pending — not yet available or included in counts.</span></p></div>
       </section>
 
       <section className={styles.proSection} aria-labelledby="pro-title">
