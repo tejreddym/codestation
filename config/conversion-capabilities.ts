@@ -73,6 +73,11 @@ export const conversionCapabilities: readonly ConversionCapability[] = [
   { family: "numeric-unit", source: "unit", target: "unit", route: "/tools/unit-converter", inputKind: "text", outputKind: "text", routeMode: "stable-numeric", discoveryCategory: "units-temperature" },
   { family: "numeric-temperature", source: "temperature", target: "temperature", route: "/tools/temperature-converter", inputKind: "text", outputKind: "text", routeMode: "stable-numeric", discoveryCategory: "units-temperature" },
   { family: "numeric-base", source: "number-base", target: "number-base", route: "/tools/number-base-converter", inputKind: "text", outputKind: "text", routeMode: "stable-numeric", discoveryCategory: "numbers" },
+  { family: "pdf", source: "images", target: "pdf", route: "/tools/images-to-pdf", inputKind: "file", outputKind: "file", mime: "application/pdf", extension: "pdf" },
+  { family: "network", source: "ipv4", target: "ipv6", route: "/tools/ipv4-to-ipv6", inputKind: "text", outputKind: "text" },
+  { family: "code", source: "html", target: "jsx", route: "/tools/html-to-jsx", inputKind: "text", outputKind: "text" },
+  { family: "code", source: "svg", target: "jsx", route: "/tools/svg-to-jsx", inputKind: "text", outputKind: "text" },
+  { family: "code", source: "docker-run", target: "docker-compose", route: "/tools/docker-run-to-compose", inputKind: "text", outputKind: "text" },
 ];
 
 export function capabilitiesFor(family: string, source?: string) { return conversionCapabilities.filter(capability => capability.family === family && (!source || capability.source === source)); }

@@ -8,9 +8,9 @@ import ToolPage, { generateMetadata } from "@/app/tools/[slug]/page";
 vi.mock("@/components/ToolWorkspace", () => ({ default: () => null }));
 afterEach(cleanup);
 
-it("registers exactly 6 PDF contracts", () => {
-  expect(pdfTools).toHaveLength(6);
-  expect(getStation("pdf")).toMatchObject({ route: "/stations/pdf", toolCount: 6 });
+it("registers exactly 7 PDF contracts", () => {
+  expect(pdfTools).toHaveLength(7);
+  expect(getStation("pdf")).toMatchObject({ route: "/stations/pdf", toolCount: 7 });
 });
 
 it.each(pdfTools)("$id public direct metadata/contract", async (tool) => {

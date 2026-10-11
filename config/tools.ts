@@ -19,6 +19,7 @@ import { numericTools, type NumericToolId } from "./numeric-tools";
 import { extendedTools, type ExtendedToolId } from "./extended-tools";
 import { pdfTools, type PdfToolId } from "./pdf-tools";
 import { qrBarcodeTools, type QrBarcodeToolId } from "./qr-barcode-tools";
+import { audioTools, type AudioToolId } from "./audio-tools";
 import { codeTools, type CodeToolId } from "./code-tools";
 import { networkTools, type NetworkToolId } from "./network-tools";
 import { cssPlaygroundTools, type CssPlaygroundToolId } from "./css-playground-tools";
@@ -45,6 +46,7 @@ export type RegisteredToolId =
   | ExtendedToolId
   | PdfToolId
   | QrBarcodeToolId
+  | AudioToolId
   | CodeToolId
   | NetworkToolId
   | CssPlaygroundToolId
@@ -70,6 +72,7 @@ export const tools: ToolDefinition[] = [
   ...(extendedTools as unknown as ToolDefinition[]),
   ...(pdfTools as unknown as ToolDefinition[]),
   ...(qrBarcodeTools as unknown as ToolDefinition[]),
+  ...(audioTools as unknown as ToolDefinition[]),
   ...(codeTools as unknown as ToolDefinition[]),
   ...(networkTools as unknown as ToolDefinition[]),
   ...(cssPlaygroundTools as unknown as ToolDefinition[]),

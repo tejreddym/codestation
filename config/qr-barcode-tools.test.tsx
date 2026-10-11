@@ -8,9 +8,9 @@ import ToolPage, { generateMetadata } from "@/app/tools/[slug]/page";
 vi.mock("@/components/ToolWorkspace", () => ({ default: () => null }));
 afterEach(cleanup);
 
-it("registers exactly 5 QR & Barcode contracts", () => {
-  expect(qrBarcodeTools).toHaveLength(5);
-  expect(getStation("qr-barcode")).toMatchObject({ route: "/stations/qr-barcode", toolCount: 5 });
+it("registers exactly 3 QR & Barcode contracts", () => {
+  expect(qrBarcodeTools).toHaveLength(3);
+  expect(getStation("qr-barcode")).toMatchObject({ route: "/stations/qr-barcode", toolCount: 3 });
 });
 
 it.each(qrBarcodeTools)("$id public direct metadata/contract", async (tool) => {

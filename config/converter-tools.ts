@@ -30,6 +30,9 @@ const categoryInfo: Record<string, Omit<ConverterCategory, "id" | "family">> = {
   "numeric-unit": { name: "Units & Temperature", description: "Convert bounded measurement and absolute-temperature values locally." },
   "numeric-temperature": { name: "Units & Temperature", description: "Convert bounded measurement and absolute-temperature values locally." },
   "numeric-base": { name: "Numbers", description: "Convert exact integer representations between bases 2–36." },
+  pdf: { name: "Documents & PDF", description: "Convert image files to PDF documents locally in your browser." },
+  code: { name: "Code & Markup", description: "Translate markup and configurations between HTML, SVG, React JSX, and Docker." },
+  network: { name: "Network", description: "Convert and translate IP addresses between IPv4 and IPv6." },
 };
 
 function categoryFor(family: string): ConverterCategory {

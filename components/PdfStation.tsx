@@ -46,6 +46,13 @@ export default function PdfStation({ toolId }: { toolId: PdfToolId }) {
   const [pageSize, setPageSize] = useState<"A4" | "Letter" | "FitImage">("A4");
   const [deleteInput, setDeleteInput] = useState("1");
 
+  // Signature pad state
+  const sigCanvasRef = useRef<HTMLCanvasElement>(null);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [penColor, setPenColor] = useState("#151713");
+  const [penWidth, setPenWidth] = useState(3);
+  const [hasSignature, setHasSignature] = useState(false);
+
   // Output / Feedback
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -141,6 +148,85 @@ export default function PdfStation({ toolId }: { toolId: PdfToolId }) {
     }
   }
 
+  // Signature pad drawing handlers
+  function startDrawing(e: React.PointerEvent<HTMLCanvasElement>) {
+    const canvas = sigCanvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    ctx.strokeStyle = penColor;
+    ctx.lineWidth = penWidth;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+
+    setIsDrawing(true);
+    setHasSignature(true);
+    canvas.setPointerCapture(e.pointerId);
+  }
+
+  function draw(e: React.PointerEvent<HTMLCanvasElement>) {
+    if (!isDrawing) return;
+    const canvas = sigCanvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    ctx.lineTo(x, y);
+    ctx.stroke();
+  }
+
+  function stopDrawing(e: React.PointerEvent<HTMLCanvasElement>) {
+    if (!isDrawing) return;
+    setIsDrawing(false);
+    const canvas = sigCanvasRef.current;
+    if (canvas) canvas.releasePointerCapture(e.pointerId);
+  }
+
+  function clearSignature() {
+    const canvas = sigCanvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
+    setHasSignature(false);
+  }
+
+  function downloadSignature(transparent = true) {
+    const canvas = sigCanvasRef.current;
+    if (!canvas) return;
+
+    if (transparent) {
+      const url = canvas.toDataURL("image/png");
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "digital_signature.png";
+      a.click();
+    } else {
+      const exportCanvas = document.createElement("canvas");
+      exportCanvas.width = canvas.width;
+      exportCanvas.height = canvas.height;
+      const ctx = exportCanvas.getContext("2d");
+      if (ctx) {
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(canvas, 0, 0);
+        const url = exportCanvas.toDataURL("image/png");
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "digital_signature_white.png";
+        a.click();
+      }
+    }
+  }
+
   const isMultiFile = toolId === "pdf-merge" || toolId === "images-to-pdf";
   const fileAccept = toolId === "images-to-pdf" ? "image/png,image/jpeg,image/webp,image/*" : ".pdf,application/pdf";
 
@@ -153,9 +239,76 @@ export default function PdfStation({ toolId }: { toolId: PdfToolId }) {
         </div>
 
         <div className={styles.body}>
-          <div className={styles.formGrid}>
-            {/* File dropzone */}
-            <div className={styles.field}>
+          {toolId === "signature-pad" ? (
+            <div className={styles.formGrid}>
+              <div style={{ display: "flex", gap: "16px", alignItems: "center", marginBottom: "8px" }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                  <label htmlFor="sig-pen-color" className={styles.label}>Ink Color</label>
+                  <input
+                    id="sig-pen-color"
+                    type="color"
+                    value={penColor}
+                    onChange={(e) => setPenColor(e.target.value)}
+                  />
+                </div>
+                <div className={styles.field} style={{ flexDirection: "row", alignItems: "center", gap: "8px" }}>
+                  <label htmlFor="pen-width-range" className={styles.label}>Stroke Width</label>
+                  <input
+                    id="pen-width-range"
+                    type="range"
+                    min="1"
+                    max="8"
+                    value={penWidth}
+                    onChange={(e) => setPenWidth(Number(e.target.value))}
+                  />
+                  <span style={{ fontSize: "12px", color: "var(--muted)" }}>{penWidth}px</span>
+                </div>
+              </div>
+
+              <div className={styles.canvasWrap}>
+                <canvas
+                  ref={sigCanvasRef}
+                  width={600}
+                  height={220}
+                  className={styles.signatureCanvas}
+                  onPointerDown={startDrawing}
+                  onPointerMove={draw}
+                  onPointerUp={stopDrawing}
+                  onPointerLeave={stopDrawing}
+                />
+              </div>
+
+              <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
+                <button
+                  type="button"
+                  className={styles.primaryBtn}
+                  onClick={() => downloadSignature(true)}
+                  disabled={!hasSignature}
+                >
+                  Download Transparent PNG
+                </button>
+                <button
+                  type="button"
+                  className={styles.secondaryBtn}
+                  onClick={() => downloadSignature(false)}
+                  disabled={!hasSignature}
+                >
+                  Download White Background PNG
+                </button>
+                <button
+                  type="button"
+                  className={styles.secondaryBtn}
+                  onClick={clearSignature}
+                  style={{ color: "var(--red)" }}
+                >
+                  Clear Canvas
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className={styles.formGrid}>
+              {/* File dropzone */}
+              <div className={styles.field}>
               <span className={styles.label}>
                 {isMultiFile ? "Upload Documents / Images" : "Upload Document"}
               </span>
@@ -370,7 +523,8 @@ export default function PdfStation({ toolId }: { toolId: PdfToolId }) {
                 </div>
               </div>
             )}
-          </div>
+            </div>
+          )}
         </div>
       </section>
     </div>

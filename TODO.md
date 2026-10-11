@@ -1,5 +1,13 @@
 # TODO
 
+## Station Architecture Reorganization & Converters Station Integration — 2026-10-11
+
+- [x] Create dedicated Audio Station (`/stations/audio`) with Web Audio API waveform visualizer and 16-bit PCM WAV exporter.
+- [x] Relocate `signature-pad` to PDF Station (`/stations/pdf`) with canvas pen controls and transparent/white PNG download.
+- [x] Streamline QR & Barcode Station (`/stations/qr-barcode`) to dedicated barcode/QR utilities.
+- [x] Register multi-station format converters (`images-to-pdf`, `ipv4-to-ipv6`, `html-to-jsx`, `svg-to-jsx`, `docker-run-to-compose`) into Converters Station (`/stations/converters`).
+- [x] Update station registry (22 stations), navigation, tests, and static builds.
+
 ## Universal Utility Expansion (Phases 1-5) — 2026-10-10
 
 - [x] **Phase 1: Mass Traffic Anchors (PDF & QR/Barcode Suite)**

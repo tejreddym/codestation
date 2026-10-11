@@ -7,6 +7,7 @@ export const pdfToolIds = [
   "images-to-pdf",
   "pdf-text-extractor",
   "pdf-page-deleter",
+  "signature-pad",
 ] as const;
 
 export type PdfToolId = (typeof pdfToolIds)[number];
@@ -117,6 +118,14 @@ export const pdfTools: readonly LocalDefinition<PdfToolId>[] = [
     ["Cleaned PDF file", "Remaining page count"],
     { pagesToDelete: "1" },
     ["Removes unwanted pages from a PDF document instantly."]
+  ),
+  define(
+    "signature-pad",
+    "Digital Signature Pad",
+    [],
+    ["Signature canvas", "Transparent PNG Download"],
+    {},
+    ["Draw your signature with mouse, stylus, or touch, and export a clean, transparent PNG for signing PDF documents and forms."]
   ),
 ];
 

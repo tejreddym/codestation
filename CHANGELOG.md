@@ -1,5 +1,27 @@
 # Changelog
 
+## Station Architecture Reorganization & Converters Station Integration — 2026-10-11
+
+- **Dedicated Audio Station**:
+  - Created `/stations/audio` station housing `audio-trimmer`.
+  - Built Web Audio API client engine with waveform peak calculation, precise second-level time formatting, and high-fidelity 16-bit stereo/mono PCM WAV encoder.
+  - Implemented interactive HTML5 canvas waveform visualizer, playback loop preview, and export controls.
+- **PDF Station Signature Pad**:
+  - Relocated `signature-pad` (Digital Signature Pad) from QR & Barcode to PDF Station (`/stations/pdf`).
+  - Added smooth canvas pen drawing, stroke width and color selectors, clear/undo actions, and transparent or white PNG exports.
+- **QR & Barcode Station Streamlining**:
+  - Streamlined `/stations/qr-barcode` to purely focus on QR Code Generator, QR Code Reader, and Linear Barcode Generator.
+- **Converters Station Integration**:
+  - Added format conversion capabilities across stations to `/stations/converters`:
+    - PDF family: `images-to-pdf`
+    - Network family: `ipv4-to-ipv6`
+    - Code family: `html-to-jsx`, `svg-to-jsx`, `docker-run-to-compose`
+  - Updated category definitions and conversion registry tests.
+- **Station Registry & Quality**:
+  - Updated `config/stations.ts` to 22 active stations.
+  - All 124 Vitest suites (5,552 tests) passing with 0 errors.
+  - TypeScript strict check clean; production Next.js build generating all 385 static routes.
+
 ## Code Station Universal Utility Expansion (Phases 1-5) — 2026-10-10
 
 - **Phase 1: Mass Traffic Anchors (PDF & QR/Barcode Suite)**:

@@ -238,3 +238,21 @@
   font-size: 13px;
   font-weight: 700;
 }
+
+.signatureCanvas {
+  width: 100%;
+  max-width: 600px;
+  height: 220px;
+  background: white;
+  border: 1px dashed var(--line);
+  border-radius: var(--radius-sm);
+  touch-action: none;
+  cursor: crosshair;
+}
+
+.canvasWrap {
+  display: flex;
+  justify-content: flex-start;
+  margin-bottom: 12px;
+}
+

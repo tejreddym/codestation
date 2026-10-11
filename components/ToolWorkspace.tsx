@@ -19,6 +19,7 @@ import { isNumericToolId } from "@/config/numeric-contracts";
 import { isExtendedToolId } from "@/config/extended-tools";
 import { isPdfToolId } from "@/config/pdf-tools";
 import { isQrBarcodeToolId } from "@/config/qr-barcode-tools";
+import { isAudioToolId } from "@/config/audio-tools";
 import { isCodeToolId } from "@/config/code-tools";
 import { isNetworkToolId } from "@/config/network-tools";
 import { isCssPlaygroundToolId } from "@/config/css-playground-tools";
@@ -47,6 +48,10 @@ const PdfStation = dynamic(() => import("./PdfStation"), {
 
 const QrBarcodeStation = dynamic(() => import("./QrBarcodeStation"), {
   loading: () => <p role="status">Loading QR &amp; Barcode controls…</p>,
+});
+
+const AudioStation = dynamic(() => import("./AudioStation"), {
+  loading: () => <p role="status">Loading Audio controls…</p>,
 });
 
 const ExtendedStation = dynamic(() => import("./ExtendedStation"), {
@@ -98,6 +103,7 @@ export default function ToolWorkspace({ toolId }: { toolId: RegisteredToolId }) 
   if (isCodeToolId(toolId)) return <CodeGenStation key={toolId} toolId={toolId} />;
   if (isPdfToolId(toolId)) return <PdfStation key={toolId} toolId={toolId} />;
   if (isQrBarcodeToolId(toolId)) return <QrBarcodeStation key={toolId} toolId={toolId} />;
+  if (isAudioToolId(toolId)) return <AudioStation key={toolId} toolId={toolId} />;
   if (isExtendedToolId(toolId)) return <ExtendedStation key={toolId} toolId={toolId} />;
   if (isNumericToolId(toolId)) return <NumericStation key={toolId} toolId={toolId} />;
   if (isSpreadsheetToolId(toolId)) return <SpreadsheetStation key={toolId} toolId={toolId} />;
