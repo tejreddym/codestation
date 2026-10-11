@@ -1,4 +1,26 @@
-import { ArrowRightLeft, Binary, Braces, CalendarDays, Clock3, Database, Globe2, Image, Palette, Regex, ShieldCheck, Table2, Type, Waypoints, type LucideIcon } from "lucide-react";
+import {
+  ArrowRightLeft,
+  Binary,
+  Braces,
+  Calculator,
+  CalendarDays,
+  Clock3,
+  Code2,
+  Database,
+  FileText,
+  Globe2,
+  Image,
+  Layout,
+  Network,
+  Palette,
+  QrCode,
+  Regex,
+  ShieldCheck,
+  Table2,
+  Type,
+  Waypoints,
+  type LucideIcon,
+} from "lucide-react";
 
 const stationIcons: Record<string, LucideIcon> = {
   "JSON & Data": Braces,
@@ -16,6 +38,12 @@ const stationIcons: Record<string, LucideIcon> = {
   Markdown: Type,
   "Color & CSS": Palette,
   Converters: ArrowRightLeft,
+  PDF: FileText,
+  "QR & Barcode": QrCode,
+  "Code Generation": Code2,
+  "Network & DevOps": Network,
+  "Frontend & CSS": Layout,
+  "Developer Math": Calculator,
 };
 
 export default function StationMark({ large = false, label }: { large?: boolean; label?: string }) {
