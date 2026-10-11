@@ -5,6 +5,7 @@ export const qrBarcodeToolIds = [
   "qr-code-reader",
   "barcode-generator",
   "signature-pad",
+  "audio-trimmer",
 ] as const;
 
 export type QrBarcodeToolId = (typeof qrBarcodeToolIds)[number];
@@ -83,6 +84,21 @@ export const qrBarcodeTools: readonly LocalDefinition<QrBarcodeToolId>[] = [
     ["Signature canvas", "Transparent PNG Download"],
     {},
     ["Draw your signature with mouse, stylus, or touch, and export a clean, transparent PNG."]
+  ),
+  define(
+    "audio-trimmer",
+    "Audio Trimmer & Cutter",
+    [
+      {
+        name: "file",
+        label: "Audio file",
+        control: "file",
+        accept: "audio/*,.mp3,.wav,.ogg,.m4a,.aac,.flac",
+      },
+    ],
+    ["Waveform visualization", "Audio playback preview", "Trimmed WAV Download"],
+    {},
+    ["Trim and slice audio clips locally in your browser with zero uploads. Perfect for ringtones, podcasts, and sound effects."]
   ),
 ];
 
