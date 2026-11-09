@@ -24,6 +24,9 @@ export function detectTools(input: string): Detection[] {
     try { JSON.parse(text); return [match("json-formatter", "Valid JSON: format it"), match("json-tree-viewer", "Valid JSON: explore its structure"), match("json-validator", "Valid JSON: validate it")]; }
     catch { return [match("json-validator", "Looks like JSON; check its syntax", "possible")]; }
   }
+  if (text.startsWith("H4sI") && text.length >= 12 && text.length % 4 === 0 && /^[A-Za-z0-9+/]+={0,2}$/.test(text)) {
+    return [match("gzip-decompressor", "Base64 Gzip archive; decompress it", "possible"), match("base64-decoder", "Base64 data; decode it", "possible")];
+  }
   if (text.length >= 12 && text.length % 4 === 0 && /^[A-Za-z0-9+/]+={0,2}$/.test(text)) {
     try { const decoded = atob(text); if (/^[\x09\x0a\x0d\x20-\x7e]+$/.test(decoded)) return [match("base64-decoder", "Possibly Base64-encoded text; confirm before decoding", "possible")]; } catch { /* Not strict Base64. */ }
   }

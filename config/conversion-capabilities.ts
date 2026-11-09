@@ -78,6 +78,8 @@ export const conversionCapabilities: readonly ConversionCapability[] = [
   { family: "code", source: "html", target: "jsx", route: "/tools/html-to-jsx", inputKind: "text", outputKind: "text" },
   { family: "code", source: "svg", target: "jsx", route: "/tools/svg-to-jsx", inputKind: "text", outputKind: "text" },
   { family: "code", source: "docker-run", target: "docker-compose", route: "/tools/docker-run-to-compose", inputKind: "text", outputKind: "text" },
+  { family: "compression", source: "raw", target: "gzip", route: "/tools/gzip-compressor", inputKind: "text", outputKind: "file", mime: "application/gzip", extension: "gz" },
+  { family: "compression", source: "gzip", target: "raw", route: "/tools/gzip-decompressor", inputKind: "file", outputKind: "text" },
 ];
 
 export function capabilitiesFor(family: string, source?: string) { return conversionCapabilities.filter(capability => capability.family === family && (!source || capability.source === source)); }

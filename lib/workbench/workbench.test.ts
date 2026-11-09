@@ -7,7 +7,7 @@ import {getTool} from '@/config/tools';
 import {runDataTool} from '@/lib/tools/json-data';
 describe('Smart Detection',()=>{
  it.each([['#D9F975','color-converter'],['#abcd','color-converter'],['550e8400-e29b-41d4-a716-446655440000','uuid-parser'],['https://example.com/a?b=2','url-parser'],['eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjMifQ.c2ln','jwt-decoder']])('routes %s without executing it',(value,slug)=>{expect(detectTools(value)).toEqual([expect.objectContaining({slug,confidence:'high'})]);expect(getTool(slug)).toBeTruthy();});
- it('leaves JSON ambiguous and malformed content nonautomatic',()=>{expect(detectTools('{"a":1}')).toHaveLength(3);expect(detectTools('{oops}')[0].confidence).toBe('possible');expect(detectTools('SGVsbG8gd29ybGQ=')[0]).toMatchObject({slug:'base64-decoder',confidence:'possible'});});
+ it('leaves JSON ambiguous and malformed content nonautomatic',()=>{expect(detectTools('{"a":1}')).toHaveLength(3);expect(detectTools('{oops}')[0].confidence).toBe('possible');expect(detectTools('SGVsbG8gd29ybGQ=')[0]).toMatchObject({slug:'base64-decoder',confidence:'possible'});expect(detectTools('H4sICAAAAAAA/w==')[0]).toMatchObject({slug:'gzip-decompressor',confidence:'possible'});});
  it.each(['#abcde','file:///etc/passwd','javascript:alert(1)','bad.jwt.token','ordinary words'])('does not auto-route %s',value=>expect(detectTools(value).every(m=>m.confidence==='possible')).toBe(true));
  it('handles empty and oversized input without truncation',()=>{expect(detectTools('  ')).toEqual([]);expect(()=>detectTools('x'.repeat(detectionLimit+1))).toThrow('200,000');});
 });

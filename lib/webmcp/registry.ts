@@ -16,13 +16,13 @@ let initialized = false;
 export const LIST_TOOLS_MCP: WebMcpTool = {
   name: "codestation_list_tools",
   description:
-    "Discover and search available Code Station utilities (380+ tools across 22 developer stations) executable in-browser.",
+    "Discover and search available Code Station utilities (385+ tools across 23 developer stations) executable in-browser.",
   inputSchema: {
     type: "object",
     properties: {
       category: {
         type: "string",
-        description: "Filter tools by station category (e.g. 'JSON & Data', 'Security', 'Encoding', 'Network & DevOps', 'Developer Math')",
+        description: "Filter tools by station category (e.g. 'JSON & Data', 'Security', 'Encoding', 'Compression', 'Network & DevOps', 'Developer Math')",
       },
       query: {
         type: "string",

@@ -33,6 +33,7 @@ const categoryInfo: Record<string, Omit<ConverterCategory, "id" | "family">> = {
   pdf: { name: "Documents & PDF", description: "Convert image files to PDF documents locally in your browser." },
   code: { name: "Code & Markup", description: "Translate markup and configurations between HTML, SVG, React JSX, and Docker." },
   network: { name: "Network", description: "Convert and translate IP addresses between IPv4 and IPv6." },
+  compression: { name: "Compression & Archives", description: "Compress and decompress files and streams locally in your browser." },
 };
 
 function categoryFor(family: string): ConverterCategory {

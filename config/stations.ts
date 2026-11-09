@@ -14,7 +14,7 @@ export interface StationDefinition {
 const stationId = (name: string) => name.toLowerCase().replace(/ & /g, "-").replace(/[^a-z0-9]+/g, "-");
 const localStations: Record<string, { description: string; related: string[]; shared?: string[] }> = {
   "JSON & Data": { description: "Format, validate, compare, transform, and inspect structured data locally in your browser.", related: ["encoding", "spreadsheet", "text"] },
-  Encoding: { description: "Encode, decode, inspect, and transform text and byte representations locally.", related: ["json-data", "security", "text"] },
+  Encoding: { description: "Encode, decode, inspect, and transform text and byte representations locally.", related: ["json-data", "security", "text", "compression"] },
   Security: { description: "Generate, hash, compare, and inspect security values locally with browser cryptography.", related: ["encoding", "regex", "date-time"] },
   Regex: { description: "Test, inspect, build, and transform regular expressions locally in your browser.", related: ["text", "security", "json-data"] },
   "Date & Time": { description: "Convert, compare, format, and inspect dates, times, timestamps, and timezones locally.", related: ["cron", "text", "encoding"] },
@@ -23,7 +23,7 @@ const localStations: Record<string, { description: string; related: string[]; sh
   Spreadsheet: { description: "View, inspect, clean, convert, and transform spreadsheet data locally in your browser.", related: ["json-data", "text"] },
   Markdown: { description: "Format, preview, convert, inspect, and generate Markdown locally.", related: ["json-data", "text"] },
   "Color & CSS": { description: "Convert colors, check text contrast, and generate editable CSS visuals locally in your browser.", related: ["image", "web", "text"] },
-  Converters: { description: "Discover canonical browser-local conversion tools by format family, without duplicating their owning stations.", related: ["json-data", "encoding", "image", "spreadsheet", "markdown", "color-css", "date-time", "text", "sql-database", "api"] },
+  Converters: { description: "Discover canonical browser-local conversion tools by format family, without duplicating their owning stations.", related: ["json-data", "encoding", "image", "spreadsheet", "markdown", "color-css", "date-time", "text", "sql-database", "api", "compression"] },
   PDF: { description: "Merge, split, rotate, convert, sign, and inspect PDF documents locally in your browser with zero server uploads.", related: ["image", "spreadsheet", "text"] },
   "QR & Barcode": { description: "Generate and scan custom QR codes and standard linear barcodes locally in your browser.", related: ["web", "image", "security"] },
   Audio: { description: "Trim, cut, inspect, and process audio waveforms locally in your browser with zero server uploads.", related: ["web", "image"] },

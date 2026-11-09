@@ -35,10 +35,10 @@ export default function HomePage() {
     } as any} />
     <div className={`shell ${styles.container}`}>
       <section className={styles.hero} data-searching={Boolean(query.trim())} aria-labelledby="home-title">
-        <div className={styles.eyebrow}><span aria-hidden="true">[</span> 380+ PRIVATE TOOLS · WEBMCP BROWSER AI PROTOCOL · 22 STATIONS <span aria-hidden="true">]</span></div>
+        <div className={styles.eyebrow}><span aria-hidden="true">[</span> 385+ PRIVATE TOOLS · WEBMCP BROWSER AI PROTOCOL · 23 STATIONS <span aria-hidden="true">]</span></div>
         <h1 id="home-title">Less friction.<br /><span>More building.</span></h1>
         <p className={styles.intro}>
-          Format, convert, generate, and inspect across 380+ private developer utilities.
+          Format, convert, generate, and inspect across 385+ private developer utilities.
           Featuring native <strong>WebMCP (<code>document.modelContext</code>)</strong> for in-page AI agent execution with 100% client-side privacy.
         </p>
         <div className={styles.heroFeaturePills}>
