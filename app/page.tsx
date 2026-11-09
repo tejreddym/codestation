@@ -9,6 +9,7 @@ import { searchTools } from "@/lib/tool-search";
 import PersonalTools from "@/components/PersonalTools";
 import NativeAd from "@/components/NativeAd";
 import StationMark from "@/components/StationMark";
+import ClipboardOmniTriage from "@/components/ClipboardOmniTriage";
 import { StationAssembly, DataPreview, ImagePreview, ColorPreview } from "@/components/HomeGraphics";
 import styles from "./Home.module.css";
 
@@ -35,10 +36,10 @@ export default function HomePage() {
     } as any} />
     <div className={`shell ${styles.container}`}>
       <section className={styles.hero} data-searching={Boolean(query.trim())} aria-labelledby="home-title">
-        <div className={styles.eyebrow}><span aria-hidden="true">[</span> 385+ PRIVATE TOOLS · WEBMCP BROWSER AI PROTOCOL · 23 STATIONS <span aria-hidden="true">]</span></div>
+        <div className={styles.eyebrow}><span aria-hidden="true">[</span> 395+ PRIVATE TOOLS · WEBMCP BROWSER AI PROTOCOL · 25 STATIONS <span aria-hidden="true">]</span></div>
         <h1 id="home-title">Less friction.<br /><span>More building.</span></h1>
         <p className={styles.intro}>
-          Format, convert, generate, and inspect across 385+ private developer utilities.
+          Format, convert, generate, and inspect across 395+ private developer utilities across 25 stations.
           Featuring native <strong>WebMCP (<code>document.modelContext</code>)</strong> for in-page AI agent execution with 100% client-side privacy.
         </p>
         <div className={styles.heroFeaturePills}>
@@ -47,12 +48,15 @@ export default function HomePage() {
             <strong>WebMCP Native</strong> (document.modelContext)
           </Link>
           <span className={styles.featurePill}>🔒 100% In-Browser Privacy</span>
+          <Link href="/stations/crypto-pki" className={styles.featurePill}>🔑 WebPKI &amp; Crypto</Link>
+          <Link href="/stations/ai-prompts" className={styles.featurePill}>✨ AI &amp; Prompts</Link>
           <Link href="/stations/pdf" className={styles.featurePill}>📄 Client PDF &amp; Sign</Link>
           <Link href="/stations/code-generation" className={styles.featurePill}>⚡ Code &amp; Type Gen</Link>
           <Link href="/stations/network-devops" className={styles.featurePill}>🌐 CIDR &amp; DevOps</Link>
           <Link href="/stations/developer-math" className={styles.featurePill}>🧮 Developer Math</Link>
           <Link href="/stations/compression" className={styles.featurePill}>📦 Compression &amp; ZIP</Link>
         </div>
+        <ClipboardOmniTriage />
         <label className={styles.search} htmlFor="global-tool-search"><Search size={21} aria-hidden="true" /><span className="sr-only">Search all tools</span><input id="global-tool-search" value={query} onChange={event => setQuery(event.target.value)} placeholder="Search tools, formats, and tasks…" aria-label="Search all tools" autoComplete="off" /></label>
         <p className={styles.searchHint}>{query.trim() ? `${matches.length} matching tools` : "Search the registry or browse a station below."}</p>
         <div className={styles.stage}><StationAssembly /><div className={styles.stageCaption} aria-hidden="true"><span>DIFFERENT PARTS. ONE WORKSPACE.</span><span>ASSEMBLED FOR THE EVERYDAY.</span></div></div>

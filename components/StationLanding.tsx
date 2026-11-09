@@ -30,6 +30,8 @@ const defaultNotices: Record<string, string> = {
   "frontend-css": "CSS Grid, Flexbox, keyframe animations, and visual styling tools render entirely in your browser with zero server uploads.",
   "developer-math": "Developer math, bitwise operations, IEEE-754 conversions, and matrix computations run locally on your device.",
   compression: "Compression, decompression, and archive inspection execute entirely within your browser memory. Files are never uploaded, logged, or sent to a server.",
+  "crypto-pki": "Cryptographic key generation, AES-GCM operations, CSR inspection, and JWT signing run locally using Web Crypto API. Private keys and secrets never leave your device.",
+  "ai-prompts": "AI prompt construction, token estimation, and vector calculations run entirely in your browser with zero server uploads or external LLM API calls.",
 };
 
 function catalogData(stationId: string, stationToolList: readonly string[]) {

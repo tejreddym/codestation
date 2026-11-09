@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useRef, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type FormEvent } from "react";
 import { getSpreadsheetDefinition, type SpreadsheetToolId } from "@/config/spreadsheet-tools";
 import { useSafePathname, useSafeRouter } from "./useSafeNavigation";
 import { capabilityForRoute, capabilitiesFor } from "@/config/conversion-capabilities";
 import { useConverterSession } from "./ConverterSession";
 import { SpreadsheetError, type SpreadsheetInfo, type SpreadsheetResult, type SpreadsheetValues } from "@/lib/tools/spreadsheet/types";
+import { ingestTabularData, executeSqlOnTable, exportQueryResultToCsv, exportQueryResultToJson, type IngestedTable, type SqlQueryResult } from "@/lib/tools/spreadsheet/sql-engine";
 import SpreadsheetControls from "./SpreadsheetControls";
 import SpreadsheetPreview, { SpreadsheetData } from "./SpreadsheetPreview";
 import styles from "./SpreadsheetStation.module.css";
@@ -196,7 +197,476 @@ function Station({ definition }: { definition: Definition }) {
   </div>;
 }
 
+const DEFAULT_SQL_DATA = `department,salary,status
+Engineering,120000,active
+Engineering,140000,active
+Marketing,95000,active
+HR,80000,inactive`;
+
+const DEFAULT_SQL_QUERY = `SELECT department, COUNT(*), AVG(salary) FROM table WHERE status = 'active' GROUP BY department`;
+
+const SAMPLE_SQL_QUERIES = [
+  { label: "Acceptance (Group & Avg)", query: "SELECT department, COUNT(*), AVG(salary) FROM table WHERE status = 'active' GROUP BY department" },
+  { label: "Select All (Limit 10)", query: "SELECT * FROM table LIMIT 10" },
+  { label: "High Earners (Filter & Sort)", query: "SELECT department, salary FROM table WHERE salary > 90000 ORDER BY salary DESC" },
+  { label: "Aggregations Summary", query: "SELECT COUNT(*) as [count], MIN(salary) as min_sal, MAX(salary) as max_sal, AVG(salary) as avg_sal FROM table" },
+  { label: "Table alias 'data'", query: "SELECT * FROM data WHERE status = 'active'" },
+];
+
+function SpreadsheetSqlStation({ definition }: { definition: Definition }) {
+  const id = `spreadsheet-${definition.id}`;
+  const [dataText, setDataText] = useState(DEFAULT_SQL_DATA);
+  const [query, setQuery] = useState(DEFAULT_SQL_QUERY);
+  const [ingestedTable, setIngestedTable] = useState<IngestedTable | null>(null);
+  const [result, setResult] = useState<SqlQueryResult | null>(null);
+  const [isIngesting, setIsIngesting] = useState(false);
+  const [isExecuting, setIsExecuting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState("");
+  const [pageSize, setPageSize] = useState<number>(10);
+  const [pageIndex, setPageIndex] = useState<number>(0);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  function downloadText(content: string, filename: string, mimeType: string) {
+    const blob = new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    try {
+      link.click();
+    } finally {
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+  }
+
+  // Ingest tabular data whenever dataText changes
+  useEffect(() => {
+    const trimmed = dataText.trim();
+    if (!trimmed) {
+      setIngestedTable(null);
+      setResult(null);
+      setError(null);
+      setNotice("Enter CSV or TSV data to begin.");
+      return;
+    }
+    setIsIngesting(true);
+    try {
+      const table = ingestTabularData(trimmed);
+      setIngestedTable(table);
+      setError(null);
+      setNotice(`Ingested ${table.rowCount} row(s) in ${table.parseTimeMs}ms. Ready to query table.`);
+    } catch (err) {
+      setIngestedTable(null);
+      setError(err instanceof Error ? err.message : String(err));
+      setNotice("Data ingestion error.");
+    } finally {
+      setIsIngesting(false);
+    }
+  }, [dataText]);
+
+  // Execute query against ingested table
+  const runQuery = useCallback(async (tableToUse?: IngestedTable, queryToUse?: string) => {
+    const activeTable = tableToUse ?? ingestedTable;
+    const activeQuery = queryToUse ?? query;
+
+    if (!activeTable) {
+      setError("Please provide valid CSV or TSV data first.");
+      return;
+    }
+    if (!activeQuery.trim()) {
+      setError("Please enter an SQL query.");
+      return;
+    }
+
+    setIsExecuting(true);
+    setError(null);
+    setNotice("Executing query in browser…");
+    try {
+      const res = await executeSqlOnTable(activeTable, activeQuery);
+      if (res.error) {
+        setError(res.error);
+        setResult(null);
+        setNotice("Query execution error.");
+      } else {
+        setResult(res);
+        setPageIndex(0);
+        setError(null);
+        setNotice(`Query returned ${res.rowCount} row(s) in ${res.executionTimeMs}ms.`);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+      setResult(null);
+      setNotice("Query execution failed.");
+    } finally {
+      setIsExecuting(false);
+    }
+  }, [ingestedTable, query]);
+
+  // Execute initial query once table is ingested
+  useEffect(() => {
+    if (ingestedTable && !result && !error) {
+      void runQuery(ingestedTable, query);
+    }
+  }, [ingestedTable, result, error, runQuery, query]);
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+      e.preventDefault();
+      void runQuery();
+    }
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsIngesting(true);
+    setNotice(`Reading ${file.name}…`);
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const text = typeof event.target?.result === "string" ? event.target.result : "";
+      setDataText(text);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    };
+    reader.onerror = () => {
+      setError(`Failed to read file: ${file.name}`);
+      setIsIngesting(false);
+    };
+    reader.readAsText(file);
+  };
+
+  const handleCopyCsv = async () => {
+    if (!result) return;
+    try {
+      const csv = exportQueryResultToCsv(result);
+      await navigator.clipboard.writeText(csv);
+      setNotice("Results copied as CSV.");
+    } catch {
+      setNotice("Could not copy to clipboard.");
+    }
+  };
+
+  const handleCopyJson = async () => {
+    if (!result) return;
+    try {
+      const json = exportQueryResultToJson(result);
+      await navigator.clipboard.writeText(json);
+      setNotice("Results copied as JSON.");
+    } catch {
+      setNotice("Could not copy to clipboard.");
+    }
+  };
+
+  const handleDownloadCsv = () => {
+    if (!result) return;
+    const csv = exportQueryResultToCsv(result);
+    downloadText(csv, "query_results.csv", "text/csv;charset=utf-8;");
+    setNotice("CSV file download requested.");
+  };
+
+  const handleDownloadJson = () => {
+    if (!result) return;
+    const json = exportQueryResultToJson(result);
+    downloadText(json, "query_results.json", "application/json;charset=utf-8;");
+    setNotice("JSON file download requested.");
+  };
+
+  const handleReset = () => {
+    setDataText(DEFAULT_SQL_DATA);
+    setQuery(DEFAULT_SQL_QUERY);
+    setPageIndex(0);
+    setError(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  // Pagination slice
+  const totalRows = result?.rowCount ?? 0;
+  const totalPages = Math.max(1, Math.ceil(totalRows / pageSize));
+  const currentPage = Math.min(pageIndex, totalPages - 1);
+  const startRowIdx = currentPage * pageSize;
+  const endRowIdx = Math.min(startRowIdx + pageSize, totalRows);
+  const visibleRows = result ? result.rows.slice(startRowIdx, endRowIdx) : [];
+
+  return (
+    <div className={styles.station}>
+      <div className={styles.layout}>
+        {/* Left Panel: Input Tabular Data & SQL Query */}
+        <section className={styles.panel} aria-labelledby={`${id}-input`} aria-busy={isIngesting || isExecuting}>
+          <div className={styles.panelHead}>
+            <h2 id={`${id}-input`}>{definition.name}</h2>
+            <div className={styles.actions}>
+              <button
+                type="button"
+                className="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isIngesting}
+              >
+                Upload CSV/TSV
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".csv,.tsv,text/csv,text/tab-separated-values,text/plain"
+                style={{ display: "none" }}
+                onChange={handleFileUpload}
+              />
+              <button type="button" className="button" onClick={handleReset}>
+                Reset Sample
+              </button>
+            </div>
+          </div>
+
+          <div className={styles.fields}>
+            {/* Tabular Data Input */}
+            <div className={styles.field}>
+              <label htmlFor={`${id}-data`}>CSV or TSV Data (Table: &apos;table&apos; / &apos;data&apos;)</label>
+              <textarea
+                id={`${id}-data`}
+                className={`${styles.input} ${styles.textarea}`}
+                rows={6}
+                value={dataText}
+                spellCheck={false}
+                autoCapitalize="off"
+                placeholder="Paste CSV or TSV data here..."
+                onChange={(e) => setDataText(e.target.value)}
+              />
+            </div>
+
+            {/* Ingested Table Schema */}
+            {ingestedTable && (
+              <div className={styles.schemaBar} aria-label="Detected table schema">
+                <strong>Table &apos;table&apos;:</strong>
+                <span>{ingestedTable.rowCount} row(s)</span>
+                {ingestedTable.columns.map((col) => (
+                  <span key={col.name} className={styles.schemaBadge}>
+                    {col.name}{" "}
+                    <span className={col.type === "numeric" ? styles.typeNumeric : styles.typeText}>
+                      ({col.type})
+                    </span>
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {/* SQL Query Input */}
+            <div className={styles.field}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <label htmlFor={`${id}-query`}>SQL Query</label>
+                <span className={styles.shortcutHint}>Shortcut: Cmd/Ctrl + Enter</span>
+              </div>
+              <textarea
+                id={`${id}-query`}
+                className={styles.sqlEditor}
+                rows={4}
+                value={query}
+                spellCheck={false}
+                autoCapitalize="off"
+                placeholder="SELECT ... FROM table WHERE ..."
+                onKeyDown={handleKeyDown}
+                onChange={(e) => setQuery(e.target.value)}
+              />
+            </div>
+
+            {/* Sample Queries */}
+            <div className={styles.field}>
+              <label>Sample Queries</label>
+              <div className={styles.sampleBar}>
+                {SAMPLE_SQL_QUERIES.map((sq, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    className={styles.sampleBtn}
+                    onClick={() => {
+                      setQuery(sq.query);
+                      void runQuery(ingestedTable ?? undefined, sq.query);
+                    }}
+                  >
+                    {sq.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className={styles.actions}>
+              <button
+                type="button"
+                className="button primary"
+                disabled={isExecuting || isIngesting}
+                onClick={() => void runQuery()}
+              >
+                {isExecuting && <span className={styles.spinner} />}
+                {isExecuting ? "Executing…" : "Execute SQL"}
+              </button>
+              <button
+                type="button"
+                className="button"
+                disabled={isExecuting}
+                onClick={() => setQuery("")}
+              >
+                Clear Query
+              </button>
+            </div>
+          </div>
+        </section>
+
+        {/* Right Panel: Query Results */}
+        <section className={styles.panel} aria-labelledby={`${id}-output`} aria-busy={isExecuting}>
+          <div className={styles.panelHead}>
+            <h2 id={`${id}-output`}>Query Results</h2>
+            {result && result.rowCount > 0 && (
+              <div className={styles.actions}>
+                <button type="button" className="button" onClick={handleCopyCsv}>
+                  Copy CSV
+                </button>
+                <button type="button" className="button" onClick={handleCopyJson}>
+                  Copy JSON
+                </button>
+                <button type="button" className="button" onClick={handleDownloadCsv}>
+                  Download CSV
+                </button>
+                <button type="button" className="button" onClick={handleDownloadJson}>
+                  Download JSON
+                </button>
+              </div>
+            )}
+          </div>
+
+          <div className={styles.result}>
+            {isExecuting ? (
+              <p className={styles.status} role="status">
+                <span className={styles.spinner} /> Executing SQL query in browser…
+              </p>
+            ) : result ? (
+              <>
+                <div className={styles.metricsBadge}>
+                  {result.rowCount} row(s) returned in {result.executionTimeMs}ms ({result.columns.length} columns)
+                </div>
+
+                {result.columns.length > 0 ? (
+                  <>
+                    <div className={styles.tableScroll} tabIndex={0} aria-label="Query results table">
+                      <table data-testid="sql-results-table">
+                        <thead>
+                          <tr>
+                            {result.columns.map((col, idx) => (
+                              <th key={idx} scope="col">
+                                {col}
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {visibleRows.length > 0 ? (
+                            visibleRows.map((row, rIdx) => (
+                              <tr key={rIdx}>
+                                {row.map((cell, cIdx) => (
+                                  <td key={cIdx}>
+                                    {cell === null || cell === undefined ? (
+                                      <span className={styles.nullCell}>NULL</span>
+                                    ) : typeof cell === "boolean" ? (
+                                      cell ? "TRUE" : "FALSE"
+                                    ) : (
+                                      String(cell)
+                                    )}
+                                  </td>
+                                ))}
+                              </tr>
+                            ))
+                          ) : (
+                            <tr>
+                              <td colSpan={result.columns.length} style={{ textAlign: "center", color: "var(--muted)" }}>
+                                Query returned 0 rows.
+                              </td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* Pagination Bar */}
+                    {totalRows > 0 && (
+                      <div className={styles.paginationBar}>
+                        <div className={styles.paginationControls}>
+                          <button
+                            type="button"
+                            className="button"
+                            disabled={currentPage === 0}
+                            onClick={() => setPageIndex((p) => Math.max(0, p - 1))}
+                          >
+                            ← Previous
+                          </button>
+                          <span>
+                            Page {currentPage + 1} of {totalPages} ({startRowIdx + 1}–{endRowIdx} of {totalRows})
+                          </span>
+                          <button
+                            type="button"
+                            className="button"
+                            disabled={currentPage >= totalPages - 1}
+                            onClick={() => setPageIndex((p) => Math.min(totalPages - 1, p + 1))}
+                          >
+                            Next →
+                          </button>
+                        </div>
+
+                        <div className={styles.paginationPageSize}>
+                          <label htmlFor={`${id}-pagesize`}>Rows per page:</label>
+                          <select
+                            id={`${id}-pagesize`}
+                            className={styles.pageSizeSelect}
+                            value={pageSize}
+                            onChange={(e) => {
+                              setPageSize(Number(e.target.value));
+                              setPageIndex(0);
+                            }}
+                          >
+                            <option value={10}>10</option>
+                            <option value={25}>25</option>
+                            <option value={50}>50</option>
+                            <option value={100}>100</option>
+                          </select>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <p className={styles.empty}>Query executed successfully but produced no output columns.</p>
+                )}
+              </>
+            ) : (
+              <p className={styles.empty}>
+                Your query results will appear here. Press Execute SQL or Cmd/Ctrl + Enter to run.
+              </p>
+            )}
+          </div>
+        </section>
+      </div>
+
+      {error && (
+        <p id={`${id}-error`} className={styles.error} role="alert" tabIndex={-1}>
+          {error}
+        </p>
+      )}
+
+      <p id={`${id}-status`} className={styles.status} role="status" aria-atomic="true">
+        {notice}
+      </p>
+
+      <p className={styles.privacy}>
+        All SQL queries execute 100% in-browser using AlaSQL. Zero server uploads, tracking, or network roundtrips.
+      </p>
+    </div>
+  );
+}
+
 export default function SpreadsheetStation({ toolId }: { toolId: SpreadsheetToolId }) {
   const definition = getSpreadsheetDefinition(toolId);
-  return definition ? <Station key={definition.id} definition={definition} /> : null;
+  if (!definition) return null;
+  if (toolId === "spreadsheet-sql-query") {
+    return <SpreadsheetSqlStation key={definition.id} definition={definition} />;
+  }
+  return <Station key={definition.id} definition={definition} />;
 }
+

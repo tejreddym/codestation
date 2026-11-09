@@ -60,8 +60,10 @@ export interface MockDatasetResult {
 // Deterministic Linear Congruential Generator
 class Prng {
   private state: number;
+  public readonly isDeterministic: boolean;
 
   constructor(seed?: number) {
+    this.isDeterministic = seed !== undefined;
     this.state = seed !== undefined ? (seed >>> 0) || 1 : Math.floor(Math.random() * 2147483647) || 1;
   }
 
@@ -326,7 +328,8 @@ function generateValue(
         break;
       case "date": {
         const pastDays = prng.int(1, 180);
-        const d = new Date(Date.now() - pastDays * 86400000);
+        const baseTime = prng.isDeterministic ? 1767225600000 : Date.now();
+        const d = new Date(baseTime - pastDays * 86400000);
         val = d.toISOString();
         break;
       }

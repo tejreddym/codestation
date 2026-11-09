@@ -12,12 +12,14 @@ import {
   Globe2,
   Headphones,
   Image,
+  KeyRound,
   Layout,
   Network,
   Palette,
   QrCode,
   Regex,
   ShieldCheck,
+  Sparkles,
   Table2,
   Type,
   Waypoints,
@@ -48,6 +50,10 @@ const stationIcons: Record<string, LucideIcon> = {
   "Frontend & CSS": Layout,
   "Developer Math": Calculator,
   Compression: Archive,
+  "WebPKI & Advanced Cryptography": KeyRound,
+  "crypto-pki": KeyRound,
+  "AI & Prompt Engineering": Sparkles,
+  "ai-prompts": Sparkles,
 };
 
 export default function StationMark({ large = false, label }: { large?: boolean; label?: string }) {

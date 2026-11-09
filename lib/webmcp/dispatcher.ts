@@ -115,7 +115,49 @@ import {
   parseTar,
   base64ToUint8Array,
 } from "../tools/compression/engine";
+import {
+  countTokens,
+  repairJson,
+  interpolatePrompt,
+  parseVectorInput,
+  computeVectorSimilarity,
+  buildSystemPrompt,
+  type AiModelId,
+  type SystemPromptConfig,
+} from "../tools/ai-prompts/engine";
+import {
+  encryptAesGcm,
+  decryptAesGcm,
+  generateRsaKeyPair,
+  signJwt,
+  verifyJwt,
+  parseCsr,
+  buildCspHeader,
+  type AesKeyOptions,
+  type CspDirectives,
+} from "../tools/crypto-pki/engine";
+import {
+  applyWatermark,
+  applyPageNumbers,
+  type WatermarkOptions,
+  type PageNumberOptions,
+} from "../tools/pdf/engine";
+import {
+  executeSql,
+} from "../tools/spreadsheet/sql-engine";
 import { getTool } from "../../config/tools";
+
+function uint8ArrayToBase64(bytes: Uint8Array): string {
+  if (typeof Buffer !== "undefined") {
+    return Buffer.from(bytes).toString("base64");
+  }
+  let binary = "";
+  const len = bytes.byteLength;
+  for (let i = 0; i < len; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
+}
 
 /** Native SubtleCrypto helpers for SHA-256 / SHA-512 / SHA-384 / HMAC */
 async function digestHex(algorithm: "SHA-256" | "SHA-384" | "SHA-512", message: string): Promise<string> {
@@ -152,7 +194,7 @@ export async function dispatchToolExecution(
   input: string = "",
   options: Record<string, any> = {}
 ): Promise<string> {
-  const normId = toolId.toLowerCase().trim().replace(/_/g, "-");
+  const normId = toolId.toLowerCase().trim().replace(/^codestation[-_]/, "").replace(/_/g, "-");
 
   switch (normId) {
     // ----------------- JSON & Data -----------------
@@ -514,6 +556,257 @@ export async function dispatchToolExecution(
         null,
         2
       );
+    }
+
+    // ----------------- Station 25: AI & Prompt Engineering -----------------
+    case "ai-token-counter": {
+      const model = (options.model ?? options.modelFamily ?? "gpt-4o") as AiModelId;
+      const pricing = (options.inputPrice !== undefined || options.outputPrice !== undefined)
+        ? {
+            inputPricePer1M: options.inputPrice !== undefined ? Number(options.inputPrice) : undefined,
+            outputPricePer1M: options.outputPrice !== undefined ? Number(options.outputPrice) : undefined,
+          }
+        : undefined;
+      const result = countTokens(input, model, pricing);
+      return JSON.stringify(result, null, 2);
+    }
+    case "json-repair": {
+      const result = repairJson(input);
+      return JSON.stringify(result, null, 2);
+    }
+    case "prompt-interpolator": {
+      let records: Record<string, string>[] = [{}];
+      if (options.records) {
+        if (typeof options.records === "string") {
+          try {
+            records = JSON.parse(options.records);
+          } catch {
+            records = [{}];
+          }
+        } else if (Array.isArray(options.records)) {
+          records = options.records;
+        }
+      }
+      const result = interpolatePrompt({
+        records,
+        template: input || options.userTemplate || options.template || "",
+        systemTemplate: options.systemTemplate ?? options.system,
+        assistantTemplate: options.assistantTemplate ?? options.assistant,
+      });
+      return JSON.stringify(result, null, 2);
+    }
+    case "vector-similarity": {
+      let vecA: number[] = [];
+      let vecB: number[] = [];
+      if (options.vecA && options.vecB) {
+        vecA = Array.isArray(options.vecA) ? options.vecA : parseVectorInput(String(options.vecA));
+        vecB = Array.isArray(options.vecB) ? options.vecB : parseVectorInput(String(options.vecB));
+      } else {
+        vecA = parseVectorInput(input);
+        const bInput = options.vecB ?? options.vectorB ?? options.b ?? options.compare ?? "";
+        vecB = Array.isArray(bInput) ? bInput : parseVectorInput(String(bInput));
+      }
+      const result = computeVectorSimilarity(vecA, vecB);
+      return JSON.stringify(result, null, 2);
+    }
+    case "system-prompt-builder": {
+      let config: SystemPromptConfig;
+      if (typeof options === "object" && (options.role || options.roleName || options.mission || options.coreTask || options.tone || options.roleTone)) {
+        config = {
+          roleName: options.roleName ?? options.role ?? "Senior Technical Assistant",
+          roleTone: options.roleTone ?? options.tone ?? "Technical, precise, and concise",
+          background: options.background,
+          coreTask: options.coreTask ?? options.mission ?? input ?? "Provide expert code review and architecture analysis.",
+          xmlWrapping: Boolean(options.xmlWrapping ?? options.xml ?? true),
+          chainOfThought: Boolean(options.chainOfThought ?? options.cot ?? false),
+          outputFormat: (options.outputFormat ? String(options.outputFormat).toLowerCase() : "markdown") as "json" | "markdown" | "plain" | "code" | "custom",
+          guardrails: Array.isArray(options.guardrails) ? options.guardrails : ["Do not make up facts", "Never expose private keys"],
+          examples: Array.isArray(options.examples) ? options.examples : [],
+          customConstraints: Array.isArray(options.customConstraints ?? options.customRules) ? options.customConstraints ?? options.customRules : [],
+        };
+      } else {
+        try {
+          config = JSON.parse(input);
+        } catch {
+          config = {
+            roleName: "Developer Assistant",
+            roleTone: "Technical, direct",
+            coreTask: input || "Help developers build reliable applications.",
+            xmlWrapping: true,
+            chainOfThought: false,
+            outputFormat: "markdown",
+            guardrails: [],
+            examples: [],
+            customConstraints: [],
+          };
+        }
+      }
+      const result = buildSystemPrompt(config);
+      return JSON.stringify(result, null, 2);
+    }
+
+    // ----------------- Station 24: WebPKI & Advanced Cryptography -----------------
+    case "aes-crypto": {
+      const mode = (options.mode ?? "encrypt").toLowerCase();
+      const keyMode = options.keyMode === "raw" || options.rawKey ? "raw" : "passphrase";
+      const keyLength = Number(options.keyLength ?? 256) === 128 ? 128 : 256;
+      const keyOptions: AesKeyOptions = {
+        mode: keyMode,
+        keyLength,
+        passphrase: options.passphrase ?? "codestation-secure-passphrase",
+        rawKey: options.rawKey,
+        salt: options.salt,
+      };
+
+      if (mode === "decrypt") {
+        let payload: any;
+        try {
+          payload = typeof input === "string" ? JSON.parse(input) : input;
+        } catch {
+          payload = {
+            ciphertext: input,
+            iv: options.iv ?? "",
+            tag: options.tag ?? "",
+            salt: options.salt,
+            aad: options.aad,
+          };
+        }
+        const plaintext = await decryptAesGcm(payload, keyOptions);
+        return JSON.stringify({ plaintext, success: true }, null, 2);
+      } else {
+        const result = await encryptAesGcm(input, {
+          ...keyOptions,
+          iv: options.iv,
+          aad: options.aad,
+        });
+        return JSON.stringify(result, null, 2);
+      }
+    }
+    case "rsa-key-generator": {
+      const modulus = Number(options.modulusLength ?? options.bits ?? input ?? 2048) as 2048 | 3072 | 4096;
+      const validModulus = [2048, 3072, 4096].includes(modulus) ? modulus : 2048;
+      const keyPair = await generateRsaKeyPair(validModulus);
+      return JSON.stringify(
+        {
+          modulusLength: keyPair.modulusLength,
+          publicKeyPem: keyPair.publicKeyPem,
+          privateKeyPem: keyPair.privateKeyPem,
+          fingerprint: keyPair.fingerprint,
+        },
+        null,
+        2
+      );
+    }
+    case "jwt-signer-verifier": {
+      const action = (options.action ?? (input.includes(".") && input.split(".").length === 3 && !options.secret ? "verify" : "sign")).toLowerCase();
+      if (action === "verify") {
+        const token = input || String(options.token ?? "");
+        const secretOrKey = options.secret ?? options.publicKey ?? options.key ?? "";
+        const verifyOptions = {
+          clockSkew: options.clockSkew !== undefined ? Number(options.clockSkew) : (options.clockSkewSeconds !== undefined ? Number(options.clockSkewSeconds) : 60),
+        };
+        const verification = await verifyJwt(token, secretOrKey, verifyOptions);
+        return JSON.stringify(verification, null, 2);
+      } else {
+        const header = options.header ? (typeof options.header === "string" ? JSON.parse(options.header) : options.header) : { alg: options.alg ?? "HS256", typ: "JWT" };
+        let payload = options.payload;
+        if (!payload) {
+          try {
+            payload = JSON.parse(input);
+          } catch {
+            payload = { sub: input || "developer", iat: Math.floor(Date.now() / 1000) };
+          }
+        } else if (typeof payload === "string") {
+          try {
+            payload = JSON.parse(payload);
+          } catch {
+            payload = { sub: payload };
+          }
+        }
+        const secretOrKey = options.secret ?? options.privateKey ?? "secret-key-1234567890";
+        const token = await signJwt(header, payload, secretOrKey);
+        return JSON.stringify({ token, header, payload }, null, 2);
+      }
+    }
+    case "csr-inspector": {
+      const csrDetails = await parseCsr(input);
+      return JSON.stringify(csrDetails, null, 2);
+    }
+    case "csp-builder": {
+      let directives: CspDirectives;
+      if (options.directives && typeof options.directives === "object") {
+        directives = options.directives;
+      } else {
+        try {
+          directives = JSON.parse(input);
+        } catch {
+          directives = {
+            "default-src": ["'self'"],
+            "script-src": ["'self'"],
+            "style-src": ["'self'", "'unsafe-inline'"],
+            "img-src": ["'self'", "data:", "https:"],
+          };
+        }
+      }
+      const cspResult = buildCspHeader(directives);
+      return JSON.stringify(cspResult, null, 2);
+    }
+
+    // ----------------- PDF Station (Watermark & Page Numberer) -----------------
+    case "pdf-watermark": {
+      const pdfBytes = base64ToUint8Array(input);
+      const watermarkOpts: WatermarkOptions = {
+        type: (options.type ?? "text") as "text" | "image",
+        text: options.text ?? "CONFIDENTIAL",
+        fontSize: options.fontSize ? Number(options.fontSize) : 48,
+        color: options.color ?? "#ff0000",
+        opacity: options.opacity ? Number(options.opacity) : 0.3,
+        rotation: options.rotation ? Number(options.rotation) : 45,
+        position: options.position ?? "center",
+        pageRange: options.pageRange,
+      };
+      const resultBytes = await applyWatermark(pdfBytes, watermarkOpts);
+      return JSON.stringify(
+        {
+          success: true,
+          outputSize: resultBytes.byteLength,
+          pdfBase64: uint8ArrayToBase64(resultBytes),
+        },
+        null,
+        2
+      );
+    }
+    case "pdf-page-numberer": {
+      const pdfBytes = base64ToUint8Array(input);
+      const pageOpts: PageNumberOptions = {
+        format: options.format ?? "page-x-of-y",
+        verticalPosition: options.verticalPosition ?? "footer",
+        alignment: options.alignment ?? "center",
+        fontFamily: options.fontFamily ?? "Helvetica",
+        fontSize: options.fontSize ? Number(options.fontSize) : 10,
+        color: options.color ?? "#000000",
+        margin: options.margin ? Number(options.margin) : 28,
+        startNumber: options.startNumber ? Number(options.startNumber) : 1,
+        pageRange: options.pageRange,
+        skipFirstPage: Boolean(options.skipFirstPage ?? false),
+      };
+      const resultBytes = await applyPageNumbers(pdfBytes, pageOpts);
+      return JSON.stringify(
+        {
+          success: true,
+          outputSize: resultBytes.byteLength,
+          pdfBase64: uint8ArrayToBase64(resultBytes),
+        },
+        null,
+        2
+      );
+    }
+
+    // ----------------- Spreadsheet Station (SQL Engine) -----------------
+    case "spreadsheet-sql-query": {
+      const query = options.query ?? options.sql ?? "SELECT * FROM table";
+      const result = await executeSql(input, query);
+      return JSON.stringify(result, null, 2);
     }
 
     // ----------------- Generic Registered Tool Fallback -----------------

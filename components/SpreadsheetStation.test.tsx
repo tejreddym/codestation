@@ -15,6 +15,7 @@ const info: SpreadsheetInfo = { sheetNames: ["First", "Second"], sheets: [
   { name: "Second", headers: ["Amount", "Total"], rowCount: 2, columnCount: 2, formulaCount: 1 },
 ] };
 const workbook = () => new File(["local workbook"], "private-local.xlsx", { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+const legacySpreadsheetTools = spreadsheetTools.filter(tool => tool.id !== "spreadsheet-sql-query");
 const definition = (id: SpreadsheetToolId) => spreadsheetTools.find(tool => tool.id === id)!;
 const byField = (id: SpreadsheetToolId, name: string) => screen.getByLabelText(definition(id).localContract.fields.find(field => field.name === name)!.label);
 const submit = (id: SpreadsheetToolId) => fireEvent.click(screen.getByRole("button", { name: definition(id).localContract.action }));
@@ -56,7 +57,7 @@ beforeEach(() => {
 afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.clearAllMocks(); vi.unstubAllGlobals(); document.documentElement.removeAttribute("data-theme"); });
 
 describe.each(["light", "dark"])("Spreadsheet %s theme DOM (not visual acceptance)", theme => {
-  it.each(spreadsheetTools)("$id exact action, keyboard, outputs, copy/download, Clear and privacy", async tool => {
+  it.each(legacySpreadsheetTools)("$id exact action, keyboard, outputs, copy/download, Clear and privacy", async tool => {
     document.documentElement.dataset.theme = theme;
     const user = userEvent.setup();
     const clipboard = vi.spyOn(navigator.clipboard, "writeText").mockResolvedValue();
@@ -97,15 +98,18 @@ describe.each(["light", "dark"])("Spreadsheet %s theme DOM (not visual acceptanc
 });
 
 describe("All spreadsheet contracts", () => {
-  it("contains exactly 20 public contracts", () => expect(spreadsheetTools).toHaveLength(20));
-  it.each(spreadsheetTools)("$id empty input is associated and focused without running", async tool => {
+  it("contains exactly 20 legacy workbook contracts and 21 total contracts", () => {
+    expect(legacySpreadsheetTools).toHaveLength(20);
+    expect(spreadsheetTools).toHaveLength(21);
+  });
+  it.each(legacySpreadsheetTools)("$id empty input is associated and focused without running", async tool => {
     render(<SpreadsheetStation toolId={tool.id} />); submit(tool.id);
     const alert = await screen.findByRole("alert"); expect(alert.textContent).toMatch(/required|Choose/);
     const first = byField(tool.id, tool.localContract.fields.find(field => ["file", "files", "source"].includes(field.name))!.name);
     expect(document.activeElement).toBe(first); expect(first.getAttribute("aria-describedby")).toContain(alert.id); expect(first.getAttribute("aria-invalid")).toBe("true");
     expect(client.runSpreadsheet).not.toHaveBeenCalled();
   });
-  it.each(spreadsheetTools)("$id invalid processing shows an inert useful error", async tool => {
+  it.each(legacySpreadsheetTools)("$id invalid processing shows an inert useful error", async tool => {
     const first = tool.localContract.fields[0];
     vi.mocked(client.runSpreadsheet).mockRejectedValueOnce(new SpreadsheetError("Malformed input: <script> stays text", first.name));
     const { container } = render(<SpreadsheetStation toolId={tool.id} />); await fill(tool.id); submit(tool.id);
@@ -113,7 +117,7 @@ describe("All spreadsheet contracts", () => {
     expect(container.querySelector("script")).toBeNull(); expect(document.activeElement).toBe(byField(tool.id, first.name));
     fireEvent.click(screen.getByRole("button", { name: "Clear" })); expect(screen.queryByRole("alert")).toBeNull();
   });
-  it.each(spreadsheetTools)("$id Clear aborts work and rejects stale completion", async tool => {
+  it.each(legacySpreadsheetTools)("$id Clear aborts work and rejects stale completion", async tool => {
     let resolve!: (value: SpreadsheetResult) => void;
     vi.mocked(client.runSpreadsheet).mockReturnValueOnce(new Promise(done => { resolve = done; }));
     const { container } = render(<SpreadsheetStation toolId={tool.id} />); await fill(tool.id); submit(tool.id);
@@ -123,7 +127,7 @@ describe("All spreadsheet contracts", () => {
     await act(async () => resolve(mockResult(tool.id)));
     expect(container.querySelector("table,pre")).toBeNull(); expect(screen.getByRole("status").textContent).toBe("");
   });
-  it.each(spreadsheetTools)("$id SSR hydration has stable field IDs and no recovery errors", async tool => {
+  it.each(legacySpreadsheetTools)("$id SSR hydration has stable field IDs and no recovery errors", async tool => {
     const element = <SpreadsheetStation toolId={tool.id} />;
     const container = document.createElement("div"); container.innerHTML = renderToString(element); document.body.appendChild(container);
     const ids = [...container.querySelectorAll("[id]")].map(node => node.id);

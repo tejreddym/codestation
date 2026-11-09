@@ -26,7 +26,7 @@ describe("SQL contracts, registry and public discovery", () => {
     expect(sqlToolIds).toEqual(Object.keys(fields)); expect(sqlTools).toHaveLength(17); expect(tools.filter(tool => tool.category === "SQL & Database")).toEqual(sqlTools);
     expect(new Set(tools.map(tool => tool.id)).size).toBe(tools.length); expect(new Set(sqlTools.map(tool => tool.description)).size).toBe(17); expect(new Set(sqlTools.map(tool => tool.seo.title)).size).toBe(17);
     for (const tool of sqlTools) expect(tool).not.toHaveProperty("pairedTool");
-     expect(stations.map(station => station.name)).toEqual(["JSON & Data", "Encoding", "Security", "Regex", "Date & Time", "Text", "Cron", "SQL & Database", "Web", "API", "Image", "Spreadsheet", "Markdown", "Color & CSS", "Converters", "PDF", "QR & Barcode", "Audio", "Code Generation", "Network & DevOps", "Frontend & CSS", "Developer Math", "Compression"]);
+     expect(stations.map(station => station.name)).toEqual(["JSON & Data", "Encoding", "Security", "Regex", "Date & Time", "Text", "Cron", "SQL & Database", "Web", "API", "Image", "Spreadsheet", "Markdown", "Color & CSS", "Converters", "PDF", "QR & Barcode", "Audio", "Code Generation", "Network & DevOps", "Frontend & CSS", "Developer Math", "Compression", "WebPKI & Advanced Cryptography", "AI & Prompt Engineering"]);
   });
   it.each(sqlTools)("$id exact fields, dialect options, direct route and factual metadata", async tool => {
     expect(tool.sqlContract.fields.map(field => field.name)).toEqual(fields[tool.id]);
@@ -57,7 +57,7 @@ describe("SQL contracts, registry and public discovery", () => {
   });
   it("homepage reaches the new landing and keeps other station links unchanged", () => {
     render(<HomePage />); const section = screen.getByRole("heading", { name: "Choose a station" }).closest("section")!;
-     for (const station of stations) expect(within(section).getByRole("link", { name: new RegExp(station.name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")) }).getAttribute("href")).toBe(station.route);
+     for (const station of stations) expect(within(section).getByRole("link", { name: new RegExp(`^${station.name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`) }).getAttribute("href")).toBe(station.route);
   });
   it("SQL workspace/editor/diagram CSS uses theme tokens, mobile bounds and keyboard focus", () => {
     const css = ["SqlDatabaseStation", "SqlStructuredFields", "SqlErDiagram"].map(name => readFileSync(`components/${name}.module.css`, "utf8")).join("\n");

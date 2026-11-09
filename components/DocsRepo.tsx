@@ -32,7 +32,7 @@ const TOPICS: DocTopic[] = [
   { id: "ai-assistants", category: "ai", title: "AI Assistant Configurations (Claude, Cursor, Windsurf)", keywords: ["claude", "cursor", "windsurf", "cline", "ai", "mcp config", "assistant"] },
   { id: "ai-prompt", category: "ai", title: "Copy-Pastable AI System Prompt & Rules", keywords: ["prompt", "system", "rules", ".cursorrules", "claude.md", "guidelines"] },
   { id: "tool-catalog", category: "catalog", title: "MCP Tool Capability Matrix (20+ Tools)", keywords: ["catalog", "tools", "capabilities", "free", "pro", "matrix"] },
-  { id: "web-stations", category: "web", title: "Web Application & 23 Stations Directory", keywords: ["web", "stations", "browser", "free", "sandbox", "wasm", "webcrypto", "compression", "zip"] },
+  { id: "web-stations", category: "web", title: "Web Application & 25 Stations Directory", keywords: ["web", "stations", "browser", "free", "sandbox", "wasm", "webcrypto", "compression", "zip", "ai", "crypto", "pki"] },
   { id: "licensing", category: "licensing", title: "Pro Licensing & Device Binding", keywords: ["license", "pro", "pricing", "device", "razorpay", "upi", "activation"] },
   { id: "lost-key-recovery", category: "lostkey", title: "Lost Key Recovery Policy & Fee Schedule", keywords: ["lost", "key", "recovery", "email", "fee", "regeneration", "razorpay"] },
   { id: "security-privacy", category: "security", title: "Zero-Telemetry & Privacy Architecture", keywords: ["privacy", "security", "telemetry", "sha256", "cloudflare", "kv", "offline"] },
@@ -790,7 +790,7 @@ EOF`}
                   <li><strong>100% In-Browser:</strong> Executions run locally in the active tab using Web APIs, Web Crypto, and client AST engines. No data ever leaves your machine.</li>
                   <li><strong>Chromium Origin Trial / Early Flag:</strong> In Chrome 146+, enable via <code>chrome://flags/#enable-webmcp-testing</code>.</li>
                   <li><strong>Zero-Friction Fallback:</strong> In all other browsers, Code Station injects a transparent polyfill on <code>document.modelContext</code> and exposes <code>window.__CODESTATION_WEBMCP__</code>.</li>
-                  <li><strong>Universal Discovery:</strong> The <code>codestation_list_tools</code> tool enables agents to query 385+ tools across 23 stations.</li>
+                  <li><strong>Universal Discovery:</strong> The <code>codestation_list_tools</code> tool enables agents to query 395+ tools across 25 stations.</li>
                   <li><strong>Universal Execution:</strong> The <code>codestation_execute_tool</code> tool executes any tool with structured JSON parameters.</li>
                   <li><strong>Active Tool Mounting:</strong> Visiting any <code>/tools/[slug]</code> page dynamically mounts a dedicated tool contract (e.g. <code>codestation_cidr_calculator</code>).</li>
                 </ul>
@@ -1111,11 +1111,11 @@ Always prioritize calling these local, deterministic tools instead of calculatin
           {activeIds.has("web-stations") && (
             <section id="web-stations" className={styles.docSection}>
               <div className={styles.sectionHeader}>
-                <h2>17. Web Application &amp; 23 Stations Directory</h2>
+                <h2>17. Web Application &amp; 25 Stations Directory</h2>
                 <span className={styles.sectionTag}>Web Application</span>
               </div>
               <p className={styles.leadText}>
-                Every single one of the <strong>385+ developer tools</strong> on the Code Station web application
+                Every single one of the <strong>395+ developer tools</strong> on the Code Station web application
                 (<code>codestation.in</code>) is <strong>100% free, unlimited, and runs client-side</strong>.
               </p>
 
@@ -1234,6 +1234,16 @@ Always prioritize calling these local, deterministic tools instead of calculatin
                   <h4>23. Compression &amp; Archive Station</h4>
                   <p>ZIP extractor &amp; tree viewer, ZIP creator, Gzip/Deflate compressor, decompressor, and TAR inspector.</p>
                   <Link href="/stations/compression" style={{ fontSize: "12px", color: "var(--accent)", fontWeight: 700 }}>Open Station →</Link>
+                </div>
+                <div className={styles.cardItem}>
+                  <h4>24. WebPKI &amp; Advanced Cryptography Station</h4>
+                  <p>AES-GCM 128/256-bit encryption, RSA key generation, JWT signing &amp; verification, CSR inspection, and CSP builder.</p>
+                  <Link href="/stations/crypto-pki" style={{ fontSize: "12px", color: "var(--accent)", fontWeight: 700 }}>Open Station →</Link>
+                </div>
+                <div className={styles.cardItem}>
+                  <h4>25. AI &amp; Prompt Engineering Station</h4>
+                  <p>Multi-model token counter &amp; visualizer, LLM JSON repair, prompt interpolator, vector similarity, and system prompt builder.</p>
+                  <Link href="/stations/ai-prompts" style={{ fontSize: "12px", color: "var(--accent)", fontWeight: 700 }}>Open Station →</Link>
                 </div>
               </div>
             </section>

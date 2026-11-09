@@ -16,13 +16,13 @@ let initialized = false;
 export const LIST_TOOLS_MCP: WebMcpTool = {
   name: "codestation_list_tools",
   description:
-    "Discover and search available Code Station utilities (385+ tools across 23 developer stations) executable in-browser.",
+    "Discover and search available Code Station utilities (395+ tools across 25 developer stations) executable in-browser.",
   inputSchema: {
     type: "object",
     properties: {
       category: {
         type: "string",
-        description: "Filter tools by station category (e.g. 'JSON & Data', 'Security', 'Encoding', 'Compression', 'Network & DevOps', 'Developer Math')",
+        description: "Filter tools by station category (e.g. 'JSON & Data', 'Security', 'Encoding', 'Compression', 'Network & DevOps', 'Developer Math', 'WebPKI & Advanced Cryptography', 'AI & Prompt Engineering')",
       },
       query: {
         type: "string",
@@ -85,7 +85,7 @@ export const LIST_TOOLS_MCP: WebMcpTool = {
 export const EXECUTE_TOOL_MCP: WebMcpTool = {
   name: "codestation_execute_tool",
   description:
-    "Execute any Code Station developer utility (JSON format, JWT decode, Base64, SHA-256, CIDR calculate, CSS, Math) directly in the browser.",
+    "Execute any Code Station developer utility (JSON format, JWT decode, Base64, SHA-256, CIDR calculate, CSS, Math, WebPKI, AI prompts) directly in the browser.",
   inputSchema: {
     type: "object",
     properties: {

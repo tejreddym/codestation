@@ -25,7 +25,17 @@ import { isNetworkToolId } from "@/config/network-tools";
 import { isCssPlaygroundToolId } from "@/config/css-playground-tools";
 import { isDevMathToolId } from "@/config/dev-math-tools";
 import { isCompressionToolId } from "@/config/compression-tools";
+import { isCryptoPkiToolId } from "@/config/crypto-pki-tools";
+import { isAiPromptsToolId } from "@/config/ai-prompts-tools";
 import type { RegisteredToolId } from "@/config/tools";
+
+const CryptoPkiStation = dynamic(() => import("./CryptoPkiStation"), {
+  loading: () => <p role="status">Loading WebPKI &amp; Cryptography controls…</p>,
+});
+
+const AiPromptsStation = dynamic(() => import("./AiPromptsStation"), {
+  loading: () => <p role="status">Loading AI &amp; Prompt Engineering controls…</p>,
+});
 
 const CompressionStation = dynamic(() => import("./CompressionStation"), {
   loading: () => <p role="status">Loading Compression &amp; Archive controls…</p>,
@@ -104,6 +114,8 @@ const NumericStation = dynamic(() => import("./NumericStation"), {
 import WebMcpBridge from "./WebMcpBridge";
 
 function renderStation(toolId: RegisteredToolId) {
+  if (isCryptoPkiToolId(toolId)) return <CryptoPkiStation key={toolId} toolId={toolId} />;
+  if (isAiPromptsToolId(toolId)) return <AiPromptsStation key={toolId} toolId={toolId} />;
   if (isCompressionToolId(toolId)) return <CompressionStation key={toolId} toolId={toolId} />;
   if (isDevMathToolId(toolId)) return <DevMathStation key={toolId} toolId={toolId} />;
   if (isCssPlaygroundToolId(toolId)) return <CssPlaygroundStation key={toolId} toolId={toolId} />;

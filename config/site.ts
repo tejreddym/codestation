@@ -30,7 +30,7 @@ export const siteConfig = {
   origin: verifiedOrigin,
   indexing: isIndexingEnabled(verifiedOrigin),
   tagline: "Your everyday developer toolbox.",
-  description: "Fast, 100% in-browser developer toolbox with native WebMCP (Web Model Context Protocol) support for AI agents. 385+ tools across 23 stations—including PDF tools, Code Generation, Compression & Archives, CIDR Networking, Hashes, Developer Math, and Converters—with zero server uploads.",
+  description: "Fast, 100% in-browser developer toolbox with native WebMCP (Web Model Context Protocol) support for AI agents. 395+ tools across 25 stations—including WebPKI Cryptography, AI & Prompts, PDF tools, Code Generation, Compression & Archives, CIDR Networking, Hashes, Developer Math, and Converters—with zero server uploads.",
 };
 
 export function metadataForPage(path: string, title: string, description: string): Metadata {

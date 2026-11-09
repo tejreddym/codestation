@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import path from "node:path";
 import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
 import { jsonDataTools } from "./config/json-data-tools";
 import { encodingLegacyRedirects } from "./config/encoding-tools";
@@ -7,6 +8,13 @@ import { securityLegacyRedirects } from "./config/security-tools";
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
+  webpack(config) {
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      alasql$: path.resolve(process.cwd(), "node_modules/alasql/dist/alasql.min.js"),
+    };
+    return config;
+  },
   async redirects() {
     return [...jsonDataTools.filter(tool => tool.id !== tool.slug).map(tool => ({
       source: `/tools/${tool.id}`, destination: `/tools/${tool.slug}`, permanent: true,

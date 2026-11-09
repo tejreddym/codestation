@@ -11,14 +11,18 @@ export interface StationDefinition {
   toolList: readonly string[];
   relatedStations: readonly string[];
 }
-const stationId = (name: string) => name.toLowerCase().replace(/ & /g, "-").replace(/[^a-z0-9]+/g, "-");
+const stationIdOverrides: Record<string, string> = {
+  "WebPKI & Advanced Cryptography": "crypto-pki",
+  "AI & Prompt Engineering": "ai-prompts",
+};
+const stationId = (name: string) => stationIdOverrides[name] ?? name.toLowerCase().replace(/ & /g, "-").replace(/[^a-z0-9]+/g, "-");
 const localStations: Record<string, { description: string; related: string[]; shared?: string[] }> = {
   "JSON & Data": { description: "Format, validate, compare, transform, and inspect structured data locally in your browser.", related: ["encoding", "spreadsheet", "text"] },
   Encoding: { description: "Encode, decode, inspect, and transform text and byte representations locally.", related: ["json-data", "security", "text", "compression"] },
-  Security: { description: "Generate, hash, compare, and inspect security values locally with browser cryptography.", related: ["encoding", "regex", "date-time"] },
+  Security: { description: "Generate, hash, compare, and inspect security values locally with browser cryptography.", related: ["encoding", "regex", "date-time", "crypto-pki"] },
   Regex: { description: "Test, inspect, build, and transform regular expressions locally in your browser.", related: ["text", "security", "json-data"] },
   "Date & Time": { description: "Convert, compare, format, and inspect dates, times, timestamps, and timezones locally.", related: ["cron", "text", "encoding"] },
-  Text: { description: "Count, transform, generate, compare, and inspect text locally in your browser.", related: ["regex", "encoding", "markdown"] },
+  Text: { description: "Count, transform, generate, compare, and inspect text locally in your browser.", related: ["regex", "encoding", "markdown", "ai-prompts"] },
   Image: { description: "Convert, resize, compress, inspect, and transform images locally in your browser.", related: ["web", "encoding"], shared: ["favicon-generator"] },
   Spreadsheet: { description: "View, inspect, clean, convert, and transform spreadsheet data locally in your browser.", related: ["json-data", "text"] },
   Markdown: { description: "Format, preview, convert, inspect, and generate Markdown locally.", related: ["json-data", "text"] },
@@ -27,14 +31,16 @@ const localStations: Record<string, { description: string; related: string[]; sh
   PDF: { description: "Merge, split, rotate, convert, sign, and inspect PDF documents locally in your browser with zero server uploads.", related: ["image", "spreadsheet", "text"] },
   "QR & Barcode": { description: "Generate and scan custom QR codes and standard linear barcodes locally in your browser.", related: ["web", "image", "security"] },
   Audio: { description: "Trim, cut, inspect, and process audio waveforms locally in your browser with zero server uploads.", related: ["web", "image"] },
-  "Code Generation": { description: "Generate TypeScript types, Zod schemas, Go structs, Python Pydantic models, Rust Serde structs, and React JSX components locally.", related: ["json-data", "sql-database", "web"] },
-  "Network & DevOps": { description: "Calculate CIDR subnets, convert IPv4/IPv6, decode SSL certificates, generate Dockerfiles, and compose configurations locally.", related: ["security", "web", "api"] },
+  "Code Generation": { description: "Generate TypeScript types, Zod schemas, Go structs, Python Pydantic models, Rust Serde structs, and React JSX components locally.", related: ["json-data", "sql-database", "web", "ai-prompts"] },
+  "Network & DevOps": { description: "Calculate CIDR subnets, convert IPv4/IPv6, decode SSL certificates, generate Dockerfiles, and compose configurations locally.", related: ["security", "web", "api", "crypto-pki"] },
   "Frontend & CSS": { description: "Build and preview CSS Grid, Flexbox layouts, keyframe animations, glassmorphism, clip-paths, and custom scrollbars visually.", related: ["color-css", "web", "image"] },
   "Developer Math": { description: "Inspect IEEE-754 floats, test bitwise operators, compute arbitrary-precision BigInts, and perform matrix operations locally.", related: ["encoding", "security", "numeric"] },
   Compression: { description: "Inspect, extract, create, and compress ZIP, TAR, Gzip, and Deflate archives locally in your browser with zero server uploads.", related: ["encoding", "security", "json-data"] },
+  "WebPKI & Advanced Cryptography": { description: "Generate RSA keys, perform AES-GCM encryption, inspect CSR requests, sign and verify JWTs, and build CSP headers locally using Web Crypto.", related: ["security", "encoding", "network-devops", "ai-prompts"] },
+  "AI & Prompt Engineering": { description: "Count tokens across LLM models, repair malformed JSON, interpolate prompts, calculate vector similarity, and build system prompts client-side.", related: ["crypto-pki", "text", "json-data", "code-generation"] },
 };
 /** Explicitly implemented stations are the only public station destinations. */
-const implementedStationNames = ["JSON & Data", "Encoding", "Security", "Regex", "Date & Time", "Text", "Cron", "SQL & Database", "Web", "API", "Image", "Spreadsheet", "Markdown", "Color & CSS", "Converters", "PDF", "QR & Barcode", "Audio", "Code Generation", "Network & DevOps", "Frontend & CSS", "Developer Math", "Compression"] as const;
+const implementedStationNames = ["JSON & Data", "Encoding", "Security", "Regex", "Date & Time", "Text", "Cron", "SQL & Database", "Web", "API", "Image", "Spreadsheet", "Markdown", "Color & CSS", "Converters", "PDF", "QR & Barcode", "Audio", "Code Generation", "Network & DevOps", "Frontend & CSS", "Developer Math", "Compression", "WebPKI & Advanced Cryptography", "AI & Prompt Engineering"] as const;
 const canonicalRoutes: Record<string, string> = Object.fromEntries(implementedStationNames.map(name => [name, `/stations/${stationId(name)}`]));
 const unique = (ids: readonly string[]) => [...new Set(ids)];
 

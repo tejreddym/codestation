@@ -32,6 +32,7 @@
     "@opennextjs/cloudflare": "^1.20.9",
     "@types/jsbarcode": "^3.11.4",
     "@types/qrcode": "^1.5.6",
+    "alasql": "^4.22.1",
     "entities": "^8.1.0",
     "exceljs": "4.4.0",
     "fflate": "0.8.3",

@@ -1,5 +1,5 @@
 import { localDefinition, type LocalField, type LocalDefinition } from "./local-contract";
-export const spreadsheetToolIds = ["csv-to-excel", "excel-to-csv", "json-to-excel", "excel-to-json", "tsv-to-excel", "excel-to-tsv", "xlsx-to-html", "spreadsheet-viewer", "sheet-extractor", "workbook-inspector", "spreadsheet-transposer", "spreadsheet-column-reorderer", "spreadsheet-row-filter", "spreadsheet-deduplicator", "spreadsheet-column-analyzer", "spreadsheet-empty-row-cleaner", "spreadsheet-empty-column-cleaner", "workbook-merger", "workbook-splitter", "spreadsheet-split-by-column"] as const;
+export const spreadsheetToolIds = ["csv-to-excel", "excel-to-csv", "json-to-excel", "excel-to-json", "tsv-to-excel", "excel-to-tsv", "xlsx-to-html", "spreadsheet-viewer", "sheet-extractor", "workbook-inspector", "spreadsheet-transposer", "spreadsheet-column-reorderer", "spreadsheet-row-filter", "spreadsheet-deduplicator", "spreadsheet-column-analyzer", "spreadsheet-empty-row-cleaner", "spreadsheet-empty-column-cleaner", "workbook-merger", "workbook-splitter", "spreadsheet-split-by-column", "spreadsheet-sql-query"] as const;
 export type SpreadsheetToolId = typeof spreadsheetToolIds[number];
 const file: LocalField = { name: "file", label: "XLSX file", control: "file", accept: ".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" };
 const sheet: LocalField = { name: "sheet", label: "Sheet", control: "select" };
@@ -7,6 +7,8 @@ const column: LocalField = { name: "column", label: "Column", control: "select" 
 const name: LocalField = { name: "sheetName", label: "Sheet name", control: "text" };
 const source = (label: string): LocalField => ({ name: "source", label, control: "textarea" });
 const textFile = (type: string): LocalField => ({ name: "textFile", label: `${type} file`, control: "file", accept: `.${type.toLowerCase()}`, optional: true });
+const dataFile: LocalField = { name: "textFile", label: "CSV/TSV file", control: "file", accept: ".csv,.tsv,text/csv,text/tab-separated-values,text/plain", optional: true };
+const sqlQuery: LocalField = { name: "query", label: "SQL Query", control: "textarea" };
 const notice = "Browser-local XLSX processing in a cancellable worker. No macros, formula evaluation, uploads or content telemetry. Formula expressions are preserved, but Code Station does not recalculate Excel formulas.";
 const define = (id: SpreadsheetToolId, title: string, fields: LocalField[], outputs: string[], defaults: Record<string, unknown> = {}, extra: string[] = [], pair?: SpreadsheetToolId): LocalDefinition<SpreadsheetToolId> => localDefinition(id, title, "Spreadsheet", fields, outputs, defaults, [notice, ...extra], "Process", pair);
 export const spreadsheetTools: readonly LocalDefinition<SpreadsheetToolId>[] = [
@@ -30,6 +32,7 @@ export const spreadsheetTools: readonly LocalDefinition<SpreadsheetToolId>[] = [
   define("workbook-merger", "Workbook Merger", [{ ...file, name: "files", label: "Multiple XLSX files" }], ["Merged XLSX workbook"], { files: [] }, ["All source sheets retained; duplicate names receive deterministic suffixes. Unsupported workbook metadata is omitted."]),
   define("workbook-splitter", "Workbook Splitter", [file], ["One XLSX file per sheet", "Sheet/file list"], {}, ["Individual local downloads; no server ZIP. Cross-sheet references may refer to sheets absent from extracted files."]),
   define("spreadsheet-split-by-column", "Split Spreadsheet by Column", [file, sheet, column], ["One dataset/file per unique value", "Group count"], { column: "" }, ["Headers retained, filenames sanitized with collision-safe suffixes. Maximum64 groups."]),
+  define("spreadsheet-sql-query", "Spreadsheet SQL Query", [source("CSV or TSV text"), dataFile, sqlQuery], ["Query results", "Row count", "Column count", "Execution time"], { source: "department,salary,status\nEngineering,120000,active\nEngineering,140000,active\nMarketing,95000,active\nHR,80000,inactive", query: "SELECT department, COUNT(*), AVG(salary) FROM table WHERE status = 'active' GROUP BY department" }, ["Execute in-browser SQL queries on CSV or TSV data using AlaSQL with zero server uploads.", "Query table 'table' (or alias 'data') with WHERE filters, GROUP BY aggregations, ORDER BY sorting, and pagination."]),
 ];
 export const getSpreadsheetDefinition = (id: string) => spreadsheetTools.find(tool => tool.id === id);
 export const isSpreadsheetToolId = (id: string): id is SpreadsheetToolId => (spreadsheetToolIds as readonly string[]).includes(id);
