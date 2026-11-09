@@ -24,7 +24,12 @@ import { isCodeToolId } from "@/config/code-tools";
 import { isNetworkToolId } from "@/config/network-tools";
 import { isCssPlaygroundToolId } from "@/config/css-playground-tools";
 import { isDevMathToolId } from "@/config/dev-math-tools";
+import { isCompressionToolId } from "@/config/compression-tools";
 import type { RegisteredToolId } from "@/config/tools";
+
+const CompressionStation = dynamic(() => import("./CompressionStation"), {
+  loading: () => <p role="status">Loading Compression &amp; Archive controls…</p>,
+});
 
 const DevMathStation = dynamic(() => import("./DevMathStation"), {
   loading: () => <p role="status">Loading Developer Math controls…</p>,
@@ -99,6 +104,7 @@ const NumericStation = dynamic(() => import("./NumericStation"), {
 import WebMcpBridge from "./WebMcpBridge";
 
 function renderStation(toolId: RegisteredToolId) {
+  if (isCompressionToolId(toolId)) return <CompressionStation key={toolId} toolId={toolId} />;
   if (isDevMathToolId(toolId)) return <DevMathStation key={toolId} toolId={toolId} />;
   if (isCssPlaygroundToolId(toolId)) return <CssPlaygroundStation key={toolId} toolId={toolId} />;
   if (isNetworkToolId(toolId)) return <NetworkStation key={toolId} toolId={toolId} />;

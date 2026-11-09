@@ -29,6 +29,7 @@ const defaultNotices: Record<string, string> = {
   "network-devops": "Network subnetting, certificate parsing, and cloud config generation run locally with zero server requests.",
   "frontend-css": "CSS Grid, Flexbox, keyframe animations, and visual styling tools render entirely in your browser with zero server uploads.",
   "developer-math": "Developer math, bitwise operations, IEEE-754 conversions, and matrix computations run locally on your device.",
+  compression: "Compression, decompression, and archive inspection execute entirely within your browser memory. Files are never uploaded, logged, or sent to a server.",
 };
 
 function catalogData(stationId: string, stationToolList: readonly string[]) {

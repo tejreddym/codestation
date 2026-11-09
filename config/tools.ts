@@ -24,6 +24,7 @@ import { codeTools, type CodeToolId } from "./code-tools";
 import { networkTools, type NetworkToolId } from "./network-tools";
 import { cssPlaygroundTools, type CssPlaygroundToolId } from "./css-playground-tools";
 import { devMathTools, type DevMathToolId } from "./dev-math-tools";
+import { compressionTools, type CompressionToolId } from "./compression-tools";
 
 /** Includes the legacy catalog plus typed station metadata; no browser code. */
 export type RegisteredToolId =
@@ -50,7 +51,8 @@ export type RegisteredToolId =
   | CodeToolId
   | NetworkToolId
   | CssPlaygroundToolId
-  | DevMathToolId;
+  | DevMathToolId
+  | CompressionToolId;
 export type ToolDefinition = { id: RegisteredToolId; slug: string; name: string; description: string; category: string; keywords: readonly string[]; featured?: boolean; pairId?: string; direction?: "forward" | "reverse"; pairedTool?: RegisteredToolId; inputFormat?: string; outputFormat?: string; inputType?: string; outputType?: string; dataContract?: DataToolContract; encodingContract?: EncodingToolContract; securityContract?: SecurityToolContract; regexContract?: RegexToolContract; dateTimeContract?: DateTimeToolContract; textContract?: TextToolContract; cronContract?: CronToolContract; sqlContract?: SqlToolContract; webContract?: WebToolContract; apiContract?: ApiToolContract; localContract?: LocalContract; relatedTools?: readonly string[]; seo?: { title?: string; description?: string }; };
 
 export const tools: ToolDefinition[] = [
@@ -77,6 +79,7 @@ export const tools: ToolDefinition[] = [
   ...(networkTools as unknown as ToolDefinition[]),
   ...(cssPlaygroundTools as unknown as ToolDefinition[]),
   ...(devMathTools as unknown as ToolDefinition[]),
+  ...(compressionTools as unknown as ToolDefinition[]),
 ];
 
 export function getTool(slug: string) { return tools.find((tool) => tool.slug === slug); }

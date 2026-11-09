@@ -1,5 +1,19 @@
 # TODO
 
+## Station 23 — Compression & Archive Station (`/stations/compression`) — 2026-11-09
+
+- [x] Create dedicated Compression & Archive Station at `/stations/compression` (Station 23).
+- [x] Implement 5 client-side compression tools (zero server uploads):
+  - [x] **ZIP Extractor & Viewer** (`zip-extractor`): Tree view of archive contents, text/image preview, selective extraction, clean ZIP re-export.
+  - [x] **ZIP Archive Creator** (`zip-creator`): Multi-file drag-and-drop, compression level 0-9 selection, instant ZIP creation & download.
+  - [x] **Gzip / Deflate Compressor** (`gzip-compressor`): Raw text/binary compression, native `CompressionStream` with `fflate` fallback, Base64 & `.gz`/`.zz` download.
+  - [x] **Gzip / Deflate Decompressor** (`gzip-decompressor`): Decompress Base64 strings or `.gz`/`.zz` files in memory, UTF-8 text preview & binary download.
+  - [x] **TAR / TAR.GZ Inspector** (`tar-inspector`): POSIX & GNU TAR parser, automatic gzip decompression, permissions/timestamps, selective file extraction, one-click export to ZIP.
+- [x] Register tools in `config/compression-tools.ts`, `config/tools.ts`, `config/stations.ts`, and `components/StationMark.tsx`.
+- [x] Add WebMCP execution dispatcher handlers for all 5 compression tools.
+- [x] Enforce strict tool slug conventions across metadata, routing, and `AGENTS.md`.
+- [x] Verify complete test suite and production SSG build.
+
 ## WebMCP Support & Comprehensive SEO/AEO/GEO Integration — 2026-11-09
 
 - [x] Implement browser-native WebMCP bridge on `document.modelContext` / `navigator.modelContext` with polyfill fallback.

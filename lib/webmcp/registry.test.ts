@@ -111,6 +111,26 @@ describe("WebMCP Registry and Dispatcher", () => {
     expect(parsed.xor.dec).toBe(12 ^ 5);
   });
 
+  it("executes Compression tools via WebMCP", async () => {
+    const compResult = await executeWebMcpTool("codestation_execute_tool", {
+      toolId: "gzip-compressor",
+      input: "WebMCP compression testing text",
+      options: { format: "gzip" },
+    });
+    expect(compResult.isError).toBeFalsy();
+    const parsedComp = JSON.parse(compResult.content[0].text);
+    expect(parsedComp.base64).toBeTruthy();
+    expect(parsedComp.format).toBe("gzip");
+
+    const decompResult = await executeWebMcpTool("codestation_execute_tool", {
+      toolId: "gzip-decompressor",
+      input: parsedComp.base64,
+      options: { format: "gzip" },
+    });
+    expect(decompResult.isError).toBeFalsy();
+    expect(decompResult.content[0].text).toBe("WebMCP compression testing text");
+  });
+
   it("registers an active tool dynamically and unregisters on cleanup", async () => {
     const tool = getTool("json-formatter")!;
     expect(tool).toBeDefined();

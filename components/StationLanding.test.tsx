@@ -19,9 +19,10 @@ describe("shared station landing", () => {
   });
 
   it("exposes canonical routes for exactly the implemented station set", () => {
-    expect(stations).toHaveLength(22);
+    expect(stations).toHaveLength(23);
     expect(stations.every(station => station.route === `/stations/${station.id}`)).toBe(true);
     expect(stations.some(station => station.name === "Developer Math")).toBe(true);
     expect(stations.some(station => station.name === "Audio")).toBe(true);
+    expect(stations.some(station => station.name === "Compression")).toBe(true);
   });
 });

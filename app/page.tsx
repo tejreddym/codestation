@@ -51,6 +51,7 @@ export default function HomePage() {
           <Link href="/stations/code-generation" className={styles.featurePill}>⚡ Code &amp; Type Gen</Link>
           <Link href="/stations/network-devops" className={styles.featurePill}>🌐 CIDR &amp; DevOps</Link>
           <Link href="/stations/developer-math" className={styles.featurePill}>🧮 Developer Math</Link>
+          <Link href="/stations/compression" className={styles.featurePill}>📦 Compression &amp; ZIP</Link>
         </div>
         <label className={styles.search} htmlFor="global-tool-search"><Search size={21} aria-hidden="true" /><span className="sr-only">Search all tools</span><input id="global-tool-search" value={query} onChange={event => setQuery(event.target.value)} placeholder="Search tools, formats, and tasks…" aria-label="Search all tools" autoComplete="off" /></label>
         <p className={styles.searchHint}>{query.trim() ? `${matches.length} matching tools` : "Search the registry or browse a station below."}</p>

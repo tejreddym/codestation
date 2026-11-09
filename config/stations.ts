@@ -31,9 +31,10 @@ const localStations: Record<string, { description: string; related: string[]; sh
   "Network & DevOps": { description: "Calculate CIDR subnets, convert IPv4/IPv6, decode SSL certificates, generate Dockerfiles, and compose configurations locally.", related: ["security", "web", "api"] },
   "Frontend & CSS": { description: "Build and preview CSS Grid, Flexbox layouts, keyframe animations, glassmorphism, clip-paths, and custom scrollbars visually.", related: ["color-css", "web", "image"] },
   "Developer Math": { description: "Inspect IEEE-754 floats, test bitwise operators, compute arbitrary-precision BigInts, and perform matrix operations locally.", related: ["encoding", "security", "numeric"] },
+  Compression: { description: "Inspect, extract, create, and compress ZIP, TAR, Gzip, and Deflate archives locally in your browser with zero server uploads.", related: ["encoding", "security", "json-data"] },
 };
 /** Explicitly implemented stations are the only public station destinations. */
-const implementedStationNames = ["JSON & Data", "Encoding", "Security", "Regex", "Date & Time", "Text", "Cron", "SQL & Database", "Web", "API", "Image", "Spreadsheet", "Markdown", "Color & CSS", "Converters", "PDF", "QR & Barcode", "Audio", "Code Generation", "Network & DevOps", "Frontend & CSS", "Developer Math"] as const;
+const implementedStationNames = ["JSON & Data", "Encoding", "Security", "Regex", "Date & Time", "Text", "Cron", "SQL & Database", "Web", "API", "Image", "Spreadsheet", "Markdown", "Color & CSS", "Converters", "PDF", "QR & Barcode", "Audio", "Code Generation", "Network & DevOps", "Frontend & CSS", "Developer Math", "Compression"] as const;
 const canonicalRoutes: Record<string, string> = Object.fromEntries(implementedStationNames.map(name => [name, `/stations/${stationId(name)}`]));
 const unique = (ids: readonly string[]) => [...new Set(ids)];
 

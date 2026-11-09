@@ -1,4 +1,5 @@
 import {
+  Archive,
   ArrowRightLeft,
   Binary,
   Braces,
@@ -46,6 +47,7 @@ const stationIcons: Record<string, LucideIcon> = {
   "Network & DevOps": Network,
   "Frontend & CSS": Layout,
   "Developer Math": Calculator,
+  Compression: Archive,
 };
 
 export default function StationMark({ large = false, label }: { large?: boolean; label?: string }) {

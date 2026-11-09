@@ -107,6 +107,14 @@ import { curlToCode, type CurlTargetLanguage } from "../tools/curl-to-code";
 import { auditEnv, formatEnvAuditReport } from "../tools/env-audit";
 import { generateMockDataset, type MockTemplate } from "../tools/mock-data";
 import { parseAndResolveGitConflicts, formatConflictReport, type ConflictStrategy } from "../tools/git-conflict";
+import {
+  compressGzip,
+  decompressGzip,
+  createZip,
+  inspectZip,
+  parseTar,
+  base64ToUint8Array,
+} from "../tools/compression/engine";
 import { getTool } from "../../config/tools";
 
 /** Native SubtleCrypto helpers for SHA-256 / SHA-512 / SHA-384 / HMAC */
@@ -401,6 +409,111 @@ export async function dispatchToolExecution(
         tableName: options.tableName,
       });
       return options.format === "sql" ? mockResult.sql ?? mockResult.json : options.format === "csv" ? mockResult.csv ?? mockResult.json : mockResult.json;
+    }
+
+    // ----------------- Compression & Archive Station -----------------
+    case "gzip-compressor": {
+      const compRes = await compressGzip(input, {
+        format: (options.format as "gzip" | "deflate") || "gzip",
+        level: Number(options.level ?? 6),
+      });
+      return JSON.stringify(
+        {
+          format: compRes.format,
+          originalSize: compRes.originalSize,
+          compressedSize: compRes.compressedSize,
+          ratioPercent: compRes.ratioPercent,
+          engine: compRes.engine,
+          base64: compRes.base64,
+        },
+        null,
+        2
+      );
+    }
+    case "gzip-decompressor": {
+      const decompRes = await decompressGzip(input, {
+        format: options.format as "auto" | "gzip" | "deflate",
+        isBase64: true,
+      });
+      return decompRes.isText && decompRes.text
+        ? decompRes.text
+        : JSON.stringify(
+            {
+              format: decompRes.format,
+              originalSize: decompRes.originalSize,
+              decompressedSize: decompRes.decompressedSize,
+              isText: decompRes.isText,
+              engine: decompRes.engine,
+            },
+            null,
+            2
+          );
+    }
+    case "zip-creator": {
+      const files: Array<{ path: string; data: Uint8Array }> = [];
+      if (Array.isArray(options.files)) {
+        for (const f of options.files) {
+          files.push({
+            path: f.path || "file.txt",
+            data: typeof f.content === "string" ? new TextEncoder().encode(f.content) : new Uint8Array(0),
+          });
+        }
+      } else {
+        files.push({
+          path: options.filename || "file.txt",
+          data: new TextEncoder().encode(input || ""),
+        });
+      }
+      const zipBytes = createZip(files, Number(options.level ?? 6));
+      return JSON.stringify(
+        {
+          fileCount: files.length,
+          size: zipBytes.length,
+          base64: Buffer.from(zipBytes).toString("base64"),
+        },
+        null,
+        2
+      );
+    }
+    case "zip-extractor": {
+      const zipBytes = base64ToUint8Array(input);
+      const zipInspection = inspectZip(zipBytes);
+      return JSON.stringify(
+        {
+          fileCount: zipInspection.fileCount,
+          dirCount: zipInspection.dirCount,
+          totalUncompressedSize: zipInspection.totalUncompressedSize,
+          totalCompressedSize: zipInspection.totalCompressedSize,
+          entries: zipInspection.entries.map((e) => ({
+            path: e.path,
+            size: e.size,
+            isDirectory: e.isDirectory,
+          })),
+        },
+        null,
+        2
+      );
+    }
+    case "tar-inspector": {
+      const tarBytes = base64ToUint8Array(input);
+      const tarInspection = parseTar(tarBytes);
+      return JSON.stringify(
+        {
+          isGzipped: tarInspection.isGzipped,
+          fileCount: tarInspection.fileCount,
+          dirCount: tarInspection.dirCount,
+          totalSize: tarInspection.totalSize,
+          entries: tarInspection.entries.map((e) => ({
+            name: e.name,
+            mode: e.formattedMode,
+            size: e.size,
+            mtime: e.mtime.toISOString(),
+            type: e.typeName,
+          })),
+        },
+        null,
+        2
+      );
     }
 
     // ----------------- Generic Registered Tool Fallback -----------------

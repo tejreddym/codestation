@@ -1,5 +1,26 @@
 # Project Status
 
+## Station 23 — Compression & Archive Station (`/stations/compression`) — 2026-11-09
+
+- **Station 23 Implementation**:
+  - Created dedicated **Compression & Archive Station** at `/stations/compression`.
+  - Implemented 5 pure client-side tools with 100% in-browser memory execution and zero server uploads:
+    - **ZIP Extractor & Viewer** (`zip-extractor`): Tree view of archive contents, text/image preview, selective extraction, clean ZIP re-export.
+    - **ZIP Archive Creator** (`zip-creator`): Multi-file drag-and-drop, compression level 0-9 selection, instant ZIP creation & download.
+    - **Gzip / Deflate Compressor** (`gzip-compressor`): Raw text/binary compression, native `CompressionStream` with `fflate` fallback, Base64 & `.gz`/`.zz` download.
+    - **Gzip / Deflate Decompressor** (`gzip-decompressor`): Decompress Base64 strings or `.gz`/`.zz` files in memory, UTF-8 text preview & binary download.
+    - **TAR / TAR.GZ Inspector** (`tar-inspector`): POSIX & GNU TAR parser, automatic gzip decompression, permissions/timestamps, selective file extraction, one-click export to ZIP.
+- **Architectural Integration**:
+  - Registered in `config/compression-tools.ts`, `config/tools.ts`, `config/stations.ts`, and `components/StationMark.tsx` (Archive icon).
+  - Wired into `components/ToolWorkspace.tsx` with dynamic import and lazy boundary.
+  - Added dedicated UI in `components/CompressionStation.tsx` and `components/CompressionStation.module.css`.
+  - Added WebMCP execution dispatcher handlers for all 5 compression tools.
+  - Updated `AGENTS.md` with strict rules enforcing exact slug conventions across tool ID, canonical URL, and WebMCP.
+- **Verification**:
+  - 128 Vitest test suites (5,594 tests) passing with 0 failures (`npm test -- --run`).
+  - Strict TypeScript check passing with 0 errors (`npm run typecheck`).
+  - Prerendering all static routes and generating offline bundle (`npm run build`).
+
 ## WebMCP Support & Comprehensive SEO/AEO/GEO Integration — 2026-11-09
 
 - **WebMCP (Web Model Context Protocol) In-Browser Implementation**:

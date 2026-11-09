@@ -1,5 +1,24 @@
 # Changelog
 
+## Station 23 — Compression & Archive Station (`/stations/compression`) — 2026-11-09
+
+- **Station 23 Implementation**:
+  - Created Station 23 at `/stations/compression` with dedicated Archive icon and privacy notice.
+  - Implemented 5 client-side tools running 100% in browser memory with zero server uploads:
+    - `zip-extractor` (ZIP Extractor & Viewer): Drag & drop or picker, archive tree view, image thumbnail and text code preview, individual file download, and clean re-ZIP export.
+    - `zip-creator` (ZIP Archive Creator): Multi-file/folder drag & drop queue, compression levels 0-9 (Store to Max), instant ZIP creation & download.
+    - `gzip-compressor` (Gzip / Deflate Compressor): Raw text/binary compression, native browser `CompressionStream` with `fflate` fallback, Base64 output & `.gz`/`.zz` download.
+    - `gzip-decompressor` (Gzip / Deflate Decompressor): Auto-detection of Gzip vs Deflate, Base64 or `.gz`/`.zz` file decompression in memory, UTF-8 text viewer with copy and binary download.
+    - `tar-inspector` (TAR / TAR.GZ Inspector): POSIX and GNU TAR header parser, automatic gzip decompression, UNIX mode permissions, selective extraction, and one-click export to ZIP.
+- **WebMCP & Metadata Integration**:
+  - Registered all 5 compression tools in `lib/webmcp/dispatcher.ts` for AI agent execution.
+  - Added full SEO, AEO, and GEO Schema.org schemas (`SoftwareApplication`, `HowTo`, `FAQPage`) and WebMCP DOM attributes.
+  - Updated `AGENTS.md` with explicit tool slug conventions.
+- **Verification**:
+  - All 128 Vitest test suites (5,594 tests) passing with 0 errors.
+  - TypeScript strict typecheck clean.
+  - Static site generation passing.
+
 ## WebMCP Support & Comprehensive SEO/AEO/GEO Integration — 2026-11-09
 
 - **Browser-Native WebMCP (Web Model Context Protocol)**:

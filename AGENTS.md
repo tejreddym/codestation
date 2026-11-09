@@ -13,6 +13,7 @@ Code Station is a browser-first developer toolbox built with Next.js 15 App Rout
 - Keep secrets out of source control; update `.env.example` when environment variables are introduced.
 - Update `PROJECT_STATUS.md`, `TODO.md`, `CHANGELOG.md`, and relevant docs as the project evolves.
 - Process inputs in the browser; do not add uploads, analytics payloads, or input persistence. No `eval`, arbitrary scripts, or server URL proxies.
+- Follow strict tool slug conventions identical to previous tools: Tool definition `id` must equal `slug` (in lowercase kebab-case, e.g. `zip-extractor`), match its canonical route (`/tools/[slug]`), pair with WebMCP identifiers (`codestation_[snake_case_slug]`), and match `data-webmcp-slug`. Do not invent prefixes or vary slugs across configs, routers, or tests.
 - All current and future tools must provide WebMCP (`document.modelContext`) support and adhere to comprehensive SEO, AEO, and GEO standards (detailed below).
 
 ## Verification

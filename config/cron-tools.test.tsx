@@ -21,7 +21,7 @@ describe("Cron registry, public routes and metadata", () => {
   it("adds precisely six unique tools without introducing excluded stations", () => {
     expect(cronTools).toHaveLength(6); expect(cronToolIds).toEqual(Object.keys(fields)); expect(tools.filter(tool => tool.category === "Cron")).toEqual(cronTools);
     expect(new Set(tools.map(tool => tool.id)).size).toBe(tools.length); expect(new Set(cronTools.map(tool => tool.description)).size).toBe(6); expect(new Set(cronTools.map(tool => tool.seo.title)).size).toBe(6);
-      expect(stations.map(station => station.name)).toEqual(["JSON & Data", "Encoding", "Security", "Regex", "Date & Time", "Text", "Cron", "SQL & Database", "Web", "API", "Image", "Spreadsheet", "Markdown", "Color & CSS", "Converters", "PDF", "QR & Barcode", "Audio", "Code Generation", "Network & DevOps", "Frontend & CSS", "Developer Math"]);
+      expect(stations.map(station => station.name)).toEqual(["JSON & Data", "Encoding", "Security", "Regex", "Date & Time", "Text", "Cron", "SQL & Database", "Web", "API", "Image", "Spreadsheet", "Markdown", "Color & CSS", "Converters", "PDF", "QR & Barcode", "Audio", "Code Generation", "Network & DevOps", "Frontend & CSS", "Developer Math", "Compression"]);
   });
   it.each(cronTools)("$id exact fields, canonical, H1, factual sections and related links", async tool => {
     expect(tool.cronContract.fields.map(field => field.name)).toEqual(fields[tool.id]); expect(generateStaticParams()).toContainEqual({ slug: tool.slug });
