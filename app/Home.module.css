@@ -32,7 +32,13 @@
 .eyebrow > span { color: var(--home-ink); font-size: 19px; }
 .hero h1 { max-width: none; margin: 20px 0; font-size: clamp(48px, 6.1vw, 80px); line-height: .99; letter-spacing: -.065em; font-weight: 600; }
 .hero h1 > span { position: relative; }
-.intro { max-width: 490px; margin: 0 auto 24px; color: var(--home-muted); font-size: 16px; line-height: 1.6; }
+.intro { max-width: 640px; margin: 0 auto 20px; color: var(--home-muted); font-size: 16px; line-height: 1.6; }
+.heroFeaturePills { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px 10px; max-width: 860px; margin: 0 auto 26px; }
+.featurePill { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; background: var(--home-surface); border: 1px solid var(--home-line); border-radius: 999px; font-size: 12px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--home-ink); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04); text-decoration: none; transition: all .15s ease; }
+.featurePill:hover { border-color: var(--home-control); background: var(--home-raised); }
+.pillDot { width: 7px; height: 7px; border-radius: 50%; background: #10b981; box-shadow: 0 0 6px rgba(16, 185, 129, 0.6); display: inline-block; }
+.pillDotPulse { animation: pulse 2s infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(0.85); } }
 .search { position: relative; z-index: 2; display: flex; align-items: center; gap: 13px; max-width: 620px; min-height: 62px; margin: auto; padding: 10px 20px; border: 1px solid var(--home-control); border-radius: 9px; background: var(--home-surface); box-shadow: 0 4px 0 var(--home-line); color: var(--home-muted); }
 .search:focus-within { outline: 2px solid var(--home-focus); outline-offset: 3px; }
 .search svg { flex: none; }

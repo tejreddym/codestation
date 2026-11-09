@@ -780,7 +780,7 @@ EOF`}
                 <span className={styles.sectionTag}>W3C / Browser API</span>
               </div>
               <p className={styles.leadText}>
-                WebMCP connects AI browser assistants, extensions, and automated web agents directly to Code Station's
+                WebMCP connects AI browser assistants, extensions, and automated web agents directly to Code Station&apos;s
                 in-page developer utilities through <code>document.modelContext</code> with <strong>zero server uploads and zero network latency</strong>.
               </p>
 

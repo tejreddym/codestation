@@ -30,7 +30,7 @@ export const siteConfig = {
   origin: verifiedOrigin,
   indexing: isIndexingEnabled(verifiedOrigin),
   tagline: "Your everyday developer toolbox.",
-  description: "Fast, private-by-default developer utilities for formatting, converting, debugging, generating, and inspecting technical data.",
+  description: "Fast, 100% in-browser developer toolbox with native WebMCP (Web Model Context Protocol) support for AI agents. 380+ tools across 22 stations—including PDF tools, Code Generation, CIDR Networking, Hashes, Developer Math, and Converters—with zero server uploads.",
 };
 
 export function metadataForPage(path: string, title: string, description: string): Metadata {
