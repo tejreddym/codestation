@@ -1,6 +1,26 @@
 # Project Status
 
-## Station Architecture Reorganization & Converters Station Integration — 2026-10-11
+## WebMCP Support & Comprehensive SEO/AEO/GEO Integration — 2026-11-09
+
+- **WebMCP (Web Model Context Protocol) In-Browser Implementation**:
+  - Implemented client-side WebMCP support complying with the Chromium experimental specification and W3C draft (`document.modelContext` / `navigator.modelContext`).
+  - Added centralized WebMCP module in `lib/webmcp/`:
+    - `types.ts`: WebMcpTool, WebMcpToolResult, and WebMcpContext interfaces.
+    - `dispatcher.ts`: Pure client-side tool execution dispatcher covering 380+ utilities (JSON, Encoding, Security/Hashes, Text, Cron, Code Generation, Network, Math, CSS, Git, Env, Mock Data) with zero server telemetry.
+    - `registry.ts`: Tool store, runtime bridge, universal discovery (`codestation_list_tools`), universal execution (`codestation_execute_tool`), and active tool registration helper with polyfill fallback for non-supporting browsers and extensions.
+    - `registry.test.ts`: Vitest test suite validating registration, listing, and local execution across stations.
+  - Added `components/WebMcpBridge.tsx` to automatically register the active tool when navigating `/tools/[slug]` routes and expose global tool discovery across all pages.
+- **SEO, AEO & GEO Architecture Standards**:
+  - Enhanced `app/tools/[slug]/page.tsx` with high-density Schema.org structured data:
+    - `SoftwareApplication` (GEO): Application Category, Web Browser operating system, zero-price offer, and 100% in-browser requirement declarations.
+    - `HowTo` (AEO): Step-by-step instructions for AI overview and search engine featured snippet extraction.
+    - `FAQPage` (AEO): Pre-computed Q&A covering tool purpose, privacy guarantees, and AI agent interoperability.
+    - Declarative WebMCP annotations: `data-webmcp-tool`, `data-webmcp-category`, `data-webmcp-slug`.
+  - Updated `AGENTS.md` with explicit mandatory rules enforcing WebMCP support, SEO, AEO, and GEO standards for all existing and future tools.
+- **Verification**:
+  - All 125 Vitest test suites (5,562 tests) passing with 0 failures (`npm test -- --run`).
+  - TypeScript strict typecheck clean (`npm run typecheck`).
+  - Production build (`npm run build`) successfully prerendered all 385 static routes and generated offline bundle.
 
 - **Semantic Station Reorganization**:
   - Reorganized misplaced tools into dedicated semantic stations:

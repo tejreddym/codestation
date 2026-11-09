@@ -1,7 +1,15 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { validateCoupon } from "./coupons";
 
 describe("Coupon Engine (CS50FIRST)", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-10-15T12:00:00Z"));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
   it("validates CS50FIRST on 1-month Monthly Pro plan", () => {
     const result = validateCoupon("CS50FIRST", "monthly", 19900);
     expect(result.valid).toBe(true);

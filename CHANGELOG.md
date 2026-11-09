@@ -1,5 +1,26 @@
 # Changelog
 
+## WebMCP Support & Comprehensive SEO/AEO/GEO Integration — 2026-11-09
+
+- **Browser-Native WebMCP (Web Model Context Protocol)**:
+  - Added native WebMCP support anchored on `document.modelContext` / `navigator.modelContext` with seamless polyfill fallback for browser AI extensions and web agents.
+  - Built pure client-side execution dispatcher in `lib/webmcp/dispatcher.ts` providing 100% in-browser, zero-upload tool execution across all 22 stations.
+  - Implemented `codestation_list_tools` for discovering, searching, and filtering all 380+ tools by station category and query.
+  - Implemented `codestation_execute_tool` for universal parameter-driven execution of any Code Station utility.
+  - Built `components/WebMcpBridge.tsx` to automatically register the active tool definition and schema on page load with clean unregister on navigation.
+  - Added unit test suite in `lib/webmcp/registry.test.ts` (10 tests passing).
+- **SEO, AEO & GEO Structured Optimization**:
+  - Upgraded tool pages (`app/tools/[slug]/page.tsx`) with high-density multi-schema JSON-LD:
+    - `SoftwareApplication` with `operatingSystem: "All (Web Browser)"`, zero-dollar offers, and `browserRequirements` declarations.
+    - `HowTo` schema with actionable step-by-step guidance for Perplexity and Google AI Overviews.
+    - `FAQPage` schema addressing functionality, privacy guarantees, and AI agent interoperability.
+  - Added declarative agent markup on tool containers (`data-webmcp-tool`, `data-webmcp-category`, `data-webmcp-slug`).
+  - Updated `AGENTS.md` with explicit mandatory rules enforcing WebMCP support, SEO, AEO, and GEO standards across all future tool development.
+- **Verification & Quality**:
+  - All 125 Vitest test suites (5,562 tests) passing with 0 failures (`npm test -- --run`).
+  - TypeScript strict typecheck clean with 0 errors (`npm run typecheck`).
+  - Next.js production build (`npm run build`) generating all 385 static routes with 0 errors.
+
 ## Station Architecture Reorganization & Converters Station Integration — 2026-10-11
 
 - **Dedicated Audio Station**:

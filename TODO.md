@@ -1,5 +1,15 @@
 # TODO
 
+## WebMCP Support & Comprehensive SEO/AEO/GEO Integration — 2026-11-09
+
+- [x] Implement browser-native WebMCP bridge on `document.modelContext` / `navigator.modelContext` with polyfill fallback.
+- [x] Create centralized in-browser tool dispatcher in `lib/webmcp/dispatcher.ts` supporting 380+ tools with zero server telemetry.
+- [x] Provide universal discovery (`codestation_list_tools`) and execution (`codestation_execute_tool`) tools for web AI agents.
+- [x] Add dynamic tool mounting with `components/WebMcpBridge.tsx` on all `/tools/[slug]` routes.
+- [x] Enhance `app/tools/[slug]/page.tsx` with high-density Schema.org structured data (`SoftwareApplication`, `HowTo`, `FAQPage`) and DOM agent attributes.
+- [x] Update `AGENTS.md` with strict mandatory WebMCP, SEO, AEO, and GEO standards for all present and future tools.
+- [x] Verify complete test suite (125/125 passed) and production SSG build (385/385 routes).
+
 ## Station Architecture Reorganization & Converters Station Integration — 2026-10-11
 
 - [x] Create dedicated Audio Station (`/stations/audio`) with Web Audio API waveform visualizer and 16-bit PCM WAV exporter.

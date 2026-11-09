@@ -96,7 +96,9 @@ const ApiStation = dynamic(() => import("./ApiStation"), {
 const NumericStation = dynamic(() => import("./NumericStation"), {
   loading: () => <p role="status">Loading numeric converter controls…</p>,
 });
-export default function ToolWorkspace({ toolId }: { toolId: RegisteredToolId }) {
+import WebMcpBridge from "./WebMcpBridge";
+
+function renderStation(toolId: RegisteredToolId) {
   if (isDevMathToolId(toolId)) return <DevMathStation key={toolId} toolId={toolId} />;
   if (isCssPlaygroundToolId(toolId)) return <CssPlaygroundStation key={toolId} toolId={toolId} />;
   if (isNetworkToolId(toolId)) return <NetworkStation key={toolId} toolId={toolId} />;
@@ -122,6 +124,15 @@ export default function ToolWorkspace({ toolId }: { toolId: RegisteredToolId }) 
   return isDateTimeToolId(toolId)
     ? <DateTimeStation key={toolId} toolId={toolId} />
     : <ToolWorkbench key={toolId} toolId={toolId as any} />;
+}
+
+export default function ToolWorkspace({ toolId }: { toolId: RegisteredToolId }) {
+  return (
+    <>
+      <WebMcpBridge toolId={toolId} />
+      {renderStation(toolId)}
+    </>
+  );
 }
 const ImageStation = dynamic(() => import("./ImageStation"), { loading: () => <p role="status">Loading Image controls…</p> });
 const SpreadsheetStation = dynamic(() => import("./SpreadsheetStation"), { loading: () => <p role="status">Loading Spreadsheet controls…</p> });
