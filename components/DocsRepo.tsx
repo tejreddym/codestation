@@ -28,10 +28,11 @@ const TOPICS: DocTopic[] = [
   { id: "cli-types", category: "cli", title: "JSON to TypeScript & Zod Schema", keywords: ["typescript", "zod", "types", "interface", "schema", "json"] },
   { id: "cli-uuid-json", category: "cli", title: "UUID Generator & JSON Formatter", keywords: ["uuid", "v4", "json", "lint", "minify", "beautify"] },
   { id: "mcp-protocol", category: "mcp", title: "MCP Stdio Protocol & RPC Methods", keywords: ["mcp", "protocol", "rpc", "stdio", "tools.list", "tools/call", "json-rpc"] },
+  { id: "webmcp-protocol", category: "mcp", title: "WebMCP: Browser-Native AI Tool Protocol", keywords: ["webmcp", "browser", "document.modelContext", "navigator.modelContext", "ai agent", "chrome", "in-page", "flag", "tools", "privacy"] },
   { id: "ai-assistants", category: "ai", title: "AI Assistant Configurations (Claude, Cursor, Windsurf)", keywords: ["claude", "cursor", "windsurf", "cline", "ai", "mcp config", "assistant"] },
   { id: "ai-prompt", category: "ai", title: "Copy-Pastable AI System Prompt & Rules", keywords: ["prompt", "system", "rules", ".cursorrules", "claude.md", "guidelines"] },
   { id: "tool-catalog", category: "catalog", title: "MCP Tool Capability Matrix (20+ Tools)", keywords: ["catalog", "tools", "capabilities", "free", "pro", "matrix"] },
-  { id: "web-stations", category: "web", title: "Web Application & 15 Stations Directory", keywords: ["web", "stations", "browser", "free", "sandbox", "wasm", "webcrypto"] },
+  { id: "web-stations", category: "web", title: "Web Application & 22 Stations Directory", keywords: ["web", "stations", "browser", "free", "sandbox", "wasm", "webcrypto"] },
   { id: "licensing", category: "licensing", title: "Pro Licensing & Device Binding", keywords: ["license", "pro", "pricing", "device", "razorpay", "upi", "activation"] },
   { id: "lost-key-recovery", category: "lostkey", title: "Lost Key Recovery Policy & Fee Schedule", keywords: ["lost", "key", "recovery", "email", "fee", "regeneration", "razorpay"] },
   { id: "security-privacy", category: "security", title: "Zero-Telemetry & Privacy Architecture", keywords: ["privacy", "security", "telemetry", "sha256", "cloudflare", "kv", "offline"] },
@@ -42,7 +43,7 @@ const CATEGORIES = [
   { id: "all", label: "All Docs" },
   { id: "quickstart", label: "⚡ Quickstart" },
   { id: "cli", label: "💻 Terminal CLI" },
-  { id: "mcp", label: "📡 MCP Protocol" },
+  { id: "mcp", label: "📡 MCP & WebMCP" },
   { id: "ai", label: "🤖 AI Agents" },
   { id: "catalog", label: "🛠️ Tool Catalog" },
   { id: "web", label: "🌐 Web Stations" },
@@ -771,11 +772,95 @@ EOF`}
             </section>
           )}
 
-          {/* 14. AI Assistant Configs */}
+          {/* WebMCP Browser Protocol */}
+          {activeIds.has("webmcp-protocol") && (
+            <section id="webmcp-protocol" className={styles.docSection}>
+              <div className={styles.sectionHeader}>
+                <h2>14. WebMCP: Browser-Native Model Context Protocol</h2>
+                <span className={styles.sectionTag}>W3C / Browser API</span>
+              </div>
+              <p className={styles.leadText}>
+                WebMCP connects AI browser assistants, extensions, and automated web agents directly to Code Station's
+                in-page developer utilities through <code>document.modelContext</code> with <strong>zero server uploads and zero network latency</strong>.
+              </p>
+
+              <div className={styles.callout}>
+                <strong>How WebMCP Works in Code Station:</strong>
+                <ul>
+                  <li><strong>100% In-Browser:</strong> Executions run locally in the active tab using Web APIs, Web Crypto, and client AST engines. No data ever leaves your machine.</li>
+                  <li><strong>Chromium Origin Trial / Early Flag:</strong> In Chrome 146+, enable via <code>chrome://flags/#enable-webmcp-testing</code>.</li>
+                  <li><strong>Zero-Friction Fallback:</strong> In all other browsers, Code Station injects a transparent polyfill on <code>document.modelContext</code> and exposes <code>window.__CODESTATION_WEBMCP__</code>.</li>
+                  <li><strong>Universal Discovery:</strong> The <code>codestation_list_tools</code> tool enables agents to query 380+ tools across 22 stations.</li>
+                  <li><strong>Universal Execution:</strong> The <code>codestation_execute_tool</code> tool executes any tool with structured JSON parameters.</li>
+                  <li><strong>Active Tool Mounting:</strong> Visiting any <code>/tools/[slug]</code> page dynamically mounts a dedicated tool contract (e.g. <code>codestation_cidr_calculator</code>).</li>
+                </ul>
+              </div>
+
+              <CopySnippet
+                title="Execute Tool via JavaScript / Web Agent"
+                code={`// Progressive feature check
+const ctx = document.modelContext ?? navigator.modelContext ?? window.__CODESTATION_WEBMCP__;
+
+if (ctx) {
+  // Execute any Code Station tool locally
+  const result = await ctx.executeTool('codestation_execute_tool', {
+    toolId: 'json-formatter',
+    input: '{"name":"Code Station","active":true}',
+    options: { indent: 2 }
+  });
+
+  console.log(result.content[0].text);
+}`}
+                language="javascript"
+              />
+
+              <CopySnippet
+                title="Discover Available In-Browser Tools"
+                code={`// Search for hashing and security utilities
+const list = await document.modelContext.executeTool('codestation_list_tools', {
+  category: 'Security',
+  limit: 10
+});
+
+console.log(JSON.parse(list.content[0].text));`}
+                language="javascript"
+              />
+
+              <div className={styles.subSection}>
+                <h3>Dual MCP Protocol Strategy</h3>
+                <table className={styles.specTable}>
+                  <thead>
+                    <tr>
+                      <th>Environment</th>
+                      <th>Protocol Standard</th>
+                      <th>Primary Consumer</th>
+                      <th>Data Boundary</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><strong>Web Browser</strong></td>
+                      <td>WebMCP (<code>document.modelContext</code>)</td>
+                      <td>Chrome AI, Web Extensions, Web Agents</td>
+                      <td>100% In-Browser Tab Memory</td>
+                    </tr>
+                    <tr>
+                      <td><strong>Desktop / Terminal</strong></td>
+                      <td>Local MCP (<code>stdio</code> JSON-RPC)</td>
+                      <td>Claude Desktop, Cursor, Windsurf, CLI</td>
+                      <td>Local Machine Memory / Node Process</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          )}
+
+          {/* 15. AI Assistant Configs */}
           {activeIds.has("ai-assistants") && (
             <section id="ai-assistants" className={styles.docSection}>
               <div className={styles.sectionHeader}>
-                <h2>14. AI Assistant Configuration Guides</h2>
+                <h2>15. AI Assistant Configuration Guides</h2>
                 <span className={styles.sectionTag}>Integration Setup</span>
               </div>
               <p className={styles.leadText}>
