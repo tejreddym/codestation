@@ -14,6 +14,7 @@ Code Station is a browser-first developer toolbox built with Next.js 15 App Rout
 - Update `PROJECT_STATUS.md`, `TODO.md`, `CHANGELOG.md`, and relevant docs as the project evolves.
 - Process inputs in the browser; do not add uploads, analytics payloads, or input persistence. No `eval`, arbitrary scripts, or server URL proxies.
 - Follow strict tool slug conventions identical to previous tools: Tool definition `id` must equal `slug` (in lowercase kebab-case, e.g. `zip-extractor`), match its canonical route (`/tools/[slug]`), pair with WebMCP identifiers (`codestation_[snake_case_slug]`), and match `data-webmcp-slug`. Do not invent prefixes or vary slugs across configs, routers, or tests.
+- Whenever creating or modifying a station: Always update the station index, global search registry, and any navigation components (homepage feature pills, station index counts, related stations network, converters capability map, docs repository directory, and site directory) so the new station and its tools appear correctly.
 - All current and future tools must provide WebMCP (`document.modelContext`) support and adhere to comprehensive SEO, AEO, and GEO standards (detailed below).
 
 ## Verification
@@ -49,6 +50,15 @@ Read `PROJECT_STATUS.md` and `HANDOFF.md` first. Check the real files rather tha
 Before implementing or modifying converter tools in any station, read and follow `docs/SMART_CONVERTER_STANDARD.md`. Applicable converters must use the shared capability registry, preserve compatible source input in client memory across output changes, synchronize directional routes and page metadata, invalidate stale outputs, and expose only genuinely supported conversions. Keep non-converter tools specialized.
 
 All station landing pages must use the shared station layout and follow `docs/STATION_PAGE_STANDARD.md`. Derive tools, counts, search, and navigation from authoritative registries. Preserve canonical tool identities and existing converter-session behavior.
+
+## Station Creation & Navigation Checklist
+
+Whenever creating or modifying a station, ensure all the following components are updated so the new station appears correctly across the entire app:
+1. **Station Registry & Layout**: Register in `config/stations.ts` (with route, name, description, Lucide icon in `components/StationMark.tsx`, and bidirectional `relatedStations`). Add client privacy notice in `components/StationLanding.tsx`.
+2. **Station Index**: Update homepage station index counts and eyebrow label in `app/page.tsx` (`[ XXX+ PRIVATE TOOLS · WEBMCP BROWSER AI PROTOCOL · N STATIONS ]`), add hero feature pills, and ensure `app/site-directory/page.tsx` reflects the new station.
+3. **Global Search Registry**: Register all tools in `config/tools.ts` with comprehensive search keywords, and connect relevant clipboard patterns in `lib/workbench/detection.ts` for Smart Detection.
+4. **Navigation & Converters**: If the station includes conversion tools, map capabilities in `config/conversion-capabilities.ts` and `config/converter-tools.ts` to surface them in the `/stations/converters` navigation tab.
+5. **Documentation Directory**: Update `components/DocsRepo.tsx` (station directory section, category counts, and tool capabilities).
 
 UI enhancements must preserve control types, validation, event behavior, routes, and tool/session state. Use the shared visual tokens and components. Functional changes require a separate task.
 
