@@ -118,20 +118,6 @@ export default function HomePage() {
           Format, convert, generate, and inspect across 395+ private developer utilities across 25 stations.
           Featuring native <strong>WebMCP (<code>document.modelContext</code>)</strong> for in-page AI agent execution with 100% client-side privacy.
         </p>
-        <div className={styles.heroFeaturePills}>
-          <Link href="/docs#webmcp-protocol" className={styles.featurePill}>
-            <span className={`${styles.pillDot} ${styles.pillDotPulse}`} />
-            <strong>WebMCP Native</strong> (document.modelContext)
-          </Link>
-          <span className={styles.featurePill}>🔒 100% In-Browser Privacy</span>
-          <Link href="/stations/crypto-pki" className={styles.featurePill}>🔑 WebPKI &amp; Crypto</Link>
-          <Link href="/stations/ai-prompts" className={styles.featurePill}>✨ AI &amp; Prompts</Link>
-          <Link href="/stations/pdf" className={styles.featurePill}>📄 Client PDF &amp; Sign</Link>
-          <Link href="/stations/code-generation" className={styles.featurePill}>⚡ Code &amp; Type Gen</Link>
-          <Link href="/stations/network-devops" className={styles.featurePill}>🌐 CIDR &amp; DevOps</Link>
-          <Link href="/stations/developer-math" className={styles.featurePill}>🧮 Developer Math</Link>
-          <Link href="/stations/compression" className={styles.featurePill}>📦 Compression &amp; ZIP</Link>
-        </div>
         <label className={styles.search} htmlFor="global-tool-search">
           <Search size={21} aria-hidden="true" />
           <span className="sr-only">Search all tools</span>
