@@ -1,15 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
-import { ArrowDown, ArrowUpRight, Search } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ArrowDown, ArrowUpRight, Search, Sparkles } from "lucide-react";
 import { stations } from "@/config/stations";
-import { tools } from "@/config/tools";
+import { getTool, tools } from "@/config/tools";
 import { searchTools } from "@/lib/tool-search";
+import { useSafeRouter } from "@/components/useSafeNavigation";
+import { useWorkbench } from "@/components/WorkbenchProvider";
+import { detectClipboardContent, type Detection } from "@/lib/workbench/detection";
 import PersonalTools from "@/components/PersonalTools";
 import NativeAd from "@/components/NativeAd";
 import StationMark from "@/components/StationMark";
-import ClipboardOmniTriage from "@/components/ClipboardOmniTriage";
 import { StationAssembly, DataPreview, ImagePreview, ColorPreview } from "@/components/HomeGraphics";
 import styles from "./Home.module.css";
 
@@ -25,7 +27,81 @@ import { siteConfig } from "@/config/site";
 
 export default function HomePage() {
   const [query, setQuery] = useState("");
-  const matches = useMemo(() => query.trim() ? searchTools(tools, query) : quickAccess, [query]);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const router = useSafeRouter();
+  const { queueInput } = useWorkbench();
+
+  // Global keyboard shortcut: Cmd/Ctrl + Shift + V focuses the search bar
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const isModifier = event.metaKey || event.ctrlKey;
+      const isShift = event.shiftKey;
+      const isV = event.key.toLowerCase() === "v" || event.code === "KeyV";
+
+      if (isModifier && isShift && isV) {
+        event.preventDefault();
+        searchInputRef.current?.focus();
+        searchInputRef.current?.select();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  // Format detection on query / pasted content
+  const detectionResult = useMemo(() => {
+    const trimmed = query.trim();
+    if (!trimmed) return null;
+    const result = detectClipboardContent(trimmed);
+    if (result.topMatch && result.topMatch.format !== "Plain Text" && result.topMatch.score >= 50) {
+      return result;
+    }
+    return null;
+  }, [query]);
+
+  // Open tool with input pre-filled and persisted
+  const handleOpenTool = useCallback((slug: string, detection: Detection) => {
+    const content = query.trim();
+    if (!content) return;
+    queueInput(slug, content);
+    try {
+      sessionStorage.setItem("codestation_pending_input", JSON.stringify({ slug, text: content }));
+      const stored = sessionStorage.getItem("codestation_triage_history");
+      const prev = stored ? JSON.parse(stored) : [];
+      const newEntry = {
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        timestamp: Date.now(),
+        text: content,
+        preview: content.replace(/\s+/g, " ").slice(0, 70),
+        format: detection.format,
+        confidence: detection.confidence,
+        score: detection.score,
+        slug,
+        toolName: getTool(slug)?.name ?? slug,
+      };
+      sessionStorage.setItem("codestation_triage_history", JSON.stringify([newEntry, ...prev.filter((item: any) => item.text !== content)].slice(0, 10)));
+    } catch {
+      // ignore storage errors
+    }
+    const truncatedParam = encodeURIComponent(content.slice(0, 2000));
+    router.push(`/tools/${slug}?input=${truncatedParam}`);
+  }, [query, queueInput, router]);
+
+  const matches = useMemo(() => {
+    const trimmed = query.trim();
+    if (!trimmed) return quickAccess;
+    const directMatches = searchTools(tools, trimmed);
+    if (directMatches.length > 0) return directMatches;
+    if (detectionResult?.matches?.length) {
+      const detected = detectionResult.matches
+        .map(d => tools.find(t => t.slug === d.slug))
+        .filter(Boolean) as typeof tools;
+      if (detected.length > 0) return detected;
+    }
+    return directMatches;
+  }, [query, detectionResult]);
+
   return <main className={styles.page}>
     <JsonLd schema={{
       "@context": "https://schema.org",
@@ -56,9 +132,59 @@ export default function HomePage() {
           <Link href="/stations/developer-math" className={styles.featurePill}>🧮 Developer Math</Link>
           <Link href="/stations/compression" className={styles.featurePill}>📦 Compression &amp; ZIP</Link>
         </div>
-        <ClipboardOmniTriage />
-        <label className={styles.search} htmlFor="global-tool-search"><Search size={21} aria-hidden="true" /><span className="sr-only">Search all tools</span><input id="global-tool-search" value={query} onChange={event => setQuery(event.target.value)} placeholder="Search tools, formats, and tasks…" aria-label="Search all tools" autoComplete="off" /></label>
+        <label className={styles.search} htmlFor="global-tool-search">
+          <Search size={21} aria-hidden="true" />
+          <span className="sr-only">Search all tools</span>
+          <input
+            id="global-tool-search"
+            ref={searchInputRef}
+            value={query}
+            onChange={event => setQuery(event.target.value)}
+            placeholder="Search tools, formats, and tasks…"
+            aria-label="Search all tools"
+            autoComplete="off"
+          />
+        </label>
+        {detectionResult && detectionResult.topMatch && (
+          <div className={styles.searchTriage} role="status" aria-live="polite">
+            <div className={styles.searchTriageHeader}>
+              <span className={styles.searchTriageFormat}>
+                <Sparkles size={14} aria-hidden="true" />
+                Detected: {detectionResult.topMatch.format}
+              </span>
+              <span className={`${styles.searchTriageBadge} ${detectionResult.topMatch.confidence === "high" ? styles.badgeHigh : styles.badgePossible}`}>
+                {detectionResult.topMatch.score}% confidence
+              </span>
+              <span className={styles.searchTriageReason}>{detectionResult.topMatch.reason}</span>
+            </div>
+            <div className={styles.searchTriageActions}>
+              <button
+                type="button"
+                className={styles.searchTriagePrimaryBtn}
+                onClick={() => handleOpenTool(detectionResult.topMatch!.slug, detectionResult.topMatch!)}
+              >
+                Open in {getTool(detectionResult.topMatch.slug)?.name ?? detectionResult.topMatch.slug}
+                <ArrowUpRight size={14} aria-hidden="true" />
+              </button>
+              {detectionResult.matches.slice(1, 4).map(alt => {
+                const altTool = getTool(alt.slug);
+                return (
+                  <button
+                    key={alt.slug}
+                    type="button"
+                    className={styles.searchTriageSecondaryBtn}
+                    onClick={() => handleOpenTool(alt.slug, alt)}
+                  >
+                    {altTool?.name ?? alt.slug}
+                    <ArrowUpRight size={12} aria-hidden="true" />
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
         <p className={styles.searchHint}>{query.trim() ? `${matches.length} matching tools` : "Search the registry or browse a station below."}</p>
+        <p className={styles.searchDetectHint}>Paste anything to detect format</p>
         <div className={styles.stage}><StationAssembly /><div className={styles.stageCaption} aria-hidden="true"><span>DIFFERENT PARTS. ONE WORKSPACE.</span><span>ASSEMBLED FOR THE EVERYDAY.</span></div></div>
       </section>
 

@@ -45,6 +45,131 @@
 .search input { min-width: 0; width: 100%; padding: 8px 0; border: 0; outline: none!important; background: transparent; color: var(--home-ink); font: 16px/1.5 Arial, Helvetica, sans-serif; }
 .search input::placeholder { color: var(--home-muted); opacity: 1; }
 .searchHint { margin: 12px 0 0; color: var(--home-muted); font-size: 12px; }
+.searchDetectHint {
+  margin: 6px 0 0;
+  color: var(--home-muted);
+  font-size: 11px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: .02em;
+}
+
+.searchTriage {
+  position: relative;
+  z-index: 2;
+  max-width: 620px;
+  margin: 14px auto 0;
+  padding: 12px 16px;
+  background: var(--home-surface);
+  border: 1px solid var(--home-line);
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+  text-align: left;
+}
+
+.searchTriageHeader {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 10px;
+  margin-bottom: 8px;
+}
+
+.searchTriageFormat {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--home-ink);
+}
+
+.searchTriageBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  padding: 2px 7px;
+  border-radius: 999px;
+  border: 1px solid;
+}
+
+.badgeHigh {
+  background: rgba(16, 185, 129, 0.12);
+  color: #059669;
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+:global([data-theme="dark"]) .badgeHigh {
+  background: rgba(16, 185, 129, 0.2);
+  color: #34d399;
+  border-color: rgba(16, 185, 129, 0.4);
+}
+
+.badgePossible {
+  background: rgba(245, 158, 11, 0.12);
+  color: #d97706;
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+:global([data-theme="dark"]) .badgePossible {
+  background: rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
+  border-color: rgba(245, 158, 11, 0.4);
+}
+
+.searchTriageReason {
+  font-size: 12px;
+  color: var(--home-muted);
+  width: 100%;
+}
+
+.searchTriageActions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.searchTriagePrimaryBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  background: var(--home-lime);
+  color: #151713;
+  border: 1px solid var(--home-control);
+  border-radius: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  transition: opacity .15s;
+}
+
+.searchTriagePrimaryBtn:hover {
+  opacity: 0.9;
+}
+
+.searchTriageSecondaryBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 10px;
+  background: transparent;
+  color: var(--home-ink);
+  border: 1px solid var(--home-line);
+  border-radius: 5px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all .15s;
+}
+
+.searchTriageSecondaryBtn:hover {
+  background: var(--home-raised);
+  border-color: var(--home-control);
+}
 .stage { position: relative; pointer-events: none; margin: 8px auto 0; max-width: 1050px; }
 .assembly { display: block; width: 100%; height: auto; aspect-ratio: 4; pointer-events: none; }
 .stageCaption { display: flex; justify-content: space-between; padding: 0 5% 20px; color: var(--home-muted); font-size: 9px; letter-spacing: .09em; }

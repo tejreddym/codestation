@@ -46,4 +46,36 @@ describe("homepage discovery contracts", () => {
     for (const svg of container.querySelectorAll("main svg")) expect(svg.getAttribute("aria-hidden")).toBe("true");
     expect(container.querySelectorAll('svg[tabindex="0"]')).toHaveLength(0);
   });
+
+  it("integrates format detection into search bar, shows extra text, and handles Cmd+Shift+V shortcut", async () => {
+    sessionStorage.clear();
+    render(<HomePage />);
+
+    // 1. Verify extra text is present below search bar
+    expect(screen.getByText("Paste anything to detect format")).toBeDefined();
+
+    // 2. Verify separate ClipboardOmniTriage textarea is NOT in hero
+    expect(screen.queryByPlaceholderText("📋 Paste anything here to auto-detect format… (Cmd/Ctrl + V)")).toBeNull();
+
+    const input = screen.getByRole("textbox", { name: "Search all tools" }) as HTMLInputElement;
+
+    // 3. Test shortcut Cmd/Ctrl + Shift + V focuses the search bar
+    input.blur();
+    expect(document.activeElement).not.toBe(input);
+    fireEvent.keyDown(window, { key: "v", code: "KeyV", metaKey: true, shiftKey: true });
+    expect(document.activeElement).toBe(input);
+
+    // 4. Test format detection on paste/change of JSON
+    fireEvent.change(input, { target: { value: '{"name": "Code Station", "active": true}' } });
+
+    expect(screen.getByText(/Detected: JSON/i)).toBeDefined();
+    expect(screen.getByText(/98% confidence/i)).toBeDefined();
+    expect(screen.getByRole("button", { name: /Open in JSON Formatter/i })).toBeDefined();
+
+    // 5. Test clicking open in tool persists pending input
+    fireEvent.click(screen.getByRole("button", { name: /Open in JSON Formatter/i }));
+    const pending = sessionStorage.getItem("codestation_pending_input");
+    expect(pending).toBeTruthy();
+    expect(JSON.parse(pending!).slug).toBe("json-formatter");
+  });
 });
