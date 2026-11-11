@@ -14,6 +14,7 @@ export interface StationDefinition {
 const stationIdOverrides: Record<string, string> = {
   "WebPKI & Advanced Cryptography": "crypto-pki",
   "AI & Prompt Engineering": "ai-prompts",
+  "Policy Generators": "policy-generators",
 };
 const stationId = (name: string) => stationIdOverrides[name] ?? name.toLowerCase().replace(/ & /g, "-").replace(/[^a-z0-9]+/g, "-");
 const localStations: Record<string, { description: string; related: string[]; shared?: string[] }> = {
@@ -38,9 +39,10 @@ const localStations: Record<string, { description: string; related: string[]; sh
   Compression: { description: "Inspect, extract, create, and compress ZIP, TAR, Gzip, and Deflate archives locally in your browser with zero server uploads.", related: ["encoding", "security", "json-data"] },
   "WebPKI & Advanced Cryptography": { description: "Generate RSA keys, perform AES-GCM encryption, inspect CSR requests, sign and verify JWTs, and build CSP headers locally using Web Crypto.", related: ["security", "encoding", "network-devops", "ai-prompts"] },
   "AI & Prompt Engineering": { description: "Count tokens across LLM models, repair malformed JSON, interpolate prompts, calculate vector similarity, and build system prompts client-side.", related: ["crypto-pki", "text", "json-data", "code-generation"] },
+  "Policy Generators": { description: "Generate customized, compliant Privacy Policies, Terms & Conditions, Cookie Policies, Disclaimers, and Refund Policies in text, markdown, and HTML locally.", related: ["markdown", "text", "web", "security"] },
 };
 /** Explicitly implemented stations are the only public station destinations. */
-const implementedStationNames = ["JSON & Data", "Encoding", "Security", "Regex", "Date & Time", "Text", "Cron", "SQL & Database", "Web", "API", "Image", "Spreadsheet", "Markdown", "Color & CSS", "Converters", "PDF", "QR & Barcode", "Audio", "Code Generation", "Network & DevOps", "Frontend & CSS", "Developer Math", "Compression", "WebPKI & Advanced Cryptography", "AI & Prompt Engineering"] as const;
+const implementedStationNames = ["JSON & Data", "Encoding", "Security", "Regex", "Date & Time", "Text", "Cron", "SQL & Database", "Web", "API", "Image", "Spreadsheet", "Markdown", "Color & CSS", "Converters", "PDF", "QR & Barcode", "Audio", "Code Generation", "Network & DevOps", "Frontend & CSS", "Developer Math", "Compression", "WebPKI & Advanced Cryptography", "AI & Prompt Engineering", "Policy Generators"] as const;
 const canonicalRoutes: Record<string, string> = Object.fromEntries(implementedStationNames.map(name => [name, `/stations/${stationId(name)}`]));
 const unique = (ids: readonly string[]) => [...new Set(ids)];
 

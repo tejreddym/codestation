@@ -218,6 +218,17 @@ export function detectTools(input: string): Detection[] {
     }
   }
 
+  // 12.5. Legal / Policy Document Detection
+  if (
+    /(?:privacy\s+policy|terms\s+(?:and|&)\s+conditions|terms\s+of\s+service|cookie\s+policy|refund\s+policy|disclaimer)/i.test(text) &&
+    /(?:effective\s+date|last\s+updated|we\s+collect|personal\s+data|governing\s+law|cookies?|liability)/i.test(text)
+  ) {
+    return [
+      match("privacy-policy-generator", "Legal policy document detected (Privacy, Terms, Cookies, or Disclaimer)", "Legal Policy", "high", 95),
+      match("terms-and-conditions-generator", "Review or generate terms and conditions", "Legal Policy", "high", 90),
+    ];
+  }
+
   // 13. Markdown
   const hasMarkdownTable = /\|[^\n]+\|[^\n]*\n\|[-:\s|]+\|\s*(\n\|[^\n]+\|[^\n]*)+/.test(text);
   const hasFencedCodeBlock = /```[\w-]*\n[\s\S]+?\n```/.test(text);

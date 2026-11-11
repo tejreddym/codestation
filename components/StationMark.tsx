@@ -18,6 +18,7 @@ import {
   Palette,
   QrCode,
   Regex,
+  Scale,
   ShieldCheck,
   Sparkles,
   Table2,
@@ -54,6 +55,8 @@ const stationIcons: Record<string, LucideIcon> = {
   "crypto-pki": KeyRound,
   "AI & Prompt Engineering": Sparkles,
   "ai-prompts": Sparkles,
+  "Policy Generators": Scale,
+  "policy-generators": Scale,
 };
 
 export default function StationMark({ large = false, label }: { large?: boolean; label?: string }) {

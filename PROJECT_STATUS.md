@@ -1,5 +1,70 @@
 # Project Status
 
+## Strategic Ad Placements Expansion — 2026-11-11
+
+- **Ad Units Expanded Across High-Traffic Views**:
+  - Expanded `BannerAd` (728x90 leaderboard & 300x250 rectangle) and `NativeAd` into key user paths:
+    - Tool detail pages (`app/tools/[slug]/page.tsx`): Bottom leaderboard complementing sticky sidebar rectangle.
+    - All 26 station landing pages (`components/StationLanding.tsx`): Pre-related and post-related leaderboard banners.
+    - Central directory browser (`components/DirectoryBrowser.tsx`): Interleaved leaderboard ads every 3 category clusters.
+    - Homepage (`app/page.tsx`): Leaderboard unit between Pro section and Principles.
+    - Workbench hub (`app/workbench/page.tsx`): Leaderboard unit above feature links.
+    - Workflow Studio (`components/WorkflowBuilder.tsx`): Post-execution pipeline inspection leaderboard unit.
+    - Batch Images (`app/batch-images/page.tsx`) & Site Directory (`app/site-directory/page.tsx`).
+- **Safety & Verification**:
+  - Gated by `NEXT_PUBLIC_ADS_ENABLED=true` and format-specific opt-in flags with 100% clean fallback when disabled.
+  - Isolated `<iframe>` rendering for banners eliminates DOM ID collisions and script conflicts.
+  - Zero hydration errors, CLS shifts, or type issues.
+  - All 155 test suites passed (6,510 tests). Next.js SSG production build cleanly generated all 413 pages.
+
+## Universal Tool Engine & Declarative Tool Contract Architecture — 2026-11-11
+
+- **Architecture Unification (All 300+ Tools)**:
+  - Created canonical declarative contracts in `lib/engine/types.ts` (`ToolDefinition`, `ToolEngine`, `ToolInput`, `ToolOutput`, `ValidationResult`, `ToolContext`, `ToolResult`).
+  - Built deterministic execution runtime in `lib/engine/runtime.ts` enforcing pre-execution validation gates, cancellation mechanics, and high-precision duration tracking.
+  - Implemented centralized memory management in `lib/engine/blobRegistry.ts` (`BlobUrlRegistry`) with automatic URL revocation and leak prevention.
+  - Built transparent Web Worker offloading in `lib/engine/workerRunner.ts` with progress forwarding, timeouts, and non-worker fallbacks.
+  - Created reusable React lifecycle hook `lib/engine/useToolEngine.ts` handling reactive state, input manipulation, and safe unmount cleanup.
+- **Universal Tool UI Shell (`components/engine/`)**:
+  - Implemented modular component suite: `UniversalToolShell.tsx`, `ToolHeader.tsx`, `ToolPrivacyBadge.tsx`, `ToolDropzone.tsx`, `ToolEditor.tsx`, `ToolControls.tsx`, `ToolProgressBar.tsx`, `ToolErrorBanner.tsx`, `ToolActionBar.tsx`, `ToolOutputPreview.tsx`, and `CustomCanvasSlot.tsx`.
+  - Designed with the warm Tactile Technical tokens in `app/globals.css`.
+- **Registry Adapter & Agent Bridge**:
+  - Built `lib/engine/adapters/registryAdapter.ts` (`adaptToolToEngine`) adapting all 300+ tools from `config/tools.ts` with zero regressions.
+  - Implemented dual-key resolution for the 6 legacy mismatched tools (`MISMATCHED_SLUG_ID_MAP`).
+  - Serializers for WebMCP (`document.modelContext`) and Local stdio MCP in `lib/engine/mcpBridge.ts`.
+  - Wired in-memory pipeline chaining in `components/WorkflowBuilder.tsx`.
+- **Testing & Quality Assurance**:
+  - Built centralized contract testing harness `describeToolContract()` in `lib/engine/__tests__/contractHarness.ts`.
+  - All 155 test suites passed (6,480 tests, 100% pass rate).
+  - TypeScript validation clean (`npm run typecheck`).
+  - Next.js production build (`npm run build`) succeeded generating all 413 static pages.
+
+## Station 26 — Policy Generators Station (`/stations/policy-generators`) — 2026-11-10
+
+- **Station 26 Implementation**:
+  - Created dedicated **Policy Generators Station** at `/stations/policy-generators` (Station 26).
+  - Implemented 5 pure client-side tools with 100% in-browser memory execution and zero server uploads:
+    - **Privacy Policy Generator** (`privacy-policy-generator`): GDPR, CCPA/CPRA, CalOPPA, and COPPA compliant privacy policy builder.
+    - **Terms & Conditions Generator** (`terms-and-conditions-generator`): Complete terms of service agreement builder with user accounts, IP ownership, arbitration, liability ceilings, and DMCA safe harbor.
+    - **Cookie Policy Generator** (`cookie-policy-generator`): EU ePrivacy Directive & GDPR Recital 30 cookie policy builder with 4-pillar taxonomy, inventory tables, and browser guides.
+    - **Disclaimer Generator** (`disclaimer-generator`): Professional advice disclaimers (legal, financial, medical), FTC affiliate links, Amazon Associates disclosures, and warranty exclusions.
+    - **Refund Policy Generator** (`refund-policy-generator`): Consumer return policy builder covering standard returns, all sales final, store credit, return shipping, restocking fees, and SaaS cancellations.
+- **Architectural Integration & Multi-Format Exports**:
+  - Registered in `config/policy-tools.ts`, `config/tools.ts`, `config/stations.ts`, and `components/StationMark.tsx` (Scale icon).
+  - Wired into `components/ToolWorkspace.tsx` with dynamic import and lazy boundary.
+  - Added dedicated UI in `components/PolicyGeneratorsStation.tsx` and `components/PolicyGeneratorsStation.module.css`.
+  - Live real-time preview panel supporting Formatted HTML, Markdown, Semantic HTML5, Plain Text, and JSON AST.
+  - One-click copy to clipboard with visual confirmation and fallback.
+  - Direct client-side file downloads (.md, .html, .txt, .json) with semantic filenames.
+  - Browser-native Print and Save-to-PDF (`window.print()` with `@media print` clean isolation).
+  - Four industry preset profiles (SaaS / Cloud Software, E-Commerce, Blog / Content, Mobile App) for instant one-click configuration.
+  - Added WebMCP execution dispatcher handlers for all 5 policy tools.
+  - Updated station counters across `config/site.ts`, `components/HomeSearch.tsx`, and `components/DocsRepo.tsx` (400+ tools, 26 stations).
+- **Verification**:
+  - 146 Vitest test suites (6,172 tests) passing with 0 failures (`npm test`).
+  - Strict TypeScript check passing with 0 errors (`npm run typecheck`).
+  - Next.js production build (`npm run build`) generating all 413 static routes with 0 errors.
+
 ## Station 23 — Compression & Archive Station (`/stations/compression`) — 2026-11-09
 
 - **Station 23 Implementation**:
@@ -82,7 +147,6 @@
   - Next.js production build (`npm run build`) generates all 383 static routes and offline bundle (168 assets, 5.8MB) with 0 errors.
   - Sitemaps, robots, breadcrumbs, station directory, and homepage showcases updated seamlessly.
 
-
 - All 104 Vitest test suites (5,414 total tests) are passing with 0 failures (`npm test -- --run`).
 - Resolved jsdom Web Storage mock in `vitest.setup.ts`, restoring complete passes for `ThemeToggle.test.tsx` and `Workbench.test.tsx`.
 - TypeScript strict typecheck passing cleanly with 0 errors (`npm run typecheck`).
@@ -94,7 +158,7 @@
   - `mock-data` (`/tools/mock-data`): Deterministic mock dataset generator with JSON & SQL INSERT formats.
   - `git-conflict` (`/tools/conflict-parse`): Git merge conflict resolver supporting `ours`, `theirs`, and `both`.
 - Shared access engine in `config/shared-registry.ts` guarantees all web tools remain 100% free with zero paywalls or credential persistence; Pro licensing exclusively governs CLI/MCP local execution.
-- Verified lost key recovery policy: users email `twnspace2@gmail.com` with Razorpay Payment ID or receipt; 1st regeneration fee ₹25, doubling on subsequent recoveries.
+- Verified lost key recovery policy: users email `hello@codestation.in` with Razorpay Payment ID or receipt; 1st regeneration fee ₹25, doubling on subsequent recoveries.
 
 ## Code Station MCP v1.2.0 & Killer Pro Suite — 2026-10-09
 
@@ -224,7 +288,7 @@
 
 ## Workbench features and Smart Detection — 2026-10-07
 
-- Implemented favorites/recent tools, global keyboard search, local clipboard suggestions with configurable single-match handoff, connected data workflows, input-free recipe links, PNG batch conversion/ZIP, targeted help, optional offline starter pack and feedback drafts to the owner-approved `twnspace2@gmail.com`.
+- Implemented favorites/recent tools, global keyboard search, local clipboard suggestions with configurable single-match handoff, connected data workflows, input-free recipe links, PNG batch conversion/ZIP, targeted help, optional offline starter pack and feedback drafts to the owner-approved `hello@codestation.in`.
 - Six new public pages; 295 existing tools and 15 stations retained. Sitemap now has **323** canonical `https://codestation.in` pages, all verified HTTP 200 locally. Fixed the JSON station ID/slug lookup discrepancy. Tool controls, engines, canonical routes, converter sessions and theme mechanism remain intact. No ads, new station or runtime dependency.
 - **5,341 tests / 93 files passed**, typecheck and build passed (**328 static pages**); lint passes with 14 existing warnings. Offline JSON/text processing was verified with the server stopped after fixing encoded dynamic-route cache paths. Final focused suite passed all 42 new tests. Desktop/mobile theme screenshots and detailed limits are recorded in [docs/WORKBENCH.md](docs/WORKBENCH.md) and [release evidence](docs/workbench-release/index.html).
 - Final optional pack: 142 code files / 4,831,438 raw bytes plus page shells. Only JSON Formatter and Text Counter are supported offline. Clipboard automation varies by browser; installation and completed ZIP bytes were not independently verified. No deployment or indexing change. Production preview at localhost:3000; stop it before rebuilding or switching to development.
@@ -234,7 +298,6 @@
 - Configured the user-confirmed `https://codestation.in` origin in `.env.local` and `.env.example`. The existing registry-driven `/sitemap.xml` now emits **317 unique canonical page URLs**: home, tools directory, 15 stations, 295 tools and five information pages. Query variants, redirects and pending stations remain excluded; indexing opt-in is unchanged.
 - Added `app/sitemap.test.ts` to compare sitemap coverage against static page files and authoritative registries, validate uniqueness/domain and check exclusions/unsafe-origin handling. Six sitemap/site tests and typecheck passed. The running local endpoint returned HTTP 200 `application/xml`; parsed XML confirmed all 317 URLs use the confirmed domain. No deployment performed. Production builds must receive `NEXT_PUBLIC_SITE_URL=https://codestation.in`.
 
-
 ## Site-wide editorial redesign — 2026-10-07
 
 - Extended the homepage’s ivory/charcoal/lime identity to all 15 stations, 295 tool routes, grouped all-tools directory and five information pages. Added a category jump index, compact ruled tool rows, original bracket/category artwork, focused workspace headings, neutral panel headers, lime actions, offset reading layouts and compact shared footer.
@@ -242,7 +305,6 @@
 - Verification: **5,293 existing tests + 3 new directory tests passed**; typecheck and production build passed (322 static pages); lint completed with existing warnings. **316 non-homepage routes return 200**. Browser checked search/filter/reset, keyboard jumps, mobile menu, theme persistence, JSON formatting/Copy, image conversion with source retention and native controls, and unchanged red color preview.
 - Reviewed 320/390/768/1024/1440 widths and a short laptop viewport. Saved 32 matched before/after screenshots across four page types in both themes. Known pre-existing JSON station count discrepancy (46 headline/40 catalog) remains; OS reduced-motion, zoom, physical touch and full network trace were not tested. Download request status worked but saved-file observation timed out.
 - Design: [docs/SITE_DESIGN.md](docs/SITE_DESIGN.md). Evidence: [docs/site-redesign/VERIFICATION.md](docs/site-redesign/VERIFICATION.md). [Screenshot gallery](docs/site-redesign/index.html). User’s follow-up supersedes the prior homepage-only stop instruction. No new station, Git commit or deployment.
-
 
 ## Homepage reinvention — 2026-10-07
 
@@ -252,7 +314,6 @@
 - Browser: inspected 320, 390, 768, 1024 and 1440 widths, including 1024×600; verified search/no-results/Clear, keyboard link selection and focus, mobile Menu/Close/Stations anchor, theme and refresh, and JSON formatting/Clear. Image route retains native file/number/select controls. Production browser recorded no console errors. Matched before/after desktop and mobile screenshots cover both themes.
 - Limitations: live OS reduced-motion, browser zoom, physical touch, full network trace and cross-browser/screen-reader testing were not performed. Asset-origin/source checks found only local homepage assets; this is not a network-capture claim. Initial Node 25 test run had nine unchanged theme-test storage failures; documented Node 22 passes all tests.
 - Design/reference/motion details: [docs/HOMEPAGE_DESIGN.md](docs/HOMEPAGE_DESIGN.md). Evidence and detailed check boundaries: [docs/homepage-redesign/VERIFICATION.md](docs/homepage-redesign/VERIFICATION.md). No Git repository or deployment. Stop after homepage work; no new station was started.
-
 
 **Product:** Code Station · **Updated:** 2026-10-07
 

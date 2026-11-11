@@ -31,15 +31,20 @@ export function ProSubscriptionManager() {
   const [verifyLoading, setVerifyLoading] = useState(false);
   const [verifyResult, setVerifyResult] = useState<VerifyResult | null>(null);
 
-  const [selectedPlan, setSelectedPlan] = useState<"monthly" | "lifetime">("monthly");
+  const [selectedPlan, setSelectedPlan] = useState<"monthly" | "lifetime">(
+    "monthly",
+  );
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
-  const [generatedResult, setGeneratedResult] = useState<GenerateResult | null>(null);
+  const [generatedResult, setGeneratedResult] = useState<GenerateResult | null>(
+    null,
+  );
   const [copiedKey, setCopiedKey] = useState(false);
 
   // Coupon state
   const [couponInput, setCouponInput] = useState("");
-  const [appliedCoupon, setAppliedCoupon] = useState<CouponValidationResult | null>(null);
+  const [appliedCoupon, setAppliedCoupon] =
+    useState<CouponValidationResult | null>(null);
   const [couponError, setCouponError] = useState<string | null>(null);
 
   function handleApplyCoupon(e: React.FormEvent) {
@@ -68,7 +73,9 @@ export function ProSubscriptionManager() {
     setSelectedPlan(plan);
     if (plan === "lifetime" && appliedCoupon) {
       setAppliedCoupon(null);
-      setCouponError("Coupon CS50FIRST was removed because it is valid only for the Monthly Pro plan.");
+      setCouponError(
+        "Coupon CS50FIRST was removed because it is valid only for the Monthly Pro plan.",
+      );
     } else {
       setCouponError(null);
     }
@@ -117,9 +124,10 @@ export function ProSubscriptionManager() {
     try {
       // 1. Create order on backend with optional coupon
       const basePaise = selectedPlan === "monthly" ? 19900 : 99900;
-      const amountPaise = appliedCoupon?.valid && selectedPlan === "monthly"
-        ? appliedCoupon.discountedAmountPaise!
-        : basePaise;
+      const amountPaise =
+        appliedCoupon?.valid && selectedPlan === "monthly"
+          ? appliedCoupon.discountedAmountPaise!
+          : basePaise;
 
       const orderRes = await fetch("/api/create-order", {
         method: "POST",
@@ -133,14 +141,21 @@ export function ProSubscriptionManager() {
       });
 
       if (!orderRes.ok) {
-        const errData = (await orderRes.json().catch(() => ({}))) as Record<string, any>;
-        throw new Error(errData.error || `Failed to create order (Status ${orderRes.status})`);
+        const errData = (await orderRes.json().catch(() => ({}))) as Record<
+          string,
+          any
+        >;
+        throw new Error(
+          errData.error || `Failed to create order (Status ${orderRes.status})`,
+        );
       }
 
       const orderData = (await orderRes.json()) as Record<string, any>;
 
       if (!window.Razorpay) {
-        throw new Error("Razorpay SDK is loading. Please check your internet connection and try again.");
+        throw new Error(
+          "Razorpay SDK is loading. Please check your internet connection and try again.",
+        );
       }
 
       // 2. Open Razorpay Checkout modal
@@ -149,7 +164,10 @@ export function ProSubscriptionManager() {
         amount: orderData.amount,
         currency: orderData.currency,
         name: "Code Station Pro",
-        description: selectedPlan === "monthly" ? "Monthly Pro Subscription" : "Lifetime Pro License",
+        description:
+          selectedPlan === "monthly"
+            ? "Monthly Pro Subscription"
+            : "Lifetime Pro License",
         order_id: orderData.order_id,
         handler: async function (response: {
           razorpay_payment_id: string;
@@ -177,13 +195,18 @@ export function ProSubscriptionManager() {
                 key: verifyData.licenseKey,
                 plan: verifyData.plan,
                 expiresAt: verifyData.expiresAt,
-                message: "Payment successful! Your Code Station Pro key has been generated.",
+                message:
+                  "Payment successful! Your Code Station Pro key has been generated.",
               });
             } else {
-              setCheckoutError(verifyData.error || "Payment signature verification failed.");
+              setCheckoutError(
+                verifyData.error || "Payment signature verification failed.",
+              );
             }
           } catch (err: any) {
-            setCheckoutError(err.message || "Network error while verifying payment.");
+            setCheckoutError(
+              err.message || "Network error while verifying payment.",
+            );
           } finally {
             setCheckoutLoading(false);
           }
@@ -201,7 +224,9 @@ export function ProSubscriptionManager() {
       const rzp = new window.Razorpay(options);
 
       rzp.on("payment.failed", function (response: any) {
-        setCheckoutError(response.error?.description || "Payment failed. Please try again.");
+        setCheckoutError(
+          response.error?.description || "Payment failed. Please try again.",
+        );
         setCheckoutLoading(false);
       });
 
@@ -222,7 +247,9 @@ export function ProSubscriptionManager() {
     <div className={styles.container}>
       {/* Pricing Cards */}
       <div className={styles.pricingGrid}>
-        <div className={`${styles.planCard} ${selectedPlan === "monthly" ? styles.selected : ""}`}>
+        <div
+          className={`${styles.planCard} ${selectedPlan === "monthly" ? styles.selected : ""}`}
+        >
           <div className={styles.planHeader}>
             <span className={styles.badge}>POPULAR</span>
             <h3>Monthly Pro</h3>
@@ -246,12 +273,16 @@ export function ProSubscriptionManager() {
             onClick={() => handleSelectPlan("monthly")}
           >
             {selectedPlan === "monthly"
-              ? (appliedCoupon?.valid ? "Selected Monthly (₹99)" : "Selected Plan")
+              ? appliedCoupon?.valid
+                ? "Selected Monthly (₹99)"
+                : "Selected Plan"
               : "Choose Monthly (₹199)"}
           </button>
         </div>
 
-        <div className={`${styles.planCard} ${selectedPlan === "lifetime" ? styles.selected : ""}`}>
+        <div
+          className={`${styles.planCard} ${selectedPlan === "lifetime" ? styles.selected : ""}`}
+        >
           <div className={styles.planHeader}>
             <span className={styles.badgeAlt}>BEST VALUE</span>
             <h3>Lifetime Access</h3>
@@ -259,7 +290,9 @@ export function ProSubscriptionManager() {
               <span className={styles.priceInr}>₹999</span>
               <span className={styles.pricePeriod}>one-time (India)</span>
             </div>
-            <div className={styles.priceGlobal}>or $19.00 one-time globally</div>
+            <div className={styles.priceGlobal}>
+              or $19.00 one-time globally
+            </div>
           </div>
           <ul className={styles.featuresList}>
             <li>✓ Everything in Monthly Pro</li>
@@ -273,7 +306,9 @@ export function ProSubscriptionManager() {
             className={styles.selectBtn}
             onClick={() => handleSelectPlan("lifetime")}
           >
-            {selectedPlan === "lifetime" ? "Selected Plan" : "Choose Lifetime (₹999)"}
+            {selectedPlan === "lifetime"
+              ? "Selected Plan"
+              : "Choose Lifetime (₹999)"}
           </button>
         </div>
       </div>
@@ -283,8 +318,9 @@ export function ProSubscriptionManager() {
         <div className={styles.boxHeader}>
           <h4>Pay with Razorpay (Instant Login-Free Key)</h4>
           <p>
-            No registration or account creation needed. Complete the checkout via UPI, Cards, NetBanking,
-            or Wallets. Your cryptographic key is issued immediately and verified via Cloudflare edge one-way hashing.
+            No registration or account creation needed. Complete the checkout
+            via UPI, Cards, NetBanking, or Wallets. Your cryptographic key is
+            issued immediately and verified via Cloudflare edge one-way hashing.
           </p>
         </div>
 
@@ -292,7 +328,11 @@ export function ProSubscriptionManager() {
         <div className={styles.couponSection}>
           {appliedCoupon?.valid ? (
             <div className={styles.couponBadge}>
-              <span>✓ Coupon <strong>{appliedCoupon.code}</strong> applied: 50% OFF (₹199 → ₹{Math.round(appliedCoupon.discountedAmountPaise! / 100)})</span>
+              <span>
+                ✓ Coupon <strong>{appliedCoupon.code}</strong> applied: 50% OFF
+                (₹199 → ₹
+                {Math.round(appliedCoupon.discountedAmountPaise! / 100)})
+              </span>
               <button
                 type="button"
                 onClick={handleRemoveCoupon}
@@ -318,7 +358,9 @@ export function ProSubscriptionManager() {
               </button>
             </form>
           )}
-          {couponError && <div className={styles.couponError}>{couponError}</div>}
+          {couponError && (
+            <div className={styles.couponError}>{couponError}</div>
+          )}
         </div>
 
         <div className={styles.checkoutAction}>
@@ -346,7 +388,9 @@ export function ProSubscriptionManager() {
         {generatedResult?.success && generatedResult.key && (
           <div className={styles.generatedKeyBox}>
             <div className={styles.keyNotice}>
-              <strong>Payment Verified! Save your key now:</strong> This plaintext key is shown only once and will never be displayed again.
+              <strong>Payment Verified! Save your key now:</strong> This
+              plaintext key is shown only once and will never be displayed
+              again.
             </div>
             <div className={styles.keyDisplay}>
               <code>{generatedResult.key}</code>
@@ -359,7 +403,8 @@ export function ProSubscriptionManager() {
               </button>
             </div>
             <div className={styles.expiryInfo}>
-              Plan: <strong>{generatedResult.plan?.toUpperCase()}</strong> • Validity:{" "}
+              Plan: <strong>{generatedResult.plan?.toUpperCase()}</strong> •
+              Validity:{" "}
               <strong>
                 {generatedResult.expiresAt
                   ? new Date(generatedResult.expiresAt).toLocaleDateString()
@@ -368,13 +413,18 @@ export function ProSubscriptionManager() {
             </div>
 
             <div className={styles.recoveryNotice}>
-              ⚠️ <strong>Backup this key safely:</strong> Code Station does not store plaintext keys. If you lose your key, email <a href="mailto:twnspace2@gmail.com">twnspace2@gmail.com</a> with your Payment ID or receipt screenshot to regenerate a new key (₹25 for 1st recovery, doubling each subsequent recovery: ₹50, ₹100, etc.).
+              ⚠️ <strong>Backup this key safely:</strong> Code Station does not
+              store plaintext keys. If you lose your key, email{" "}
+              <a href="mailto:hello@codestation.in">hello@codestation.in</a>{" "}
+              with your Payment ID or receipt screenshot to regenerate a new key
+              (₹25 for 1st recovery, doubling each subsequent recovery: ₹50,
+              ₹100, etc.).
             </div>
 
             <div className={styles.cliSnippet}>
               <label>Run with Cursor or Claude Desktop:</label>
               <pre>
-{`{
+                {`{
   "mcpServers": {
     "codestation": {
       "command": "npx",
@@ -392,7 +442,10 @@ export function ProSubscriptionManager() {
       <section className={styles.actionBox}>
         <div className={styles.boxHeader}>
           <h4>Already Have a Key? Verify Status</h4>
-          <p>Check the validity, plan tier, and expiration date of your Code Station license key.</p>
+          <p>
+            Check the validity, plan tier, and expiration date of your Code
+            Station license key.
+          </p>
         </div>
 
         <form onSubmit={handleVerify} className={styles.verifyForm}>
@@ -403,15 +456,25 @@ export function ProSubscriptionManager() {
             onChange={(e) => setVerifyKeyInput(e.target.value)}
             className={styles.inputField}
           />
-          <button type="submit" className={styles.verifyBtn} disabled={verifyLoading}>
+          <button
+            type="submit"
+            className={styles.verifyBtn}
+            disabled={verifyLoading}
+          >
             {verifyLoading ? "Checking..." : "Verify"}
           </button>
         </form>
 
         {verifyResult && (
-          <div className={`${styles.resultBanner} ${verifyResult.valid ? styles.valid : styles.invalid}`}>
+          <div
+            className={`${styles.resultBanner} ${verifyResult.valid ? styles.valid : styles.invalid}`}
+          >
             <div>
-              <strong>{verifyResult.valid ? "Active Pro License" : "Verification Failed"}</strong>
+              <strong>
+                {verifyResult.valid
+                  ? "Active Pro License"
+                  : "Verification Failed"}
+              </strong>
               <p>{verifyResult.message}</p>
               {verifyResult.valid && (
                 <small>

@@ -18,16 +18,19 @@
 ## Usage
 
 ### 1-Click Auto Setup (Claude Desktop, Cursor & Windsurf)
+
 ```bash
 npx codestation-mcp setup --key CS-PRO-YOURKEY
 ```
 
 ### Quick Run (MCP Server Mode)
+
 ```bash
 npx codestation-mcp
 ```
 
 ### Terminal CLI Subcommands
+
 ```bash
 # Convert cURL to TypeScript fetch / axios / Python / Go
 npx codestation-mcp curl "curl -X POST https://api.example.com -d '{\"k\":\"v\"}'" --target fetch
@@ -97,6 +100,7 @@ Published on npm: [`codestation-mcp`](https://www.npmjs.com/package/codestation-
 ## Tool Catalog & Tiers
 
 ### Free Tier (Unlimited)
+
 - `codestation_uuid`: Cryptographically secure v4 UUID generator.
 - `codestation_base64`: Encode/decode standard and URL-safe Base64.
 - `codestation_url_codec`: Encode and decode URL components.
@@ -110,6 +114,7 @@ Published on npm: [`codestation-mcp`](https://www.npmjs.com/package/codestation-
 - `codestation_slugify`: Generate clean, URL-friendly slugs.
 
 ### Pro Tier (₹199 / month in India • $2.99 / month Global • ₹999 Lifetime)
+
 - `codestation_curl_to_code`: Convert cURL commands to TypeScript fetch/axios, Python requests, or Go net/http.
 - `codestation_env_audit`: Scan `.env` files for secret leaks (Stripe, AWS, OpenAI, GitHub PAT, private keys) and validate against `.env.example`.
 - `codestation_mock_data`: Realistic mock dataset and SQL INSERT generator for users, products, orders, and custom schemas.
@@ -132,7 +137,7 @@ Published on npm: [`codestation-mcp`](https://www.npmjs.com/package/codestation-
 
 Because Code Station is 100% login-free, plaintext keys are never stored on our servers (only one-way SHA-256 hashes exist in Cloudflare KV).
 
-- **How to Recover:** Email **twnspace2@gmail.com** with your proof of purchase:
+- **How to Recover:** Email **hello@codestation.in** with your proof of purchase:
   - Razorpay Payment ID (`pay_...`), or
   - Payment receipt screenshot.
 - **Revocation & Reissue:** We revoke the old key hash in Cloudflare KV and generate a brand-new replacement key.
@@ -141,13 +146,14 @@ Because Code Station is 100% login-free, plaintext keys are never stored on our 
   - 2nd recovery: **₹50** (2x)
   - 3rd recovery: **₹100** (2x)
   - 4th recovery: **₹200** (2x)
-  - Doubling each subsequent recovery (*2) to discourage key sharing, leakage, or carelessness while providing a reliable recovery path.
+  - Doubling each subsequent recovery (\*2) to discourage key sharing, leakage, or carelessness while providing a reliable recovery path.
 
 ---
 
 ## Building
+
 ```bash
 npm run build:mcp
 ```
-Runs `esbuild` to produce `./bin/codestation-mcp.mjs`.
 
+Runs `esbuild` to produce `./bin/codestation-mcp.mjs`.

@@ -15,7 +15,7 @@ First implemented release of the eight prioritized improvements plus Smart Detec
 - **Batch images:** genuine PNG sources to JPG or WebP using the existing image engine. Up to 20 files, 16 MiB each and 64 MiB combined source/output caps. Native file/select/number/color controls. Sequential processing, progress, per-file failures, individual downloads and a successful-files ZIP via existing fflate. Native encoding already underway cannot be interrupted, but cancellation discards late output and prevents later files. Options/clear invalidate all results. Metadata removal, transparency and animation limits are disclosed.
 - **Examples/error guidance:** targeted contextual help for JSON Formatter, JSON Validator, URL Parser, JWT Decoder, Color Converter and Text Counter. Existing engine validation is preserved. Workflow errors identify the stopped step and offer recovery guidance; batch errors remain attached to their file.
 - **Offline/installable starter pack:** optional download in Settings, with manifest and local SVG app icon. Supports full-page visits to `/offline`, JSON Formatter and Text Counter. Application code is cached only after the explicit download; ordinary homepage visits do not download engines. The pack includes all emitted application-code chunks to support worker/dynamic imports, but only three HTML pages are supported offline. Cache completion marker prevents partial packs from serving; failed updates retain the prior ready pack. Query URLs, non-GET requests, external origins, RSC requests and unsupported pages are not cached. Remove action deletes this feature’s caches and unregisters its worker. Browser eviction remains possible. Use the offline page’s full document links; other navigation needs a connection.
-- **Feedback:** `/feedback` and per-tool Report a problem links. Owner-approved destination `twnspace2@gmail.com`; mailto opens a draft only. Copy/download alternatives are local. No automatic input, device details, attachments, backend submission or sent-success claim.
+- **Feedback:** `/feedback` and per-tool Report a problem links. Owner-approved destination `hello@codestation.in`; mailto opens a draft only. Copy/download alternatives are local. No automatic input, device details, attachments, backend submission or sent-success claim.
 
 ## Architecture and design
 
@@ -58,12 +58,12 @@ Evidence: [release screenshots](workbench-release/index.html), [automated logs a
 
 No new runtime dependencies. Existing fflate and existing engines are reused.
 
-| Asset | Raw bytes | gzip bytes |
-| --- | ---: | ---: |
-| App icon SVG | 308 | 225 |
-| Service worker | 3,308 | 1,359 |
-| Web app manifest | 330 | 234 |
-| Generated offline asset manifest | 7,260 | 2,238 |
+| Asset                            | Raw bytes | gzip bytes |
+| -------------------------------- | --------: | ---------: |
+| App icon SVG                     |       308 |        225 |
+| Service worker                   |     3,308 |      1,359 |
+| Web app manifest                 |       330 |        234 |
+| Generated offline asset manifest |     7,260 |      2,238 |
 
 Final optional offline code pack: **142 files, 4,831,438 uncompressed bytes (4.61 MiB)**, plus three HTML page shells, icon and web app manifest. This is an explicit download, not an eager homepage load. It includes code for other families because shared/dynamic chunks must be available; only the two named tools are supported offline in this release. No performance score is claimed.
 

@@ -4,8 +4,6 @@
  */
 
 import type { ToolDefinition } from "../../config/tools";
-import { tools } from "../../config/tools";
-import { dispatchToolExecution } from "./dispatcher";
 import type { WebMcpTool, WebMcpToolResult, WebMcpContext } from "./types";
 
 /** In-memory store of registered tools */
@@ -35,6 +33,7 @@ export const LIST_TOOLS_MCP: WebMcpTool = {
     },
   },
   execute: async (args: Record<string, any>) => {
+    const { tools } = await import("../../config/tools");
     const category = args?.category ? String(args.category).toLowerCase().trim() : undefined;
     const query = args?.query ? String(args.query).toLowerCase().trim() : undefined;
     const limit = Math.min(Math.max(Number(args?.limit ?? 25), 1), 100);
@@ -112,6 +111,7 @@ export const EXECUTE_TOOL_MCP: WebMcpTool = {
       };
     }
     try {
+      const { dispatchToolExecution } = await import("./dispatcher");
       const output = await dispatchToolExecution(
         String(args.toolId),
         String(args.input ?? ""),
@@ -228,6 +228,12 @@ export function createWebMcpToolForDefinition(tool: ToolDefinition): WebMcpTool 
     "secure-token-generator",
     "random-string",
     "mock-data",
+    "privacy-policy-generator",
+    "terms-and-conditions-generator",
+    "terms-conditions-generator",
+    "cookie-policy-generator",
+    "disclaimer-generator",
+    "refund-policy-generator",
   ].includes(tool.id);
 
   return {
@@ -249,6 +255,7 @@ export function createWebMcpToolForDefinition(tool: ToolDefinition): WebMcpTool 
     },
     execute: async (args: Record<string, any>) => {
       try {
+        const { dispatchToolExecution } = await import("./dispatcher");
         const output = await dispatchToolExecution(tool.id, args.input ?? "", args.options ?? args);
         return { content: [{ type: "text", text: output }] };
       } catch (err) {

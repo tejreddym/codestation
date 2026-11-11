@@ -145,6 +145,10 @@ import {
 import {
   executeSql,
 } from "../tools/spreadsheet/sql-engine";
+import {
+  generatePolicyText,
+} from "../tools/policy-generators/engine";
+import type { PolicyToolId, PolicyOutputFormat } from "../tools/policy-generators/types";
 import { getTool } from "../../config/tools";
 
 function uint8ArrayToBase64(bytes: Uint8Array): string {
@@ -807,6 +811,18 @@ export async function dispatchToolExecution(
       const query = options.query ?? options.sql ?? "SELECT * FROM table";
       const result = await executeSql(input, query);
       return JSON.stringify(result, null, 2);
+    }
+
+    // ----------------- Policy Generators Station -----------------
+    case "privacy-policy-generator":
+    case "terms-and-conditions-generator":
+    case "terms-conditions-generator":
+    case "cookie-policy-generator":
+    case "disclaimer-generator":
+    case "refund-policy-generator": {
+      const canonicalId = (normId === "terms-conditions-generator" ? "terms-and-conditions-generator" : normId) as PolicyToolId;
+      const format = (options.format as PolicyOutputFormat) || "markdown";
+      return generatePolicyText(canonicalId, format, options);
     }
 
     // ----------------- Generic Registered Tool Fallback -----------------

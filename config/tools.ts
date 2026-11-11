@@ -27,9 +27,11 @@ import { devMathTools, type DevMathToolId } from "./dev-math-tools";
 import { compressionTools, type CompressionToolId } from "./compression-tools";
 import { cryptoPkiTools, isCryptoPkiToolId, type CryptoPkiToolId } from "./crypto-pki-tools";
 import { aiPromptsTools, isAiPromptsToolId, type AiPromptsToolId } from "./ai-prompts-tools";
+import { policyTools, isPolicyToolId, type PolicyToolId } from "./policy-tools";
 
 export { isCryptoPkiToolId, type CryptoPkiToolId } from "./crypto-pki-tools";
 export { isAiPromptsToolId, type AiPromptsToolId } from "./ai-prompts-tools";
+export { isPolicyToolId, type PolicyToolId } from "./policy-tools";
 
 /** Includes the legacy catalog plus typed station metadata; no browser code. */
 export type RegisteredToolId =
@@ -59,7 +61,8 @@ export type RegisteredToolId =
   | DevMathToolId
   | CompressionToolId
   | CryptoPkiToolId
-  | AiPromptsToolId;
+  | AiPromptsToolId
+  | PolicyToolId;
 export type ToolDefinition = { id: RegisteredToolId; slug: string; name: string; description: string; category: string; keywords: readonly string[]; featured?: boolean; pairId?: string; direction?: "forward" | "reverse"; pairedTool?: RegisteredToolId; inputFormat?: string; outputFormat?: string; inputType?: string; outputType?: string; dataContract?: DataToolContract; encodingContract?: EncodingToolContract; securityContract?: SecurityToolContract; regexContract?: RegexToolContract; dateTimeContract?: DateTimeToolContract; textContract?: TextToolContract; cronContract?: CronToolContract; sqlContract?: SqlToolContract; webContract?: WebToolContract; apiContract?: ApiToolContract; localContract?: LocalContract; relatedTools?: readonly string[]; seo?: { title?: string; description?: string }; };
 
 export const tools: ToolDefinition[] = [
@@ -89,6 +92,7 @@ export const tools: ToolDefinition[] = [
   ...(compressionTools as unknown as ToolDefinition[]),
   ...(cryptoPkiTools as unknown as ToolDefinition[]),
   ...(aiPromptsTools as unknown as ToolDefinition[]),
+  ...(policyTools as unknown as ToolDefinition[]),
 ];
 
 export function getTool(slug: string) { return tools.find((tool) => tool.slug === slug); }

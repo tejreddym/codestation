@@ -5,6 +5,7 @@ import { tools as registryTools, type ToolDefinition } from "@/config/tools";
 import StationMark from "./StationMark";
 import StationGlyph from "./StationGlyph";
 import ToolCatalog, { type ToolCategoryFilter } from "./ToolCatalog";
+import BannerAd from "./BannerAd";
 
 const defaultNotices: Record<string, string> = {
   "json-data": "Data is parsed and transformed locally. Previews are inert text and inputs are not uploaded or persisted.",
@@ -32,6 +33,7 @@ const defaultNotices: Record<string, string> = {
   compression: "Compression, decompression, and archive inspection execute entirely within your browser memory. Files are never uploaded, logged, or sent to a server.",
   "crypto-pki": "Cryptographic key generation, AES-GCM operations, CSR inspection, and JWT signing run locally using Web Crypto API. Private keys and secrets never leave your device.",
   "ai-prompts": "AI prompt construction, token estimation, and vector calculations run entirely in your browser with zero server uploads or external LLM API calls.",
+  "policy-generators": "Policy generation and legal document formatting run 100% locally in your browser memory. Your company details, contact information, and generated legal texts are never uploaded, logged, or stored.",
 };
 
 function catalogData(stationId: string, stationToolList: readonly string[]) {
@@ -69,6 +71,12 @@ export default function StationLanding({ stationId, notice }: { stationId: strin
     </div>
     <div className="content"><p>{notice ?? defaultNotices[station.id]}</p></div>
     <ToolCatalog name={station.name} tools={catalog.tools} categoryFilters={catalog.filters} categoryLabels={catalog.labels} emptyMessage={station.id === "converters" ? "No converter tools match those filters." : undefined} />
+    <div style={{ display: "flex", justifyContent: "center", margin: "40px 0 20px", width: "100%" }}>
+      <BannerAd size="leaderboard" />
+    </div>
     <section className="section related-section" aria-labelledby={`${station.id}-related`}><div className="section-head"><div><span className="section-kicker">KEEP EXPLORING</span><h2 id={`${station.id}-related`}>Related developer stations</h2></div></div><div className="category-grid">{related.map(item => <Link className="category station-card" href={item.route} key={item.id}><div className="station-card-header"><StationMark large label={item.name} /><strong>{item.name}</strong></div><p className="station-description">{item.description}</p><div className="station-card-footer"><span className="station-count">{item.toolCount} tools</span><span className="station-card-explore">Explore <span aria-hidden="true">→</span></span></div></Link>)}</div></section>
+    <div style={{ display: "flex", justifyContent: "center", margin: "32px 0 16px", width: "100%" }}>
+      <BannerAd size="leaderboard" />
+    </div>
   </section></main>;
 }

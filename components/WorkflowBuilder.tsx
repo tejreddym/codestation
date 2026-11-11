@@ -21,6 +21,7 @@ import {
 } from '@/lib/workbench/workflows';
 import { useWorkbench } from './WorkbenchProvider';
 import { useSafeRouter } from './useSafeNavigation';
+import BannerAd from './BannerAd';
 import styles from './WorkflowBuilder.module.css';
 
 type StepExecutionState = {
@@ -76,6 +77,13 @@ export default function WorkflowBuilder() {
         const parsed = parseRecipe(decoded);
         setRecipe(parsed);
         if (parsed.name) setRecipeName(parsed.name);
+      }
+      if (typeof window !== 'undefined') {
+        const piped = sessionStorage.getItem('codestation_workflow_input');
+        if (piped) {
+          setInput(piped);
+          sessionStorage.removeItem('codestation_workflow_input');
+        }
       }
     } catch {
       setMessage('This recipe link is invalid. No input was loaded.');
@@ -782,6 +790,10 @@ export default function WorkflowBuilder() {
           </div>
         )}
       </section>
+
+      <div style={{ display: 'flex', justifyContent: 'center', margin: '36px 0 16px', width: '100%' }}>
+        <BannerAd size="leaderboard" />
+      </div>
 
       {/* ---------------- 3. Recipe Management & Portability Panel ---------------- */}
       <section className={styles.panel} aria-labelledby="recipe-mgmt-heading">

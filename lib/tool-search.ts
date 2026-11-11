@@ -11,21 +11,42 @@ export function normalizeToolSearch(value: string): string {
  */
 export type ToolSearchMetadata = { id: string; name: string; description: string; keywords: readonly string[] };
 
-export function searchTools<T extends ToolSearchMetadata>(tools: readonly T[], query: string): T[] {
-  const normalized = normalizeToolSearch(query);
-  const best = new Map<string, { tool: T; rank: number; index: number }>();
+interface NormalizedToolCache {
+  name: string;
+  keywords: string[];
+  description: string;
+  combined: string;
+}
 
-  tools.forEach((tool, index) => {
+const toolCache = new WeakMap<object, NormalizedToolCache>();
+
+function getNormalizedTool<T extends ToolSearchMetadata>(tool: T): NormalizedToolCache {
+  let entry = toolCache.get(tool);
+  if (!entry) {
     const name = normalizeToolSearch(tool.name);
     const keywords = tool.keywords.map(normalizeToolSearch);
     const description = normalizeToolSearch(tool.description);
+    const combined = `${name} ${keywords.join(" ")} ${description}`;
+    entry = { name, keywords, description, combined };
+    toolCache.set(tool, entry);
+  }
+  return entry;
+}
+
+export function searchTools<T extends ToolSearchMetadata>(tools: readonly T[], query: string): T[] {
+  const normalized = normalizeToolSearch(query);
+  const best = new Map<string, { tool: T; rank: number; index: number }>();
+  const parts = normalized ? normalized.split(" ") : [];
+
+  tools.forEach((tool, index) => {
+    const { name, keywords, description, combined } = getNormalizedTool(tool);
     let rank = 4;
     if (!normalized) rank = 0;
     else if (name === normalized) rank = 0;
     else if (name.includes(normalized)) rank = 1;
     else if (keywords.some(keyword => keyword === normalized || keyword.includes(normalized))) rank = 2;
     else if (description.includes(normalized)) rank = 3;
-    else if (normalized.split(" ").every(part => `${name} ${keywords.join(" ")} ${description}`.includes(part))) rank = 4;
+    else if (parts.every(part => combined.includes(part))) rank = 4;
     else return;
 
     const prior = best.get(String(tool.id));

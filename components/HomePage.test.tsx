@@ -78,4 +78,28 @@ describe("homepage discovery contracts", () => {
     expect(pending).toBeTruthy();
     expect(JSON.parse(pending!).slug).toBe("json-formatter");
   });
+
+  it("ensures copy consistency with 300+ browser developer tools and validates station card layout structure", () => {
+    render(<HomePage />);
+
+    // 1. Pro section copy asserts 300+ browser developer tools
+    const proSection = screen.getByRole("region", { name: /Code Station Pro/i });
+    expect(proSection.textContent).toContain("All 300+ browser developer tools are 100% free, private, and unlimited.");
+    expect(proSection.textContent).not.toContain("250+");
+
+    // 2. Pro CTA links to /pro and /docs
+    const proLinks = within(proSection).getAllByRole("link");
+    expect(proLinks.map(l => l.getAttribute("href"))).toEqual(["/pro", "/docs"]);
+
+    // 3. Station cards in directory render station name, description, and count badge
+    const directory = screen.getByRole("region", { name: "Choose a station" });
+    const stationCards = within(directory).getAllByRole("link");
+    expect(stationCards).toHaveLength(stations.length);
+    for (const card of stationCards) {
+      expect(card.querySelector("h3")).toBeTruthy();
+      expect(card.querySelector("p")).toBeTruthy();
+      expect(card.querySelector("span")).toBeTruthy();
+      expect(card.textContent).toMatch(/\d+ available tools/);
+    }
+  });
 });

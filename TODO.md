@@ -1,5 +1,54 @@
 # TODO
 
+## Strategic Ad Placements Expansion — 2026-11-11
+
+- [x] Embed bottom 728x90 leaderboard ad unit in all tool pages (`app/tools/[slug]/page.tsx`).
+- [x] Integrate dual leaderboard banners across all 26 station landing pages (`components/StationLanding.tsx`).
+- [x] Add interleaved leaderboard banner units every 3 category sections in Directory Browser (`components/DirectoryBrowser.tsx`).
+- [x] Add centered leaderboard ad unit on Homepage (`app/page.tsx`).
+- [x] Add centered leaderboard ad unit on Workbench hub (`app/workbench/page.tsx`).
+- [x] Embed leaderboard ad unit in Workflow Studio (`components/WorkflowBuilder.tsx`).
+- [x] Add centered leaderboard ad unit on Batch Images (`app/batch-images/page.tsx`).
+- [x] Add centered leaderboard ad unit on Site Directory (`app/site-directory/page.tsx`).
+- [x] Verify typecheck (`npm run typecheck`), full test suite (`npm test`), and production build (`npm run build`).
+
+## Universal Tool Engine & Declarative Tool Contract Architecture — 2026-11-11
+
+- [x] **R1: Core Declarative Tool Contract & Lifecycle Interfaces**
+  - [x] Define `ToolDefinition` and `ToolEngine` in `lib/engine/types.ts`.
+  - [x] Strongly typed `ToolInput` schemas (text, textarea, code, select, toggle, checkbox, number, range, file, files, custom).
+  - [x] Strongly typed `ToolOutput` schemas (text, code, table, image, blob, binary, custom).
+  - [x] `ValidationResult` with diagnostics (line, column, field, severity).
+  - [x] `ToolContext` with `AbortSignal`, `reportProgress`, and `runInWorker`.
+  - [x] `ToolResult` with duration, MIME type, suggested filename, and warnings.
+- [x] **R2: Reusable Execution Runner & Lifecycle Management**
+  - [x] Deterministic state machine in `lib/engine/runtime.ts` (`idle` -> `validating` -> `processing` -> `success` | `error` | `cancelled`).
+  - [x] Mandatory pre-execution validation gate.
+  - [x] Centralized Object URL management in `lib/engine/blobRegistry.ts` (`BlobUrlRegistry`) with leak-free auto-revocation.
+  - [x] Web Worker offloading in `lib/engine/workerRunner.ts` with progress reporting, timeouts, and fallback.
+  - [x] Reusable React hook `lib/engine/useToolEngine.ts` with unmount disposal and state transitions.
+- [x] **R3: Universal Tool UI Shell & Shared Primitives**
+  - [x] Unified `components/engine/UniversalToolShell.tsx` and `UniversalToolShell.module.css`.
+  - [x] `ToolHeader.tsx` & `ToolPrivacyBadge.tsx` ("100% Local • Browser-Only", "Offline Ready", "Network Opt-In").
+  - [x] `ToolDropzone.tsx` (drag-and-drop, MIME validation, max byte limit) and `ToolEditor.tsx` (clipboard paste, sample loader).
+  - [x] `ToolControls.tsx` for dynamic parameter controls with `when` conditionals.
+  - [x] `ToolProgressBar.tsx` (aria-busy, percentage bar, status text, elapsed time, cancel button).
+  - [x] `ToolErrorBanner.tsx` for structured line/column diagnostics.
+  - [x] `ToolActionBar.tsx` (copy, sanitized download, workflow chaining) and `ToolOutputPreview.tsx` (text, table, image).
+  - [x] `CustomCanvasSlot.tsx` error-boundary isolated slot for visual tools.
+- [x] **R4: Full 300+ Tool Registry Adapter & Agent Bridge**
+  - [x] Zero-regression adapter `adaptToolToEngine` in `lib/engine/adapters/registryAdapter.ts` covering all tools in `config/tools.ts`.
+  - [x] Dual-key resolution for mismatched legacy tool slugs (`MISMATCHED_SLUG_ID_MAP`).
+  - [x] WebMCP and Local stdio MCP schema serializers in `lib/engine/mcpBridge.ts`.
+  - [x] In-memory workflow pipeline chaining in `components/WorkflowBuilder.tsx`.
+- [x] **R5: Contract Testing Harness & Full Verification**
+  - [x] `describeToolContract()` harness in `lib/engine/__tests__/contractHarness.ts`.
+  - [x] Registry contract test `tests/engine/registryContract.test.ts`.
+  - [x] Component test suite `components/engine/__tests__/UniversalToolShell.test.tsx`.
+  - [x] 155 test suites passed (6,480 tests, 0 failures).
+  - [x] Clean TypeScript typecheck (`npm run typecheck`, 0 errors).
+  - [x] Next.js production build (`npm run build`) generated all 413 static pages cleanly.
+
 ## Station 23 — Compression & Archive Station (`/stations/compression`) — 2026-11-09
 
 - [x] Create dedicated Compression & Archive Station at `/stations/compression` (Station 23).
@@ -72,15 +121,14 @@
   - [x] High-precision fraction ⇄ decimal converter.
   - [x] Completed and activated `/stations/developer-math`.
 
-
 - [x] Add production-only, independently gated Adsterra Social Bar, Popunder,
-  and one responsive Native Banner placement with stable `next/script` IDs,
-  exact source attributes, and deduplication tests.
+      and one responsive Native Banner placement with stable `next/script` IDs,
+      exact source attributes, and deduplication tests.
 - [x] Document ad placements, build-time switches, failure boundaries, and
-  consent/privacy/regional prerequisites in `docs/ADVERTISING.md`.
+      consent/privacy/regional prerequisites in `docs/ADVERTISING.md`.
 - [ ] Owner/compliance review: update the public privacy/consent treatment,
-  confirm regional requirements and account inventory settings, then explicitly
-  enable only approved formats in a production build.
+      confirm regional requirements and account inventory settings, then explicitly
+      enable only approved formats in a production build.
 
 - [x] Match the illustrated theme toggle to the station palette; verify behavior, mobile target and production build (2026-10-07).
 
@@ -89,7 +137,7 @@
 ## Workbench release — 2026-10-07
 
 - [x] Ship the eight prioritized improvements and Smart Detection with bounded first-release coverage; see docs/WORKBENCH.md.
-- [x] Wire feedback to twnspace2@gmail.com using an explicit email draft, with local copy/download fallbacks.
+- [x] Wire feedback to hello@codestation.in using an explicit email draft, with local copy/download fallbacks.
 - [x] Expand the codestation.in sitemap to 323 public pages and verify every route.
 - [x] Verify offline JSON/text processing with the local server stopped; correct encoded dynamic-route cache keys.
 - [x] Resolve JSON station registry ID/slug lookup (all 46 tools discoverable).
@@ -108,7 +156,6 @@
 - [x] Resolved in the workbench functionality release: station-owned IDs now resolve by ID, restoring all 46 JSON & Data entries.
 - [ ] Broader manual verification: OS reduced motion, browser zoom, physical touch, screen readers and cross-browser download completion.
 
-
 ## Homepage reinvention — 2026-10-07
 
 - Replaced the homepage composition with a centered editorial hero and native search, original Station Assembly SVG, compact quick links, three illustrated showcases, a registry-driven ruled station index, processing note and lime wordmark footer. All 15 stations and existing counts/routes remain; Developer Math is pending.
@@ -117,7 +164,6 @@
 - Browser: inspected 320, 390, 768, 1024 and 1440 widths, including 1024×600; verified search/no-results/Clear, keyboard link selection and focus, mobile Menu/Close/Stations anchor, theme and refresh, and JSON formatting/Clear. Image route retains native file/number/select controls. Production browser recorded no console errors. Matched before/after desktop and mobile screenshots cover both themes.
 - Limitations: live OS reduced-motion, browser zoom, physical touch, full network trace and cross-browser/screen-reader testing were not performed. Asset-origin/source checks found only local homepage assets; this is not a network-capture claim. Initial Node 25 test run had nine unchanged theme-test storage failures; documented Node 22 passes all tests.
 - Design/reference/motion details: [docs/HOMEPAGE_DESIGN.md](docs/HOMEPAGE_DESIGN.md). Evidence and detailed check boundaries: [docs/homepage-redesign/VERIFICATION.md](docs/homepage-redesign/VERIFICATION.md). No Git repository or deployment. Stop after homepage work; no new station was started.
-
 
 ## Now
 

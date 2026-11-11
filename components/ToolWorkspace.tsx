@@ -27,7 +27,12 @@ import { isDevMathToolId } from "@/config/dev-math-tools";
 import { isCompressionToolId } from "@/config/compression-tools";
 import { isCryptoPkiToolId } from "@/config/crypto-pki-tools";
 import { isAiPromptsToolId } from "@/config/ai-prompts-tools";
+import { isPolicyToolId } from "@/config/policy-tools";
 import type { RegisteredToolId } from "@/config/tools";
+
+const PolicyGeneratorsStation = dynamic(() => import("./PolicyGeneratorsStation"), {
+  loading: () => <p role="status">Loading Policy Generator controls…</p>,
+});
 
 const CryptoPkiStation = dynamic(() => import("./CryptoPkiStation"), {
   loading: () => <p role="status">Loading WebPKI &amp; Cryptography controls…</p>,
@@ -114,6 +119,7 @@ const NumericStation = dynamic(() => import("./NumericStation"), {
 import WebMcpBridge from "./WebMcpBridge";
 
 function renderStation(toolId: RegisteredToolId) {
+  if (isPolicyToolId(toolId)) return <PolicyGeneratorsStation key={toolId} toolId={toolId} />;
   if (isCryptoPkiToolId(toolId)) return <CryptoPkiStation key={toolId} toolId={toolId} />;
   if (isAiPromptsToolId(toolId)) return <AiPromptsStation key={toolId} toolId={toolId} />;
   if (isCompressionToolId(toolId)) return <CompressionStation key={toolId} toolId={toolId} />;

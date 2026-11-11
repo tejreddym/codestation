@@ -9,34 +9,281 @@ import styles from "./DocsRepo.module.css";
 
 interface DocTopic {
   id: string;
-  category: "quickstart" | "cli" | "mcp" | "ai" | "catalog" | "web" | "licensing" | "lostkey" | "security" | "faq";
+  category:
+    | "quickstart"
+    | "cli"
+    | "mcp"
+    | "ai"
+    | "catalog"
+    | "web"
+    | "licensing"
+    | "lostkey"
+    | "security"
+    | "faq";
   title: string;
   keywords: string[];
 }
 
 const TOPICS: DocTopic[] = [
-  { id: "quickstart", category: "quickstart", title: "1-Click Auto Setup & Prerequisites", keywords: ["install", "setup", "quickstart", "node", "npx", "start"] },
-  { id: "cli-overview", category: "cli", title: "Terminal CLI Overview & Piping", keywords: ["cli", "terminal", "command", "pipe", "stdin", "subcommands"] },
-  { id: "cli-curl", category: "cli", title: "cURL to Code (Fetch, Axios, Python, Go)", keywords: ["curl", "fetch", "axios", "python", "go", "http", "api", "request"] },
-  { id: "cli-env", category: "cli", title: "Environment Secret Scanner (env-audit)", keywords: ["env", "secrets", "leak", "stripe", "aws", "openai", "github", "audit", "security"] },
-  { id: "cli-mock", category: "cli", title: "Realistic Mock Data & SQL Seeder", keywords: ["mock", "data", "seed", "faker", "sql", "insert", "users", "products", "orders"] },
-  { id: "cli-conflict", category: "cli", title: "Git Merge Conflict Resolver", keywords: ["git", "conflict", "merge", "ours", "theirs", "both", "head", "branch"] },
-  { id: "cli-jwt", category: "cli", title: "JWT Token Inspector", keywords: ["jwt", "token", "decode", "claims", "header", "expiry", "ttl"] },
-  { id: "cli-sql", category: "cli", title: "SQL Formatter & Dialects", keywords: ["sql", "format", "beautify", "postgres", "mysql", "sqlite", "sqlserver"] },
-  { id: "cli-cron", category: "cli", title: "Cron Translator & Next Runtimes", keywords: ["cron", "schedule", "explain", "next", "projection"] },
-  { id: "cli-hash", category: "cli", title: "Cryptographic Hashes & Digests", keywords: ["hash", "sha256", "sha512", "md5", "sha1", "crc32", "crypto"] },
-  { id: "cli-types", category: "cli", title: "JSON to TypeScript & Zod Schema", keywords: ["typescript", "zod", "types", "interface", "schema", "json"] },
-  { id: "cli-uuid-json", category: "cli", title: "UUID Generator & JSON Formatter", keywords: ["uuid", "v4", "json", "lint", "minify", "beautify"] },
-  { id: "mcp-protocol", category: "mcp", title: "MCP Stdio Protocol & RPC Methods", keywords: ["mcp", "protocol", "rpc", "stdio", "tools.list", "tools/call", "json-rpc"] },
-  { id: "webmcp-protocol", category: "mcp", title: "WebMCP: Browser-Native AI Tool Protocol", keywords: ["webmcp", "browser", "document.modelContext", "navigator.modelContext", "ai agent", "chrome", "in-page", "flag", "tools", "privacy"] },
-  { id: "ai-assistants", category: "ai", title: "AI Assistant Configurations (Claude, Cursor, Windsurf)", keywords: ["claude", "cursor", "windsurf", "cline", "ai", "mcp config", "assistant"] },
-  { id: "ai-prompt", category: "ai", title: "Copy-Pastable AI System Prompt & Rules", keywords: ["prompt", "system", "rules", ".cursorrules", "claude.md", "guidelines"] },
-  { id: "tool-catalog", category: "catalog", title: "MCP Tool Capability Matrix (20+ Tools)", keywords: ["catalog", "tools", "capabilities", "free", "pro", "matrix"] },
-  { id: "web-stations", category: "web", title: "Web Application & 25 Stations Directory", keywords: ["web", "stations", "browser", "free", "sandbox", "wasm", "webcrypto", "compression", "zip", "ai", "crypto", "pki"] },
-  { id: "licensing", category: "licensing", title: "Pro Licensing & Device Binding", keywords: ["license", "pro", "pricing", "device", "razorpay", "upi", "activation"] },
-  { id: "lost-key-recovery", category: "lostkey", title: "Lost Key Recovery Policy & Fee Schedule", keywords: ["lost", "key", "recovery", "email", "fee", "regeneration", "razorpay"] },
-  { id: "security-privacy", category: "security", title: "Zero-Telemetry & Privacy Architecture", keywords: ["privacy", "security", "telemetry", "sha256", "cloudflare", "kv", "offline"] },
-  { id: "troubleshooting", category: "faq", title: "Troubleshooting, Errors & FAQs", keywords: ["faq", "errors", "troubleshooting", "permission", "node", "proxy"] },
+  {
+    id: "quickstart",
+    category: "quickstart",
+    title: "1-Click Auto Setup & Prerequisites",
+    keywords: ["install", "setup", "quickstart", "node", "npx", "start"],
+  },
+  {
+    id: "cli-overview",
+    category: "cli",
+    title: "Terminal CLI Overview & Piping",
+    keywords: ["cli", "terminal", "command", "pipe", "stdin", "subcommands"],
+  },
+  {
+    id: "cli-curl",
+    category: "cli",
+    title: "cURL to Code (Fetch, Axios, Python, Go)",
+    keywords: [
+      "curl",
+      "fetch",
+      "axios",
+      "python",
+      "go",
+      "http",
+      "api",
+      "request",
+    ],
+  },
+  {
+    id: "cli-env",
+    category: "cli",
+    title: "Environment Secret Scanner (env-audit)",
+    keywords: [
+      "env",
+      "secrets",
+      "leak",
+      "stripe",
+      "aws",
+      "openai",
+      "github",
+      "audit",
+      "security",
+    ],
+  },
+  {
+    id: "cli-mock",
+    category: "cli",
+    title: "Realistic Mock Data & SQL Seeder",
+    keywords: [
+      "mock",
+      "data",
+      "seed",
+      "faker",
+      "sql",
+      "insert",
+      "users",
+      "products",
+      "orders",
+    ],
+  },
+  {
+    id: "cli-conflict",
+    category: "cli",
+    title: "Git Merge Conflict Resolver",
+    keywords: [
+      "git",
+      "conflict",
+      "merge",
+      "ours",
+      "theirs",
+      "both",
+      "head",
+      "branch",
+    ],
+  },
+  {
+    id: "cli-jwt",
+    category: "cli",
+    title: "JWT Token Inspector",
+    keywords: ["jwt", "token", "decode", "claims", "header", "expiry", "ttl"],
+  },
+  {
+    id: "cli-sql",
+    category: "cli",
+    title: "SQL Formatter & Dialects",
+    keywords: [
+      "sql",
+      "format",
+      "beautify",
+      "postgres",
+      "mysql",
+      "sqlite",
+      "sqlserver",
+    ],
+  },
+  {
+    id: "cli-cron",
+    category: "cli",
+    title: "Cron Translator & Next Runtimes",
+    keywords: ["cron", "schedule", "explain", "next", "projection"],
+  },
+  {
+    id: "cli-hash",
+    category: "cli",
+    title: "Cryptographic Hashes & Digests",
+    keywords: ["hash", "sha256", "sha512", "md5", "sha1", "crc32", "crypto"],
+  },
+  {
+    id: "cli-types",
+    category: "cli",
+    title: "JSON to TypeScript & Zod Schema",
+    keywords: ["typescript", "zod", "types", "interface", "schema", "json"],
+  },
+  {
+    id: "cli-uuid-json",
+    category: "cli",
+    title: "UUID Generator & JSON Formatter",
+    keywords: ["uuid", "v4", "json", "lint", "minify", "beautify"],
+  },
+  {
+    id: "mcp-protocol",
+    category: "mcp",
+    title: "MCP Stdio Protocol & RPC Methods",
+    keywords: [
+      "mcp",
+      "protocol",
+      "rpc",
+      "stdio",
+      "tools.list",
+      "tools/call",
+      "json-rpc",
+    ],
+  },
+  {
+    id: "webmcp-protocol",
+    category: "mcp",
+    title: "WebMCP: Browser-Native AI Tool Protocol",
+    keywords: [
+      "webmcp",
+      "browser",
+      "document.modelContext",
+      "navigator.modelContext",
+      "ai agent",
+      "chrome",
+      "in-page",
+      "flag",
+      "tools",
+      "privacy",
+    ],
+  },
+  {
+    id: "ai-assistants",
+    category: "ai",
+    title: "AI Assistant Configurations (Claude, Cursor, Windsurf)",
+    keywords: [
+      "claude",
+      "cursor",
+      "windsurf",
+      "cline",
+      "ai",
+      "mcp config",
+      "assistant",
+    ],
+  },
+  {
+    id: "ai-prompt",
+    category: "ai",
+    title: "Copy-Pastable AI System Prompt & Rules",
+    keywords: [
+      "prompt",
+      "system",
+      "rules",
+      ".cursorrules",
+      "claude.md",
+      "guidelines",
+    ],
+  },
+  {
+    id: "tool-catalog",
+    category: "catalog",
+    title: "MCP Tool Capability Matrix (20+ Tools)",
+    keywords: ["catalog", "tools", "capabilities", "free", "pro", "matrix"],
+  },
+  {
+    id: "web-stations",
+    category: "web",
+    title: "Web Application & 26 Stations Directory",
+    keywords: [
+      "web",
+      "stations",
+      "browser",
+      "free",
+      "sandbox",
+      "wasm",
+      "webcrypto",
+      "compression",
+      "zip",
+      "ai",
+      "crypto",
+      "pki",
+      "policy",
+      "terms",
+      "privacy",
+    ],
+  },
+  {
+    id: "licensing",
+    category: "licensing",
+    title: "Pro Licensing & Device Binding",
+    keywords: [
+      "license",
+      "pro",
+      "pricing",
+      "device",
+      "razorpay",
+      "upi",
+      "activation",
+    ],
+  },
+  {
+    id: "lost-key-recovery",
+    category: "lostkey",
+    title: "Lost Key Recovery Policy & Fee Schedule",
+    keywords: [
+      "lost",
+      "key",
+      "recovery",
+      "email",
+      "fee",
+      "regeneration",
+      "razorpay",
+    ],
+  },
+  {
+    id: "security-privacy",
+    category: "security",
+    title: "Zero-Telemetry & Privacy Architecture",
+    keywords: [
+      "privacy",
+      "security",
+      "telemetry",
+      "sha256",
+      "cloudflare",
+      "kv",
+      "offline",
+    ],
+  },
+  {
+    id: "troubleshooting",
+    category: "faq",
+    title: "Troubleshooting, Errors & FAQs",
+    keywords: [
+      "faq",
+      "errors",
+      "troubleshooting",
+      "permission",
+      "node",
+      "proxy",
+    ],
+  },
 ];
 
 const CATEGORIES = [
@@ -60,7 +307,8 @@ export function DocsRepo() {
   const filteredTopics = useMemo(() => {
     const q = query.trim().toLowerCase();
     return TOPICS.filter((t) => {
-      const matchesCat = selectedCategory === "all" || t.category === selectedCategory;
+      const matchesCat =
+        selectedCategory === "all" || t.category === selectedCategory;
       if (!matchesCat) return false;
       if (!q) return true;
       return (
@@ -71,7 +319,10 @@ export function DocsRepo() {
     });
   }, [query, selectedCategory]);
 
-  const activeIds = useMemo(() => new Set(filteredTopics.map((t) => t.id)), [filteredTopics]);
+  const activeIds = useMemo(
+    () => new Set(filteredTopics.map((t) => t.id)),
+    [filteredTopics],
+  );
 
   return (
     <div className={styles.container}>
@@ -84,11 +335,15 @@ export function DocsRepo() {
         </nav>
         <div className={styles.titleArea}>
           <div>
-            <span className="eyebrow bracket-label">CODE STATION / KNOWLEDGE REPO &amp; SPECIFICATION</span>
+            <span className="eyebrow bracket-label">
+              CODE STATION / KNOWLEDGE REPO &amp; SPECIFICATION
+            </span>
             <h1>Documentation Repository</h1>
             <p>
-              Authoritative developer reference manual for the Code Station Local Model Context Protocol (MCP) server,
-              dual-purpose terminal CLI, 338+ client-side web tools, AI coding agent workflows, and licensing policies.
+              Authoritative developer reference manual for the Code Station
+              Local Model Context Protocol (MCP) server, dual-purpose terminal
+              CLI, 338+ client-side web tools, AI coding agent workflows, and
+              licensing policies.
             </p>
           </div>
           <div className={styles.repoBadge}>
@@ -101,7 +356,9 @@ export function DocsRepo() {
       {/* Search & Filter Bar */}
       <div className={styles.searchToolbar}>
         <div className={styles.searchInputWrapper}>
-          <span className={styles.searchIcon} aria-hidden="true">🔍</span>
+          <span className={styles.searchIcon} aria-hidden="true">
+            🔍
+          </span>
           <input
             type="search"
             value={query}
@@ -146,7 +403,9 @@ export function DocsRepo() {
         {/* Sticky Sidebar Navigation */}
         <aside className={styles.sidebar}>
           <div className={styles.sidebarSection}>
-            <div className={styles.sidebarHeading}>Table of Contents ({filteredTopics.length})</div>
+            <div className={styles.sidebarHeading}>
+              Table of Contents ({filteredTopics.length})
+            </div>
             <ul className={styles.sidebarList}>
               {filteredTopics.map((topic) => (
                 <li key={topic.id}>
@@ -156,7 +415,13 @@ export function DocsRepo() {
                 </li>
               ))}
               {filteredTopics.length === 0 && (
-                <li style={{ padding: "8px", color: "var(--muted)", fontSize: "13px" }}>
+                <li
+                  style={{
+                    padding: "8px",
+                    color: "var(--muted)",
+                    fontSize: "13px",
+                  }}
+                >
                   No matching documentation articles.
                 </li>
               )}
@@ -179,13 +444,21 @@ export function DocsRepo() {
                 </Link>
               </li>
               <li>
-                <a href="https://www.npmjs.com/package/codestation-mcp" target="_blank" rel="noreferrer" className={styles.sidebarLink}>
+                <a
+                  href="https://www.npmjs.com/package/codestation-mcp"
+                  target="_blank"
+                  rel="noreferrer"
+                  className={styles.sidebarLink}
+                >
                   <span>npm Package</span>
                   <span className={styles.sidebarCount}>↗</span>
                 </a>
               </li>
               <li>
-                <a href="mailto:twnspace2@gmail.com" className={styles.sidebarLink}>
+                <a
+                  href="mailto:hello@codestation.in"
+                  className={styles.sidebarLink}
+                >
                   <span>Key Support &amp; Recovery</span>
                   <span className={styles.sidebarCount}>Email</span>
                 </a>
@@ -204,27 +477,36 @@ export function DocsRepo() {
                 <span className={styles.sectionTag}>Getting Started</span>
               </div>
               <p className={styles.leadText}>
-                Code Station gives you deterministic developer tools across three interfaces:
-                a <strong>100% Free Web Application</strong> with 338+ client-side tools, a <strong>Local MCP Server</strong> for AI coding agents (Cursor, Claude Desktop, Windsurf),
-                and a <strong>Dual-Purpose Terminal CLI</strong>.
+                Code Station gives you deterministic developer tools across
+                three interfaces: a <strong>100% Free Web Application</strong>{" "}
+                with 338+ client-side tools, a <strong>Local MCP Server</strong>{" "}
+                for AI coding agents (Cursor, Claude Desktop, Windsurf), and a{" "}
+                <strong>Dual-Purpose Terminal CLI</strong>.
               </p>
 
               <div className={styles.callout}>
-                <strong>System Prerequisites:</strong> Requires <strong>Node.js &gt;= 22.13.0</strong> (with native WebCrypto and modern ESM support) and <code>npm &gt;= 10.9</code>.
-                No global installation is strictly required; you can execute everything on-demand via <code>npx -y codestation-mcp</code>.
+                <strong>System Prerequisites:</strong> Requires{" "}
+                <strong>Node.js &gt;= 22.13.0</strong> (with native WebCrypto
+                and modern ESM support) and <code>npm &gt;= 10.9</code>. No
+                global installation is strictly required; you can execute
+                everything on-demand via <code>npx -y codestation-mcp</code>.
               </div>
 
               <div className={styles.subSection}>
                 <h3>1-Click AI Assistant Auto-Setup</h3>
                 <p>
-                  Automatically detects your installed AI environments and registers the Code Station MCP server in Claude Desktop, Cursor IDE, and Windsurf in a single command:
+                  Automatically detects your installed AI environments and
+                  registers the Code Station MCP server in Claude Desktop,
+                  Cursor IDE, and Windsurf in a single command:
                 </p>
                 <CopySnippet
                   title="Terminal (Pro 1-Click Setup)"
                   code="npx -y codestation-mcp setup --key CS-PRO-YOUR-KEY"
                   language="bash"
                 />
-                <p>Or configure with the Free tier (all standard tools enabled):</p>
+                <p>
+                  Or configure with the Free tier (all standard tools enabled):
+                </p>
                 <CopySnippet
                   title="Terminal (Free 1-Click Setup)"
                   code="npx -y codestation-mcp setup"
@@ -235,7 +517,9 @@ export function DocsRepo() {
               <div className={styles.subSection}>
                 <h3>Global CLI Installation (Optional)</h3>
                 <p>
-                  To make the short command <code>codestation</code> or <code>codestation-mcp</code> globally accessible in your terminal without typing <code>npx</code>:
+                  To make the short command <code>codestation</code> or{" "}
+                  <code>codestation-mcp</code> globally accessible in your
+                  terminal without typing <code>npx</code>:
                 </p>
                 <CopySnippet
                   title="Terminal (Global Install)"
@@ -254,13 +538,19 @@ export function DocsRepo() {
                 <span className={styles.sectionTag}>CLI Power Engine</span>
               </div>
               <p className={styles.leadText}>
-                The <code>codestation-mcp</code> binary is engineered to be dual-purpose: when invoked with subcommands,
-                it behaves as an ultra-fast terminal utility with exit codes, formatted colors, and Unix pipe support.
+                The <code>codestation-mcp</code> binary is engineered to be
+                dual-purpose: when invoked with subcommands, it behaves as an
+                ultra-fast terminal utility with exit codes, formatted colors,
+                and Unix pipe support.
               </p>
 
               <div className={styles.callout + " " + styles.tip}>
-                <strong>Unix Stdin Piping:</strong> All subcommands accept piped input via <code>stdin</code>.
-                For instance, <code>cat request.curl | npx codestation-mcp curl --target go</code> or <code>cat data.json | npx codestation-mcp ts Profile</code>.
+                <strong>Unix Stdin Piping:</strong> All subcommands accept piped
+                input via <code>stdin</code>. For instance,{" "}
+                <code>
+                  cat request.curl | npx codestation-mcp curl --target go
+                </code>{" "}
+                or <code>cat data.json | npx codestation-mcp ts Profile</code>.
               </div>
 
               <CopySnippet
@@ -283,14 +573,23 @@ codestation <command> [input_or_file] [flags]`}
                 <span className={styles.sectionTag}>Terminal Subcommand</span>
               </div>
               <p className={styles.leadText}>
-                Converts raw cURL commands into clean, idiomatic client code for TypeScript fetch, Axios, Python requests, and Go <code>net/http</code>.
-                Handles query parameters, headers (<code>-H</code>), custom HTTP methods (<code>-X POST/PUT/PATCH/DELETE</code>), JSON payloads (<code>-d</code>, <code>--data-raw</code>), and basic authentication (<code>-u</code>).
+                Converts raw cURL commands into clean, idiomatic client code for
+                TypeScript fetch, Axios, Python requests, and Go{" "}
+                <code>net/http</code>. Handles query parameters, headers (
+                <code>-H</code>), custom HTTP methods (
+                <code>-X POST/PUT/PATCH/DELETE</code>), JSON payloads (
+                <code>-d</code>, <code>--data-raw</code>), and basic
+                authentication (<code>-u</code>).
               </p>
 
               <div className={styles.commandCard}>
                 <div className={styles.commandHeader}>
-                  <span className={styles.commandTitle}><code>curl &lt;command&gt; [--target &lt;lang&gt;]</code></span>
-                  <span className={`${styles.commandBadge} ${styles.pro}`}>PRO TIER</span>
+                  <span className={styles.commandTitle}>
+                    <code>curl &lt;command&gt; [--target &lt;lang&gt;]</code>
+                  </span>
+                  <span className={`${styles.commandBadge} ${styles.pro}`}>
+                    PRO TIER
+                  </span>
                 </div>
 
                 <CopySnippet
@@ -322,16 +621,28 @@ codestation <command> [input_or_file] [flags]`}
                   </thead>
                   <tbody>
                     <tr>
-                      <td><code>&lt;curl_command&gt;</code></td>
+                      <td>
+                        <code>&lt;curl_command&gt;</code>
+                      </td>
                       <td>String / stdin</td>
                       <td>Required</td>
-                      <td>The raw curl string to parse, or piped from stdin.</td>
+                      <td>
+                        The raw curl string to parse, or piped from stdin.
+                      </td>
                     </tr>
                     <tr>
-                      <td><code>--target, -t</code></td>
+                      <td>
+                        <code>--target, -t</code>
+                      </td>
                       <td>String</td>
-                      <td><code>fetch</code></td>
-                      <td>Target language/client: <code>fetch</code>, <code>axios</code>, <code>python</code>, <code>go</code>.</td>
+                      <td>
+                        <code>fetch</code>
+                      </td>
+                      <td>
+                        Target language/client: <code>fetch</code>,{" "}
+                        <code>axios</code>, <code>python</code>, <code>go</code>
+                        .
+                      </td>
                     </tr>
                   </tbody>
                 </table>
@@ -343,19 +654,29 @@ codestation <command> [input_or_file] [flags]`}
           {activeIds.has("cli-env") && (
             <section id="cli-env" className={styles.docSection}>
               <div className={styles.sectionHeader}>
-                <h2>4. Secret Leak Scanner &amp; Drift Auditor (env / env-audit)</h2>
+                <h2>
+                  4. Secret Leak Scanner &amp; Drift Auditor (env / env-audit)
+                </h2>
                 <span className={styles.sectionTag}>Security Subcommand</span>
               </div>
               <p className={styles.leadText}>
-                Scans <code>.env</code> files or strings for accidental credential leaks and synchronizes with <code>.env.example</code>.
-                Detects live Stripe keys, AWS access keys, OpenAI tokens, GitHub PATs, private keys, and high-entropy secrets.
-                Outputs a clean security audit report with <strong>automatic credential redaction</strong> (e.g. <code>sk_l••••••••5678</code>).
+                Scans <code>.env</code> files or strings for accidental
+                credential leaks and synchronizes with <code>.env.example</code>
+                . Detects live Stripe keys, AWS access keys, OpenAI tokens,
+                GitHub PATs, private keys, and high-entropy secrets. Outputs a
+                clean security audit report with{" "}
+                <strong>automatic credential redaction</strong> (e.g.{" "}
+                <code>sk_l••••••••5678</code>).
               </p>
 
               <div className={styles.commandCard}>
                 <div className={styles.commandHeader}>
-                  <span className={styles.commandTitle}><code>env [path] [--example [path]]</code></span>
-                  <span className={`${styles.commandBadge} ${styles.pro}`}>PRO TIER</span>
+                  <span className={styles.commandTitle}>
+                    <code>env [path] [--example [path]]</code>
+                  </span>
+                  <span className={`${styles.commandBadge} ${styles.pro}`}>
+                    PRO TIER
+                  </span>
                 </div>
 
                 <CopySnippet
@@ -371,8 +692,10 @@ codestation <command> [input_or_file] [flags]`}
                 />
 
                 <div className={styles.callout + " " + styles.security}>
-                  <strong>Secret Redaction by Default:</strong> All detected credential values are masked before terminal display.
-                  You can safely run <code>npx codestation-mcp env</code> in terminal recordings, CI/CD logs, or live demonstrations.
+                  <strong>Secret Redaction by Default:</strong> All detected
+                  credential values are masked before terminal display. You can
+                  safely run <code>npx codestation-mcp env</code> in terminal
+                  recordings, CI/CD logs, or live demonstrations.
                 </div>
 
                 <table className={styles.specTable}>
@@ -385,34 +708,60 @@ codestation <command> [input_or_file] [flags]`}
                   </thead>
                   <tbody>
                     <tr>
-                      <td><strong>Stripe Secret Key</strong></td>
+                      <td>
+                        <strong>Stripe Secret Key</strong>
+                      </td>
                       <td>Critical</td>
-                      <td><code>sk_live_...</code> (live billing credentials)</td>
+                      <td>
+                        <code>sk_live_...</code> (live billing credentials)
+                      </td>
                     </tr>
                     <tr>
-                      <td><strong>AWS Access Key</strong></td>
+                      <td>
+                        <strong>AWS Access Key</strong>
+                      </td>
                       <td>Critical</td>
-                      <td><code>AKIA...</code> / <code>ASIA...</code> (20-character AWS credentials)</td>
+                      <td>
+                        <code>AKIA...</code> / <code>ASIA...</code>{" "}
+                        (20-character AWS credentials)
+                      </td>
                     </tr>
                     <tr>
-                      <td><strong>OpenAI API Key</strong></td>
+                      <td>
+                        <strong>OpenAI API Key</strong>
+                      </td>
                       <td>Critical</td>
-                      <td><code>sk-proj-...</code> / <code>sk-...</code> (OpenAI project &amp; user keys)</td>
+                      <td>
+                        <code>sk-proj-...</code> / <code>sk-...</code> (OpenAI
+                        project &amp; user keys)
+                      </td>
                     </tr>
                     <tr>
-                      <td><strong>GitHub Personal Token</strong></td>
+                      <td>
+                        <strong>GitHub Personal Token</strong>
+                      </td>
                       <td>Critical</td>
-                      <td><code>ghp_...</code>, <code>github_pat_...</code></td>
+                      <td>
+                        <code>ghp_...</code>, <code>github_pat_...</code>
+                      </td>
                     </tr>
                     <tr>
-                      <td><strong>Private Key PEM</strong></td>
+                      <td>
+                        <strong>Private Key PEM</strong>
+                      </td>
                       <td>Critical</td>
-                      <td><code>-----BEGIN RSA/OPENSSH PRIVATE KEY-----</code></td>
+                      <td>
+                        <code>-----BEGIN RSA/OPENSSH PRIVATE KEY-----</code>
+                      </td>
                     </tr>
                     <tr>
-                      <td><strong>Missing .env.example Key</strong></td>
+                      <td>
+                        <strong>Missing .env.example Key</strong>
+                      </td>
                       <td>High</td>
-                      <td>Keys required by .env.example missing from active .env</td>
+                      <td>
+                        Keys required by .env.example missing from active .env
+                      </td>
                     </tr>
                   </tbody>
                 </table>
@@ -424,18 +773,27 @@ codestation <command> [input_or_file] [flags]`}
           {activeIds.has("cli-mock") && (
             <section id="cli-mock" className={styles.docSection}>
               <div className={styles.sectionHeader}>
-                <h2>5. Realistic Mock Data &amp; SQL Seeder (mock / mock-data)</h2>
+                <h2>
+                  5. Realistic Mock Data &amp; SQL Seeder (mock / mock-data)
+                </h2>
                 <span className={styles.sectionTag}>Data Generator</span>
               </div>
               <p className={styles.leadText}>
-                Generates realistic, developer-friendly mock datasets and SQL <code>INSERT</code> statements for unit tests, seeding databases,
-                or prototyping frontends. Includes prebuilt templates (<code>users</code>, <code>products</code>, <code>orders</code>) and supports custom JSON schemas.
+                Generates realistic, developer-friendly mock datasets and SQL{" "}
+                <code>INSERT</code> statements for unit tests, seeding
+                databases, or prototyping frontends. Includes prebuilt templates
+                (<code>users</code>, <code>products</code>, <code>orders</code>)
+                and supports custom JSON schemas.
               </p>
 
               <div className={styles.commandCard}>
                 <div className={styles.commandHeader}>
-                  <span className={styles.commandTitle}><code>mock [template] [--count N] [--format json|sql]</code></span>
-                  <span className={`${styles.commandBadge} ${styles.pro}`}>PRO TIER</span>
+                  <span className={styles.commandTitle}>
+                    <code>mock [template] [--count N] [--format json|sql]</code>
+                  </span>
+                  <span className={`${styles.commandBadge} ${styles.pro}`}>
+                    PRO TIER
+                  </span>
                 </div>
 
                 <CopySnippet
@@ -467,31 +825,59 @@ codestation <command> [input_or_file] [flags]`}
                   </thead>
                   <tbody>
                     <tr>
-                      <td><code>template</code></td>
-                      <td><code>users</code>, <code>products</code>, <code>orders</code></td>
-                      <td><code>users</code></td>
-                      <td>Built-in domain template for quick realistic generation.</td>
+                      <td>
+                        <code>template</code>
+                      </td>
+                      <td>
+                        <code>users</code>, <code>products</code>,{" "}
+                        <code>orders</code>
+                      </td>
+                      <td>
+                        <code>users</code>
+                      </td>
+                      <td>
+                        Built-in domain template for quick realistic generation.
+                      </td>
                     </tr>
                     <tr>
-                      <td><code>--count, -c</code></td>
+                      <td>
+                        <code>--count, -c</code>
+                      </td>
                       <td>Integer (1-500)</td>
-                      <td><code>5</code></td>
+                      <td>
+                        <code>5</code>
+                      </td>
                       <td>Number of records to generate.</td>
                     </tr>
                     <tr>
-                      <td><code>--format, -f</code></td>
-                      <td><code>json</code>, <code>sql</code></td>
-                      <td><code>json</code></td>
+                      <td>
+                        <code>--format, -f</code>
+                      </td>
+                      <td>
+                        <code>json</code>, <code>sql</code>
+                      </td>
+                      <td>
+                        <code>json</code>
+                      </td>
                       <td>Output serialization format.</td>
                     </tr>
                     <tr>
-                      <td><code>--table, -t</code></td>
+                      <td>
+                        <code>--table, -t</code>
+                      </td>
                       <td>String</td>
-                      <td><code>template name</code></td>
-                      <td>Target table name when formatting as SQL <code>INSERT</code>.</td>
+                      <td>
+                        <code>template name</code>
+                      </td>
+                      <td>
+                        Target table name when formatting as SQL{" "}
+                        <code>INSERT</code>.
+                      </td>
                     </tr>
                     <tr>
-                      <td><code>--schema, -s</code></td>
+                      <td>
+                        <code>--schema, -s</code>
+                      </td>
                       <td>JSON String</td>
                       <td>Optional</td>
                       <td>Custom schema mapping field names to data types.</td>
@@ -506,18 +892,30 @@ codestation <command> [input_or_file] [flags]`}
           {activeIds.has("cli-conflict") && (
             <section id="cli-conflict" className={styles.docSection}>
               <div className={styles.sectionHeader}>
-                <h2>6. Git Merge Conflict Resolver (conflict / conflict-parse)</h2>
+                <h2>
+                  6. Git Merge Conflict Resolver (conflict / conflict-parse)
+                </h2>
                 <span className={styles.sectionTag}>Git Subcommand</span>
               </div>
               <p className={styles.leadText}>
-                Parses standard Git merge conflict markers (<code>&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD</code>, <code>=======</code>, <code>&gt;&gt;&gt;&gt;&gt;&gt;&gt; branch</code>)
-                and executes clean resolution strategies without touching your Git index or leaving residual syntax errors.
+                Parses standard Git merge conflict markers (
+                <code>&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD</code>,{" "}
+                <code>=======</code>,{" "}
+                <code>&gt;&gt;&gt;&gt;&gt;&gt;&gt; branch</code>) and executes
+                clean resolution strategies without touching your Git index or
+                leaving residual syntax errors.
               </p>
 
               <div className={styles.commandCard}>
                 <div className={styles.commandHeader}>
-                  <span className={styles.commandTitle}><code>conflict &lt;file&gt; [--strategy ours|theirs|both]</code></span>
-                  <span className={`${styles.commandBadge} ${styles.pro}`}>PRO TIER</span>
+                  <span className={styles.commandTitle}>
+                    <code>
+                      conflict &lt;file&gt; [--strategy ours|theirs|both]
+                    </code>
+                  </span>
+                  <span className={`${styles.commandBadge} ${styles.pro}`}>
+                    PRO TIER
+                  </span>
                 </div>
 
                 <CopySnippet
@@ -553,16 +951,31 @@ EOF`}
                   </thead>
                   <tbody>
                     <tr>
-                      <td><code>ours</code></td>
-                      <td>Keeps code from the top block (<code>HEAD</code>); strips conflict markers and incoming block.</td>
+                      <td>
+                        <code>ours</code>
+                      </td>
+                      <td>
+                        Keeps code from the top block (<code>HEAD</code>);
+                        strips conflict markers and incoming block.
+                      </td>
                     </tr>
                     <tr>
-                      <td><code>theirs</code></td>
-                      <td>Keeps code from the bottom block (incoming branch); strips conflict markers and current block.</td>
+                      <td>
+                        <code>theirs</code>
+                      </td>
+                      <td>
+                        Keeps code from the bottom block (incoming branch);
+                        strips conflict markers and current block.
+                      </td>
                     </tr>
                     <tr>
-                      <td><code>both</code></td>
-                      <td>Preserves both blocks sequentially in the resolved file; removes markers.</td>
+                      <td>
+                        <code>both</code>
+                      </td>
+                      <td>
+                        Preserves both blocks sequentially in the resolved file;
+                        removes markers.
+                      </td>
                     </tr>
                   </tbody>
                 </table>
@@ -578,14 +991,20 @@ EOF`}
                 <span className={styles.sectionTag}>Terminal Subcommand</span>
               </div>
               <p className={styles.leadText}>
-                Inspects JSON Web Tokens in your terminal instantly without sending tokens over the internet to unverified websites.
-                Decodes Header and Payload claims, calculates exact expiration dates, and shows remaining time-to-live (TTL).
+                Inspects JSON Web Tokens in your terminal instantly without
+                sending tokens over the internet to unverified websites. Decodes
+                Header and Payload claims, calculates exact expiration dates,
+                and shows remaining time-to-live (TTL).
               </p>
 
               <div className={styles.commandCard}>
                 <div className={styles.commandHeader}>
-                  <span className={styles.commandTitle}><code>jwt &lt;token&gt;</code></span>
-                  <span className={`${styles.commandBadge} ${styles.pro}`}>PRO TIER</span>
+                  <span className={styles.commandTitle}>
+                    <code>jwt &lt;token&gt;</code>
+                  </span>
+                  <span className={`${styles.commandBadge} ${styles.pro}`}>
+                    PRO TIER
+                  </span>
                 </div>
 
                 <CopySnippet
@@ -605,14 +1024,21 @@ EOF`}
                 <span className={styles.sectionTag}>Database Subcommand</span>
               </div>
               <p className={styles.leadText}>
-                Formats messy SQL queries with dialect-aware indentation, keyword capitalization, and clause alignment across
-                PostgreSQL, MySQL, SQLite, and SQL Server.
+                Formats messy SQL queries with dialect-aware indentation,
+                keyword capitalization, and clause alignment across PostgreSQL,
+                MySQL, SQLite, and SQL Server.
               </p>
 
               <div className={styles.commandCard}>
                 <div className={styles.commandHeader}>
-                  <span className={styles.commandTitle}><code>sql &quot;&lt;query&gt;&quot; [--dialect &lt;name&gt;]</code></span>
-                  <span className={`${styles.commandBadge} ${styles.pro}`}>PRO TIER</span>
+                  <span className={styles.commandTitle}>
+                    <code>
+                      sql &quot;&lt;query&gt;&quot; [--dialect &lt;name&gt;]
+                    </code>
+                  </span>
+                  <span className={`${styles.commandBadge} ${styles.pro}`}>
+                    PRO TIER
+                  </span>
                 </div>
 
                 <CopySnippet
@@ -632,13 +1058,18 @@ EOF`}
                 <span className={styles.sectionTag}>Date/Time Subcommand</span>
               </div>
               <p className={styles.leadText}>
-                Translates 5-field Unix cron syntax into clear, unambiguous English and computes the next 5 execution timestamps.
+                Translates 5-field Unix cron syntax into clear, unambiguous
+                English and computes the next 5 execution timestamps.
               </p>
 
               <div className={styles.commandCard}>
                 <div className={styles.commandHeader}>
-                  <span className={styles.commandTitle}><code>cron &quot;&lt;expression&gt;&quot;</code></span>
-                  <span className={`${styles.commandBadge} ${styles.pro}`}>PRO TIER</span>
+                  <span className={styles.commandTitle}>
+                    <code>cron &quot;&lt;expression&gt;&quot;</code>
+                  </span>
+                  <span className={`${styles.commandBadge} ${styles.pro}`}>
+                    PRO TIER
+                  </span>
                 </div>
 
                 <CopySnippet
@@ -658,13 +1089,20 @@ EOF`}
                 <span className={styles.sectionTag}>Crypto Subcommand</span>
               </div>
               <p className={styles.leadText}>
-                Computes cryptographic digests using native Node.js WebCrypto. Supports SHA-256, SHA-512, MD5, SHA-1, and CRC-32.
+                Computes cryptographic digests using native Node.js WebCrypto.
+                Supports SHA-256, SHA-512, MD5, SHA-1, and CRC-32.
               </p>
 
               <div className={styles.commandCard}>
                 <div className={styles.commandHeader}>
-                  <span className={styles.commandTitle}><code>hash &quot;&lt;text&gt;&quot; [--alg &lt;name&gt;]</code></span>
-                  <span className={`${styles.commandBadge} ${styles.pro}`}>PRO TIER</span>
+                  <span className={styles.commandTitle}>
+                    <code>
+                      hash &quot;&lt;text&gt;&quot; [--alg &lt;name&gt;]
+                    </code>
+                  </span>
+                  <span className={`${styles.commandBadge} ${styles.pro}`}>
+                    PRO TIER
+                  </span>
                 </div>
 
                 <CopySnippet
@@ -684,13 +1122,20 @@ EOF`}
                 <span className={styles.sectionTag}>Code Generation</span>
               </div>
               <p className={styles.leadText}>
-                Infers production-ready TypeScript types and runtime Zod validation schemas directly from sample JSON payloads or API responses.
+                Infers production-ready TypeScript types and runtime Zod
+                validation schemas directly from sample JSON payloads or API
+                responses.
               </p>
 
               <div className={styles.commandCard}>
                 <div className={styles.commandHeader}>
-                  <span className={styles.commandTitle}><code>ts &lt;json&gt; [RootName]</code> / <code>zod &lt;json&gt; [SchemaName]</code></span>
-                  <span className={`${styles.commandBadge} ${styles.pro}`}>PRO TIER</span>
+                  <span className={styles.commandTitle}>
+                    <code>ts &lt;json&gt; [RootName]</code> /{" "}
+                    <code>zod &lt;json&gt; [SchemaName]</code>
+                  </span>
+                  <span className={`${styles.commandBadge} ${styles.pro}`}>
+                    PRO TIER
+                  </span>
                 </div>
 
                 <CopySnippet
@@ -716,13 +1161,18 @@ EOF`}
                 <span className={styles.sectionTag}>Free Core Utilities</span>
               </div>
               <p className={styles.leadText}>
-                Everyday terminal essentials available completely free on both CLI and MCP.
+                Everyday terminal essentials available completely free on both
+                CLI and MCP.
               </p>
 
               <div className={styles.commandCard}>
                 <div className={styles.commandHeader}>
-                  <span className={styles.commandTitle}><code>uuid [count]</code> / <code>json &lt;raw&gt;</code></span>
-                  <span className={`${styles.commandBadge} ${styles.free}`}>FREE TIER</span>
+                  <span className={styles.commandTitle}>
+                    <code>uuid [count]</code> / <code>json &lt;raw&gt;</code>
+                  </span>
+                  <span className={`${styles.commandBadge} ${styles.free}`}>
+                    FREE TIER
+                  </span>
                 </div>
 
                 <CopySnippet
@@ -748,19 +1198,39 @@ EOF`}
                 <span className={styles.sectionTag}>Protocol Specs</span>
               </div>
               <p className={styles.leadText}>
-                The Code Station MCP server communicates with AI clients over standard input/output (<code>stdio</code>)
-                using the JSON-RPC 2.0 protocol mandated by the Model Context Protocol specification.
+                The Code Station MCP server communicates with AI clients over
+                standard input/output (<code>stdio</code>) using the JSON-RPC
+                2.0 protocol mandated by the Model Context Protocol
+                specification.
               </p>
 
               <div className={styles.callout}>
                 <strong>Supported RPC Endpoints:</strong>
                 <ul>
-                  <li><code>tools/list</code> (Standard MCP): Returns array of available tools and JSON Schema parameter descriptors.</li>
-                  <li><code>tools/call</code> (Standard MCP): Executes a tool with provided arguments and returns content payloads.</li>
-                  <li><code>tools.list</code> (Extended RPC): Lightweight array of tool identifiers.</li>
-                  <li><code>tools.describe</code> (Extended RPC): Returns full documentation for a specific tool ID.</li>
-                  <li><code>auth.status</code> (Extended RPC): Returns current license tier, key fingerprint, and device status.</li>
-                  <li><code>entitlements.status</code> (Extended RPC): Detailed feature entitlement flags.</li>
+                  <li>
+                    <code>tools/list</code> (Standard MCP): Returns array of
+                    available tools and JSON Schema parameter descriptors.
+                  </li>
+                  <li>
+                    <code>tools/call</code> (Standard MCP): Executes a tool with
+                    provided arguments and returns content payloads.
+                  </li>
+                  <li>
+                    <code>tools.list</code> (Extended RPC): Lightweight array of
+                    tool identifiers.
+                  </li>
+                  <li>
+                    <code>tools.describe</code> (Extended RPC): Returns full
+                    documentation for a specific tool ID.
+                  </li>
+                  <li>
+                    <code>auth.status</code> (Extended RPC): Returns current
+                    license tier, key fingerprint, and device status.
+                  </li>
+                  <li>
+                    <code>entitlements.status</code> (Extended RPC): Detailed
+                    feature entitlement flags.
+                  </li>
                 </ul>
               </div>
 
@@ -780,19 +1250,47 @@ EOF`}
                 <span className={styles.sectionTag}>W3C / Browser API</span>
               </div>
               <p className={styles.leadText}>
-                WebMCP connects AI browser assistants, extensions, and automated web agents directly to Code Station&apos;s
-                in-page developer utilities through <code>document.modelContext</code> with <strong>zero server uploads and zero network latency</strong>.
+                WebMCP connects AI browser assistants, extensions, and automated
+                web agents directly to Code Station&apos;s in-page developer
+                utilities through <code>document.modelContext</code> with{" "}
+                <strong>zero server uploads and zero network latency</strong>.
               </p>
 
               <div className={styles.callout}>
                 <strong>How WebMCP Works in Code Station:</strong>
                 <ul>
-                  <li><strong>100% In-Browser:</strong> Executions run locally in the active tab using Web APIs, Web Crypto, and client AST engines. No data ever leaves your machine.</li>
-                  <li><strong>Chromium Origin Trial / Early Flag:</strong> In Chrome 146+, enable via <code>chrome://flags/#enable-webmcp-testing</code>.</li>
-                  <li><strong>Zero-Friction Fallback:</strong> In all other browsers, Code Station injects a transparent polyfill on <code>document.modelContext</code> and exposes <code>window.__CODESTATION_WEBMCP__</code>.</li>
-                  <li><strong>Universal Discovery:</strong> The <code>codestation_list_tools</code> tool enables agents to query 395+ tools across 25 stations.</li>
-                  <li><strong>Universal Execution:</strong> The <code>codestation_execute_tool</code> tool executes any tool with structured JSON parameters.</li>
-                  <li><strong>Active Tool Mounting:</strong> Visiting any <code>/tools/[slug]</code> page dynamically mounts a dedicated tool contract (e.g. <code>codestation_cidr_calculator</code>).</li>
+                  <li>
+                    <strong>100% In-Browser:</strong> Executions run locally in
+                    the active tab using Web APIs, Web Crypto, and client AST
+                    engines. No data ever leaves your machine.
+                  </li>
+                  <li>
+                    <strong>Chromium Origin Trial / Early Flag:</strong> In
+                    Chrome 146+, enable via{" "}
+                    <code>chrome://flags/#enable-webmcp-testing</code>.
+                  </li>
+                  <li>
+                    <strong>Zero-Friction Fallback:</strong> In all other
+                    browsers, Code Station injects a transparent polyfill on{" "}
+                    <code>document.modelContext</code> and exposes{" "}
+                    <code>window.__CODESTATION_WEBMCP__</code>.
+                  </li>
+                  <li>
+                    <strong>Universal Discovery:</strong> The{" "}
+                    <code>codestation_list_tools</code> tool enables agents to
+                    query 400+ tools across 26 stations.
+                  </li>
+                  <li>
+                    <strong>Universal Execution:</strong> The{" "}
+                    <code>codestation_execute_tool</code> tool executes any tool
+                    with structured JSON parameters.
+                  </li>
+                  <li>
+                    <strong>Active Tool Mounting:</strong> Visiting any{" "}
+                    <code>/tools/[slug]</code> page dynamically mounts a
+                    dedicated tool contract (e.g.{" "}
+                    <code>codestation_cidr_calculator</code>).
+                  </li>
                 </ul>
               </div>
 
@@ -839,14 +1337,22 @@ console.log(JSON.parse(list.content[0].text));`}
                   </thead>
                   <tbody>
                     <tr>
-                      <td><strong>Web Browser</strong></td>
-                      <td>WebMCP (<code>document.modelContext</code>)</td>
+                      <td>
+                        <strong>Web Browser</strong>
+                      </td>
+                      <td>
+                        WebMCP (<code>document.modelContext</code>)
+                      </td>
                       <td>Chrome AI, Web Extensions, Web Agents</td>
                       <td>100% In-Browser Tab Memory</td>
                     </tr>
                     <tr>
-                      <td><strong>Desktop / Terminal</strong></td>
-                      <td>Local MCP (<code>stdio</code> JSON-RPC)</td>
+                      <td>
+                        <strong>Desktop / Terminal</strong>
+                      </td>
+                      <td>
+                        Local MCP (<code>stdio</code> JSON-RPC)
+                      </td>
                       <td>Claude Desktop, Cursor, Windsurf, CLI</td>
                       <td>Local Machine Memory / Node Process</td>
                     </tr>
@@ -864,15 +1370,25 @@ console.log(JSON.parse(list.content[0].text));`}
                 <span className={styles.sectionTag}>Integration Setup</span>
               </div>
               <p className={styles.leadText}>
-                Connect Code Station to your favorite AI development environment in seconds.
+                Connect Code Station to your favorite AI development environment
+                in seconds.
               </p>
 
               <div className={styles.subSection}>
                 <h3>Claude Desktop</h3>
                 <p>Add to your Claude configuration file:</p>
                 <ul>
-                  <li><strong>macOS:</strong> <code>~/Library/Application Support/Claude/claude_desktop_config.json</code></li>
-                  <li><strong>Windows:</strong> <code>%APPDATA%\Claude\claude_desktop_config.json</code></li>
+                  <li>
+                    <strong>macOS:</strong>{" "}
+                    <code>
+                      ~/Library/Application
+                      Support/Claude/claude_desktop_config.json
+                    </code>
+                  </li>
+                  <li>
+                    <strong>Windows:</strong>{" "}
+                    <code>%APPDATA%\Claude\claude_desktop_config.json</code>
+                  </li>
                 </ul>
                 <CopySnippet
                   title="claude_desktop_config.json"
@@ -891,7 +1407,9 @@ console.log(JSON.parse(list.content[0].text));`}
               <div className={styles.subSection}>
                 <h3>Cursor IDE</h3>
                 <p>
-                  Add to your project&apos;s <code>.cursor/mcp.json</code> or paste into Cursor Settings (<strong>Settings → Features → MCP</strong>):
+                  Add to your project&apos;s <code>.cursor/mcp.json</code> or
+                  paste into Cursor Settings (
+                  <strong>Settings → Features → MCP</strong>):
                 </p>
                 <CopySnippet
                   title=".cursor/mcp.json"
@@ -909,7 +1427,9 @@ console.log(JSON.parse(list.content[0].text));`}
 
               <div className={styles.subSection}>
                 <h3>Windsurf / Codeium</h3>
-                <p>Add to <code>~/.codeium/windsurf/mcp_config.json</code>:</p>
+                <p>
+                  Add to <code>~/.codeium/windsurf/mcp_config.json</code>:
+                </p>
                 <CopySnippet
                   title="mcp_config.json"
                   code={`{
@@ -926,7 +1446,10 @@ console.log(JSON.parse(list.content[0].text));`}
 
               <div className={styles.subSection}>
                 <h3>Claude Code CLI</h3>
-                <p>Register directly using Claude Code&apos;s built-in MCP manager:</p>
+                <p>
+                  Register directly using Claude Code&apos;s built-in MCP
+                  manager:
+                </p>
                 <CopySnippet
                   title="Claude Code CLI"
                   code="claude mcp add codestation npx -y codestation-mcp --key CS-PRO-YOUR-KEY"
@@ -944,8 +1467,10 @@ console.log(JSON.parse(list.content[0].text));`}
                 <span className={styles.sectionTag}>Agent Prompting</span>
               </div>
               <p className={styles.leadText}>
-                Add this block to your assistant&apos;s Custom Instructions, <code>.cursorrules</code>, or <code>CLAUDE.md</code>.
-                It instructs the LLM to delegate calculations, conversions, and parsing directly to local Code Station tools:
+                Add this block to your assistant&apos;s Custom Instructions,{" "}
+                <code>.cursorrules</code>, or <code>CLAUDE.md</code>. It
+                instructs the LLM to delegate calculations, conversions, and
+                parsing directly to local Code Station tools:
               </p>
 
               <CopySnippet
@@ -980,7 +1505,8 @@ Always prioritize calling these local, deterministic tools instead of calculatin
                 <span className={styles.sectionTag}>Tool Catalog</span>
               </div>
               <p className={styles.leadText}>
-                Overview of all 20+ Model Context Protocol tools exposed by <code>codestation-mcp</code>:
+                Overview of all 20+ Model Context Protocol tools exposed by{" "}
+                <code>codestation-mcp</code>:
               </p>
 
               <table className={styles.specTable}>
@@ -993,114 +1519,246 @@ Always prioritize calling these local, deterministic tools instead of calculatin
                 </thead>
                 <tbody>
                   <tr>
-                    <td><code>codestation_curl_to_code</code></td>
-                    <td><strong style={{ color: "var(--accent)" }}>Pro</strong></td>
-                    <td>Converts cURL commands into TypeScript fetch/axios, Python, or Go.</td>
+                    <td>
+                      <code>codestation_curl_to_code</code>
+                    </td>
+                    <td>
+                      <strong style={{ color: "var(--accent)" }}>Pro</strong>
+                    </td>
+                    <td>
+                      Converts cURL commands into TypeScript fetch/axios,
+                      Python, or Go.
+                    </td>
                   </tr>
                   <tr>
-                    <td><code>codestation_env_audit</code></td>
-                    <td><strong style={{ color: "var(--accent)" }}>Pro</strong></td>
-                    <td>Scans .env for secrets (Stripe, AWS, OpenAI, GitHub PAT) &amp; audits .env.example.</td>
+                    <td>
+                      <code>codestation_env_audit</code>
+                    </td>
+                    <td>
+                      <strong style={{ color: "var(--accent)" }}>Pro</strong>
+                    </td>
+                    <td>
+                      Scans .env for secrets (Stripe, AWS, OpenAI, GitHub PAT)
+                      &amp; audits .env.example.
+                    </td>
                   </tr>
                   <tr>
-                    <td><code>codestation_mock_data</code></td>
-                    <td><strong style={{ color: "var(--accent)" }}>Pro</strong></td>
-                    <td>Generates realistic mock datasets &amp; SQL INSERT statements.</td>
+                    <td>
+                      <code>codestation_mock_data</code>
+                    </td>
+                    <td>
+                      <strong style={{ color: "var(--accent)" }}>Pro</strong>
+                    </td>
+                    <td>
+                      Generates realistic mock datasets &amp; SQL INSERT
+                      statements.
+                    </td>
                   </tr>
                   <tr>
-                    <td><code>codestation_git_conflict</code></td>
-                    <td><strong style={{ color: "var(--accent)" }}>Pro</strong></td>
-                    <td>Parses &amp; resolves Git merge conflicts with ours, theirs, or both.</td>
+                    <td>
+                      <code>codestation_git_conflict</code>
+                    </td>
+                    <td>
+                      <strong style={{ color: "var(--accent)" }}>Pro</strong>
+                    </td>
+                    <td>
+                      Parses &amp; resolves Git merge conflicts with ours,
+                      theirs, or both.
+                    </td>
                   </tr>
                   <tr>
-                    <td><code>codestation_json_to_typescript</code></td>
-                    <td><strong style={{ color: "var(--accent)" }}>Pro</strong></td>
-                    <td>Generates clean, nested TypeScript interfaces from sample JSON.</td>
+                    <td>
+                      <code>codestation_json_to_typescript</code>
+                    </td>
+                    <td>
+                      <strong style={{ color: "var(--accent)" }}>Pro</strong>
+                    </td>
+                    <td>
+                      Generates clean, nested TypeScript interfaces from sample
+                      JSON.
+                    </td>
                   </tr>
                   <tr>
-                    <td><code>codestation_json_to_zod</code></td>
-                    <td><strong style={{ color: "var(--accent)" }}>Pro</strong></td>
-                    <td>Generates production-ready Zod schema declarations and inferred types.</td>
+                    <td>
+                      <code>codestation_json_to_zod</code>
+                    </td>
+                    <td>
+                      <strong style={{ color: "var(--accent)" }}>Pro</strong>
+                    </td>
+                    <td>
+                      Generates production-ready Zod schema declarations and
+                      inferred types.
+                    </td>
                   </tr>
                   <tr>
-                    <td><code>codestation_jwt_decode</code></td>
-                    <td><strong style={{ color: "var(--accent)" }}>Pro</strong></td>
-                    <td>Decodes JWT headers, claims, and calculates expiry TTL.</td>
+                    <td>
+                      <code>codestation_jwt_decode</code>
+                    </td>
+                    <td>
+                      <strong style={{ color: "var(--accent)" }}>Pro</strong>
+                    </td>
+                    <td>
+                      Decodes JWT headers, claims, and calculates expiry TTL.
+                    </td>
                   </tr>
                   <tr>
-                    <td><code>codestation_format_sql</code></td>
-                    <td><strong style={{ color: "var(--accent)" }}>Pro</strong></td>
-                    <td>Beautifies SQL queries for PostgreSQL, MySQL, SQLite, and SQL Server.</td>
+                    <td>
+                      <code>codestation_format_sql</code>
+                    </td>
+                    <td>
+                      <strong style={{ color: "var(--accent)" }}>Pro</strong>
+                    </td>
+                    <td>
+                      Beautifies SQL queries for PostgreSQL, MySQL, SQLite, and
+                      SQL Server.
+                    </td>
                   </tr>
                   <tr>
-                    <td><code>codestation_cron_explain</code></td>
-                    <td><strong style={{ color: "var(--accent)" }}>Pro</strong></td>
-                    <td>Translates Unix cron expressions and projects next 5 runtimes.</td>
+                    <td>
+                      <code>codestation_cron_explain</code>
+                    </td>
+                    <td>
+                      <strong style={{ color: "var(--accent)" }}>Pro</strong>
+                    </td>
+                    <td>
+                      Translates Unix cron expressions and projects next 5
+                      runtimes.
+                    </td>
                   </tr>
                   <tr>
-                    <td><code>codestation_hash</code></td>
-                    <td><strong style={{ color: "var(--accent)" }}>Pro</strong></td>
-                    <td>Cryptographic hashing (SHA-256, SHA-512, MD5, SHA-1, CRC-32).</td>
+                    <td>
+                      <code>codestation_hash</code>
+                    </td>
+                    <td>
+                      <strong style={{ color: "var(--accent)" }}>Pro</strong>
+                    </td>
+                    <td>
+                      Cryptographic hashing (SHA-256, SHA-512, MD5, SHA-1,
+                      CRC-32).
+                    </td>
                   </tr>
                   <tr>
-                    <td><code>codestation_hmac</code></td>
-                    <td><strong style={{ color: "var(--accent)" }}>Pro</strong></td>
-                    <td>Keyed HMAC message authentication (SHA-256, SHA-512).</td>
+                    <td>
+                      <code>codestation_hmac</code>
+                    </td>
+                    <td>
+                      <strong style={{ color: "var(--accent)" }}>Pro</strong>
+                    </td>
+                    <td>
+                      Keyed HMAC message authentication (SHA-256, SHA-512).
+                    </td>
                   </tr>
                   <tr>
-                    <td><code>codestation_business_days</code></td>
-                    <td><strong style={{ color: "var(--accent)" }}>Pro</strong></td>
-                    <td>Calculates business working days between two dates excluding weekends/holidays.</td>
+                    <td>
+                      <code>codestation_business_days</code>
+                    </td>
+                    <td>
+                      <strong style={{ color: "var(--accent)" }}>Pro</strong>
+                    </td>
+                    <td>
+                      Calculates business working days between two dates
+                      excluding weekends/holidays.
+                    </td>
                   </tr>
                   <tr>
-                    <td><code>codestation_regex_test</code></td>
-                    <td><strong style={{ color: "var(--accent)" }}>Pro</strong></td>
-                    <td>Tests regular expressions and extracts capture groups.</td>
+                    <td>
+                      <code>codestation_regex_test</code>
+                    </td>
+                    <td>
+                      <strong style={{ color: "var(--accent)" }}>Pro</strong>
+                    </td>
+                    <td>
+                      Tests regular expressions and extracts capture groups.
+                    </td>
                   </tr>
                   <tr>
-                    <td><code>codestation_json_schema</code></td>
-                    <td><strong style={{ color: "var(--accent)" }}>Pro</strong></td>
-                    <td>Infers Draft 7 or 2020-12 JSON Schema structures from sample data.</td>
+                    <td>
+                      <code>codestation_json_schema</code>
+                    </td>
+                    <td>
+                      <strong style={{ color: "var(--accent)" }}>Pro</strong>
+                    </td>
+                    <td>
+                      Infers Draft 7 or 2020-12 JSON Schema structures from
+                      sample data.
+                    </td>
                   </tr>
                   <tr>
-                    <td><code>codestation_format_json</code></td>
-                    <td><span style={{ color: "var(--green)" }}>Free</span></td>
+                    <td>
+                      <code>codestation_format_json</code>
+                    </td>
+                    <td>
+                      <span style={{ color: "var(--green)" }}>Free</span>
+                    </td>
                     <td>Formats and pretty-prints JSON payloads.</td>
                   </tr>
                   <tr>
-                    <td><code>codestation_minify_json</code></td>
-                    <td><span style={{ color: "var(--green)" }}>Free</span></td>
+                    <td>
+                      <code>codestation_minify_json</code>
+                    </td>
+                    <td>
+                      <span style={{ color: "var(--green)" }}>Free</span>
+                    </td>
                     <td>Compacts JSON into single-line representations.</td>
                   </tr>
                   <tr>
-                    <td><code>codestation_json_to_yaml</code></td>
-                    <td><span style={{ color: "var(--green)" }}>Free</span></td>
+                    <td>
+                      <code>codestation_json_to_yaml</code>
+                    </td>
+                    <td>
+                      <span style={{ color: "var(--green)" }}>Free</span>
+                    </td>
                     <td>Converts JSON data into YAML syntax.</td>
                   </tr>
                   <tr>
-                    <td><code>codestation_yaml_to_json</code></td>
-                    <td><span style={{ color: "var(--green)" }}>Free</span></td>
+                    <td>
+                      <code>codestation_yaml_to_json</code>
+                    </td>
+                    <td>
+                      <span style={{ color: "var(--green)" }}>Free</span>
+                    </td>
                     <td>Parses YAML into standard JSON.</td>
                   </tr>
                   <tr>
-                    <td><code>codestation_base64</code></td>
-                    <td><span style={{ color: "var(--green)" }}>Free</span></td>
+                    <td>
+                      <code>codestation_base64</code>
+                    </td>
+                    <td>
+                      <span style={{ color: "var(--green)" }}>Free</span>
+                    </td>
                     <td>Standard and URL-safe Base64 encode and decode.</td>
                   </tr>
                   <tr>
-                    <td><code>codestation_case_convert</code></td>
-                    <td><span style={{ color: "var(--green)" }}>Free</span></td>
-                    <td>Converts identifiers between camelCase, snake_case, kebab-case, PascalCase.</td>
+                    <td>
+                      <code>codestation_case_convert</code>
+                    </td>
+                    <td>
+                      <span style={{ color: "var(--green)" }}>Free</span>
+                    </td>
+                    <td>
+                      Converts identifiers between camelCase, snake_case,
+                      kebab-case, PascalCase.
+                    </td>
                   </tr>
                   <tr>
-                    <td><code>codestation_text_diff</code></td>
-                    <td><span style={{ color: "var(--green)" }}>Free</span></td>
+                    <td>
+                      <code>codestation_text_diff</code>
+                    </td>
+                    <td>
+                      <span style={{ color: "var(--green)" }}>Free</span>
+                    </td>
                     <td>Unified line-by-line semantic text comparison.</td>
                   </tr>
                   <tr>
-                    <td><code>codestation_uuid</code></td>
-                    <td><span style={{ color: "var(--green)" }}>Free</span></td>
-                    <td>Generates cryptographically random RFC 4122 v4 UUIDs.</td>
+                    <td>
+                      <code>codestation_uuid</code>
+                    </td>
+                    <td>
+                      <span style={{ color: "var(--green)" }}>Free</span>
+                    </td>
+                    <td>
+                      Generates cryptographically random RFC 4122 v4 UUIDs.
+                    </td>
                   </tr>
                 </tbody>
               </table>
@@ -1115,135 +1773,454 @@ Always prioritize calling these local, deterministic tools instead of calculatin
                 <span className={styles.sectionTag}>Web Application</span>
               </div>
               <p className={styles.leadText}>
-                Every single one of the <strong>395+ developer tools</strong> on the Code Station web application
-                (<code>codestation.in</code>) is <strong>100% free, unlimited, and runs client-side</strong>.
+                Every single one of the <strong>395+ developer tools</strong> on
+                the Code Station web application (<code>codestation.in</code>)
+                is <strong>100% free, unlimited, and runs client-side</strong>.
               </p>
 
               <div className={styles.gridTwo}>
                 <div className={styles.cardItem}>
                   <h4>1. JSON &amp; Data Station</h4>
-                  <p>Formatting, validation, JSON-to-YAML, JSON-to-CSV, and schema validation.</p>
-                  <Link href="/stations/json-data" style={{ fontSize: "12px", color: "var(--accent)", fontWeight: 700 }}>Open Station →</Link>
+                  <p>
+                    Formatting, validation, JSON-to-YAML, JSON-to-CSV, and
+                    schema validation.
+                  </p>
+                  <Link
+                    href="/stations/json-data"
+                    style={{
+                      fontSize: "12px",
+                      color: "var(--accent)",
+                      fontWeight: 700,
+                    }}
+                  >
+                    Open Station →
+                  </Link>
                 </div>
                 <div className={styles.cardItem}>
                   <h4>2. Security &amp; Crypto Station</h4>
-                  <p>Cryptographic hashes, HMACs, JWT decoders, key generators, and password entropy.</p>
-                  <Link href="/stations/security" style={{ fontSize: "12px", color: "var(--accent)", fontWeight: 700 }}>Open Station →</Link>
+                  <p>
+                    Cryptographic hashes, HMACs, JWT decoders, key generators,
+                    and password entropy.
+                  </p>
+                  <Link
+                    href="/stations/security"
+                    style={{
+                      fontSize: "12px",
+                      color: "var(--accent)",
+                      fontWeight: 700,
+                    }}
+                  >
+                    Open Station →
+                  </Link>
                 </div>
                 <div className={styles.cardItem}>
                   <h4>3. API &amp; Webhooks Station</h4>
-                  <p>Mock payload generators, cURL generator, query parsers, and HTTP status codes.</p>
-                  <Link href="/stations/api" style={{ fontSize: "12px", color: "var(--accent)", fontWeight: 700 }}>Open Station →</Link>
+                  <p>
+                    Mock payload generators, cURL generator, query parsers, and
+                    HTTP status codes.
+                  </p>
+                  <Link
+                    href="/stations/api"
+                    style={{
+                      fontSize: "12px",
+                      color: "var(--accent)",
+                      fontWeight: 700,
+                    }}
+                  >
+                    Open Station →
+                  </Link>
                 </div>
                 <div className={styles.cardItem}>
                   <h4>4. SQL &amp; Database Station</h4>
-                  <p>SQL formatters, mock data seeder, ER diagram generators, and dialect converters.</p>
-                  <Link href="/stations/sql-database" style={{ fontSize: "12px", color: "var(--accent)", fontWeight: 700 }}>Open Station →</Link>
+                  <p>
+                    SQL formatters, mock data seeder, ER diagram generators, and
+                    dialect converters.
+                  </p>
+                  <Link
+                    href="/stations/sql-database"
+                    style={{
+                      fontSize: "12px",
+                      color: "var(--accent)",
+                      fontWeight: 700,
+                    }}
+                  >
+                    Open Station →
+                  </Link>
                 </div>
                 <div className={styles.cardItem}>
                   <h4>5. Encoders &amp; Decoders</h4>
-                  <p>Base64, Hex, URL encoding, HTML entities, and binary codecs.</p>
-                  <Link href="/stations/encoding" style={{ fontSize: "12px", color: "var(--accent)", fontWeight: 700 }}>Open Station →</Link>
+                  <p>
+                    Base64, Hex, URL encoding, HTML entities, and binary codecs.
+                  </p>
+                  <Link
+                    href="/stations/encoding"
+                    style={{
+                      fontSize: "12px",
+                      color: "var(--accent)",
+                      fontWeight: 700,
+                    }}
+                  >
+                    Open Station →
+                  </Link>
                 </div>
                 <div className={styles.cardItem}>
                   <h4>6. Date &amp; Time Station</h4>
-                  <p>Timezone conversions across IANA databases, business day calculators, and timestamps.</p>
-                  <Link href="/stations/date-time" style={{ fontSize: "12px", color: "var(--accent)", fontWeight: 700 }}>Open Station →</Link>
+                  <p>
+                    Timezone conversions across IANA databases, business day
+                    calculators, and timestamps.
+                  </p>
+                  <Link
+                    href="/stations/date-time"
+                    style={{
+                      fontSize: "12px",
+                      color: "var(--accent)",
+                      fontWeight: 700,
+                    }}
+                  >
+                    Open Station →
+                  </Link>
                 </div>
                 <div className={styles.cardItem}>
                   <h4>7. Text &amp; Strings Station</h4>
-                  <p>Case conversion, semantic text diffing, line sorting, and deduplication.</p>
-                  <Link href="/stations/text" style={{ fontSize: "12px", color: "var(--accent)", fontWeight: 700 }}>Open Station →</Link>
+                  <p>
+                    Case conversion, semantic text diffing, line sorting, and
+                    deduplication.
+                  </p>
+                  <Link
+                    href="/stations/text"
+                    style={{
+                      fontSize: "12px",
+                      color: "var(--accent)",
+                      fontWeight: 700,
+                    }}
+                  >
+                    Open Station →
+                  </Link>
                 </div>
                 <div className={styles.cardItem}>
                   <h4>8. Converters Station</h4>
-                  <p>Two-way number base conversion, temperature, and unit converters.</p>
-                  <Link href="/stations/converters" style={{ fontSize: "12px", color: "var(--accent)", fontWeight: 700 }}>Open Station →</Link>
+                  <p>
+                    Two-way number base conversion, temperature, and unit
+                    converters.
+                  </p>
+                  <Link
+                    href="/stations/converters"
+                    style={{
+                      fontSize: "12px",
+                      color: "var(--accent)",
+                      fontWeight: 700,
+                    }}
+                  >
+                    Open Station →
+                  </Link>
                 </div>
                 <div className={styles.cardItem}>
                   <h4>9. Image &amp; SVG Station</h4>
-                  <p>PNG/JPEG compression, SVG optimizer, aspect ratio tools, and color palette extraction.</p>
-                  <Link href="/stations/image" style={{ fontSize: "12px", color: "var(--accent)", fontWeight: 700 }}>Open Station →</Link>
+                  <p>
+                    PNG/JPEG compression, SVG optimizer, aspect ratio tools, and
+                    color palette extraction.
+                  </p>
+                  <Link
+                    href="/stations/image"
+                    style={{
+                      fontSize: "12px",
+                      color: "var(--accent)",
+                      fontWeight: 700,
+                    }}
+                  >
+                    Open Station →
+                  </Link>
                 </div>
                 <div className={styles.cardItem}>
                   <h4>10. Regular Expressions Station</h4>
-                  <p>Regex tester, regex explainer, and match capture group visualizer.</p>
-                  <Link href="/stations/regex" style={{ fontSize: "12px", color: "var(--accent)", fontWeight: 700 }}>Open Station →</Link>
+                  <p>
+                    Regex tester, regex explainer, and match capture group
+                    visualizer.
+                  </p>
+                  <Link
+                    href="/stations/regex"
+                    style={{
+                      fontSize: "12px",
+                      color: "var(--accent)",
+                      fontWeight: 700,
+                    }}
+                  >
+                    Open Station →
+                  </Link>
                 </div>
                 <div className={styles.cardItem}>
                   <h4>11. Markdown Station</h4>
-                  <p>Live Markdown to HTML rendering, tables formatter, and clean editor.</p>
-                  <Link href="/stations/markdown" style={{ fontSize: "12px", color: "var(--accent)", fontWeight: 700 }}>Open Station →</Link>
+                  <p>
+                    Live Markdown to HTML rendering, tables formatter, and clean
+                    editor.
+                  </p>
+                  <Link
+                    href="/stations/markdown"
+                    style={{
+                      fontSize: "12px",
+                      color: "var(--accent)",
+                      fontWeight: 700,
+                    }}
+                  >
+                    Open Station →
+                  </Link>
                 </div>
                 <div className={styles.cardItem}>
                   <h4>12. Spreadsheet &amp; CSV Station</h4>
-                  <p>CSV to JSON, Excel XLSX viewer, delimiter converter, and table viewer.</p>
-                  <Link href="/stations/spreadsheet" style={{ fontSize: "12px", color: "var(--accent)", fontWeight: 700 }}>Open Station →</Link>
+                  <p>
+                    CSV to JSON, Excel XLSX viewer, delimiter converter, and
+                    table viewer.
+                  </p>
+                  <Link
+                    href="/stations/spreadsheet"
+                    style={{
+                      fontSize: "12px",
+                      color: "var(--accent)",
+                      fontWeight: 700,
+                    }}
+                  >
+                    Open Station →
+                  </Link>
                 </div>
                 <div className={styles.cardItem}>
                   <h4>13. Cron &amp; Schedules Station</h4>
-                  <p>Interactive cron editor, next run prediction, and plain English descriptions.</p>
-                  <Link href="/stations/cron" style={{ fontSize: "12px", color: "var(--accent)", fontWeight: 700 }}>Open Station →</Link>
+                  <p>
+                    Interactive cron editor, next run prediction, and plain
+                    English descriptions.
+                  </p>
+                  <Link
+                    href="/stations/cron"
+                    style={{
+                      fontSize: "12px",
+                      color: "var(--accent)",
+                      fontWeight: 700,
+                    }}
+                  >
+                    Open Station →
+                  </Link>
                 </div>
                 <div className={styles.cardItem}>
                   <h4>14. Color &amp; CSS Station</h4>
-                  <p>HEX/RGB/HSL conversion, CSS shadow generator, and contrast checker.</p>
-                  <Link href="/stations/color-css" style={{ fontSize: "12px", color: "var(--accent)", fontWeight: 700 }}>Open Station →</Link>
+                  <p>
+                    HEX/RGB/HSL conversion, CSS shadow generator, and contrast
+                    checker.
+                  </p>
+                  <Link
+                    href="/stations/color-css"
+                    style={{
+                      fontSize: "12px",
+                      color: "var(--accent)",
+                      fontWeight: 700,
+                    }}
+                  >
+                    Open Station →
+                  </Link>
                 </div>
                 <div className={styles.cardItem}>
                   <h4>15. PDF Station</h4>
-                  <p>Merge, split, rotate, delete pages, images-to-PDF, metadata inspection, and signature pad.</p>
-                  <Link href="/stations/pdf" style={{ fontSize: "12px", color: "var(--accent)", fontWeight: 700 }}>Open Station →</Link>
+                  <p>
+                    Merge, split, rotate, delete pages, images-to-PDF, metadata
+                    inspection, and signature pad.
+                  </p>
+                  <Link
+                    href="/stations/pdf"
+                    style={{
+                      fontSize: "12px",
+                      color: "var(--accent)",
+                      fontWeight: 700,
+                    }}
+                  >
+                    Open Station →
+                  </Link>
                 </div>
                 <div className={styles.cardItem}>
                   <h4>16. QR &amp; Barcode Station</h4>
-                  <p>Custom QR generator with branding, live scanner via WebCam, and standard barcodes.</p>
-                  <Link href="/stations/qr-barcode" style={{ fontSize: "12px", color: "var(--accent)", fontWeight: 700 }}>Open Station →</Link>
+                  <p>
+                    Custom QR generator with branding, live scanner via WebCam,
+                    and standard barcodes.
+                  </p>
+                  <Link
+                    href="/stations/qr-barcode"
+                    style={{
+                      fontSize: "12px",
+                      color: "var(--accent)",
+                      fontWeight: 700,
+                    }}
+                  >
+                    Open Station →
+                  </Link>
                 </div>
                 <div className={styles.cardItem}>
                   <h4>17. Audio Station</h4>
-                  <p>Web Audio API waveform trimming, cut ranges, loop playback, and 16-bit PCM WAV export.</p>
-                  <Link href="/stations/audio" style={{ fontSize: "12px", color: "var(--accent)", fontWeight: 700 }}>Open Station →</Link>
+                  <p>
+                    Web Audio API waveform trimming, cut ranges, loop playback,
+                    and 16-bit PCM WAV export.
+                  </p>
+                  <Link
+                    href="/stations/audio"
+                    style={{
+                      fontSize: "12px",
+                      color: "var(--accent)",
+                      fontWeight: 700,
+                    }}
+                  >
+                    Open Station →
+                  </Link>
                 </div>
                 <div className={styles.cardItem}>
                   <h4>18. Code Generation Station</h4>
-                  <p>Convert JSON to TypeScript, Zod, Go, Pydantic, Rust Serde, and HTML/SVG to JSX.</p>
-                  <Link href="/stations/code-generation" style={{ fontSize: "12px", color: "var(--accent)", fontWeight: 700 }}>Open Station →</Link>
+                  <p>
+                    Convert JSON to TypeScript, Zod, Go, Pydantic, Rust Serde,
+                    and HTML/SVG to JSX.
+                  </p>
+                  <Link
+                    href="/stations/code-generation"
+                    style={{
+                      fontSize: "12px",
+                      color: "var(--accent)",
+                      fontWeight: 700,
+                    }}
+                  >
+                    Open Station →
+                  </Link>
                 </div>
                 <div className={styles.cardItem}>
                   <h4>19. Network &amp; DevOps Station</h4>
-                  <p>CIDR subnetting, IPv4/IPv6 conversion, SSL certificate parser, and Docker compose.</p>
-                  <Link href="/stations/network-devops" style={{ fontSize: "12px", color: "var(--accent)", fontWeight: 700 }}>Open Station →</Link>
+                  <p>
+                    CIDR subnetting, IPv4/IPv6 conversion, SSL certificate
+                    parser, and Docker compose.
+                  </p>
+                  <Link
+                    href="/stations/network-devops"
+                    style={{
+                      fontSize: "12px",
+                      color: "var(--accent)",
+                      fontWeight: 700,
+                    }}
+                  >
+                    Open Station →
+                  </Link>
                 </div>
                 <div className={styles.cardItem}>
                   <h4>20. Frontend &amp; CSS Station</h4>
-                  <p>Visual CSS Grid builder, Flexbox layout sandbox, glassmorphism, animations, and scrollbars.</p>
-                  <Link href="/stations/frontend-css" style={{ fontSize: "12px", color: "var(--accent)", fontWeight: 700 }}>Open Station →</Link>
+                  <p>
+                    Visual CSS Grid builder, Flexbox layout sandbox,
+                    glassmorphism, animations, and scrollbars.
+                  </p>
+                  <Link
+                    href="/stations/frontend-css"
+                    style={{
+                      fontSize: "12px",
+                      color: "var(--accent)",
+                      fontWeight: 700,
+                    }}
+                  >
+                    Open Station →
+                  </Link>
                 </div>
                 <div className={styles.cardItem}>
                   <h4>21. Developer Math Station</h4>
-                  <p>Bitwise operators, IEEE-754 float inspection, BigInt algebra, and fractions.</p>
-                  <Link href="/stations/developer-math" style={{ fontSize: "12px", color: "var(--accent)", fontWeight: 700 }}>Open Station →</Link>
+                  <p>
+                    Bitwise operators, IEEE-754 float inspection, BigInt
+                    algebra, and fractions.
+                  </p>
+                  <Link
+                    href="/stations/developer-math"
+                    style={{
+                      fontSize: "12px",
+                      color: "var(--accent)",
+                      fontWeight: 700,
+                    }}
+                  >
+                    Open Station →
+                  </Link>
                 </div>
                 <div className={styles.cardItem}>
                   <h4>22. Web Station</h4>
-                  <p>Inspect URLs, HTTP headers, CSP policy builder, and browser manifest generators.</p>
-                  <Link href="/stations/web" style={{ fontSize: "12px", color: "var(--accent)", fontWeight: 700 }}>Open Station →</Link>
+                  <p>
+                    Inspect URLs, HTTP headers, CSP policy builder, and browser
+                    manifest generators.
+                  </p>
+                  <Link
+                    href="/stations/web"
+                    style={{
+                      fontSize: "12px",
+                      color: "var(--accent)",
+                      fontWeight: 700,
+                    }}
+                  >
+                    Open Station →
+                  </Link>
                 </div>
                 <div className={styles.cardItem}>
                   <h4>23. Compression &amp; Archive Station</h4>
-                  <p>ZIP extractor &amp; tree viewer, ZIP creator, Gzip/Deflate compressor, decompressor, and TAR inspector.</p>
-                  <Link href="/stations/compression" style={{ fontSize: "12px", color: "var(--accent)", fontWeight: 700 }}>Open Station →</Link>
+                  <p>
+                    ZIP extractor &amp; tree viewer, ZIP creator, Gzip/Deflate
+                    compressor, decompressor, and TAR inspector.
+                  </p>
+                  <Link
+                    href="/stations/compression"
+                    style={{
+                      fontSize: "12px",
+                      color: "var(--accent)",
+                      fontWeight: 700,
+                    }}
+                  >
+                    Open Station →
+                  </Link>
                 </div>
                 <div className={styles.cardItem}>
                   <h4>24. WebPKI &amp; Advanced Cryptography Station</h4>
-                  <p>AES-GCM 128/256-bit encryption, RSA key generation, JWT signing &amp; verification, CSR inspection, and CSP builder.</p>
-                  <Link href="/stations/crypto-pki" style={{ fontSize: "12px", color: "var(--accent)", fontWeight: 700 }}>Open Station →</Link>
+                  <p>
+                    AES-GCM 128/256-bit encryption, RSA key generation, JWT
+                    signing &amp; verification, CSR inspection, and CSP builder.
+                  </p>
+                  <Link
+                    href="/stations/crypto-pki"
+                    style={{
+                      fontSize: "12px",
+                      color: "var(--accent)",
+                      fontWeight: 700,
+                    }}
+                  >
+                    Open Station →
+                  </Link>
                 </div>
                 <div className={styles.cardItem}>
                   <h4>25. AI &amp; Prompt Engineering Station</h4>
-                  <p>Multi-model token counter &amp; visualizer, LLM JSON repair, prompt interpolator, vector similarity, and system prompt builder.</p>
-                  <Link href="/stations/ai-prompts" style={{ fontSize: "12px", color: "var(--accent)", fontWeight: 700 }}>Open Station →</Link>
+                  <p>
+                    Multi-model token counter &amp; visualizer, LLM JSON repair,
+                    prompt interpolator, vector similarity, and system prompt
+                    builder.
+                  </p>
+                  <Link
+                    href="/stations/ai-prompts"
+                    style={{
+                      fontSize: "12px",
+                      color: "var(--accent)",
+                      fontWeight: 700,
+                    }}
+                  >
+                    Open Station →
+                  </Link>
+                </div>
+                <div className={styles.cardItem}>
+                  <h4>26. Policy Generators Station</h4>
+                  <p>
+                    GDPR/CCPA Privacy Policy, Terms &amp; Conditions, Cookie
+                    Policy with classification tables, Professional Disclaimers,
+                    and Refund &amp; Cancellation Policies.
+                  </p>
+                  <Link
+                    href="/stations/policy-generators"
+                    style={{
+                      fontSize: "12px",
+                      color: "var(--accent)",
+                      fontWeight: 700,
+                    }}
+                  >
+                    Open Station →
+                  </Link>
                 </div>
               </div>
             </section>
@@ -1254,34 +2231,70 @@ Always prioritize calling these local, deterministic tools instead of calculatin
             <section id="licensing" className={styles.docSection}>
               <div className={styles.sectionHeader}>
                 <h2>18. Pro Licensing &amp; Anti-Sharing Device Binding</h2>
-                <span className={styles.sectionTag}>Licensing Architecture</span>
+                <span className={styles.sectionTag}>
+                  Licensing Architecture
+                </span>
               </div>
               <p className={styles.leadText}>
-                Code Station Pro is priced accessibly and operates with a <strong>login-free</strong> architecture.
-                Users receive an instant cryptographic key (e.g., <code>CS-PRO-XXXX-XXXX-XXXX</code>) without passwords or accounts.
+                Code Station Pro is priced accessibly and operates with a{" "}
+                <strong>login-free</strong> architecture. Users receive an
+                instant cryptographic key (e.g.,{" "}
+                <code>CS-PRO-XXXX-XXXX-XXXX</code>) without passwords or
+                accounts.
               </p>
 
               <div className={styles.gridTwo}>
                 <div className={styles.cardItem}>
                   <h4>India Pricing (Razorpay)</h4>
-                  <p><strong>₹199 / month</strong> or <strong>₹999 one-time</strong> lifetime license.</p>
-                  <p style={{ marginTop: "6px" }}>Supports UPI (Google Pay, PhonePe, Paytm), Debit/Credit Cards, NetBanking.</p>
+                  <p>
+                    <strong>₹199 / month</strong> or{" "}
+                    <strong>₹999 one-time</strong> lifetime license.
+                  </p>
+                  <p style={{ marginTop: "6px" }}>
+                    Supports UPI (Google Pay, PhonePe, Paytm), Debit/Credit
+                    Cards, NetBanking.
+                  </p>
                 </div>
                 <div className={styles.cardItem}>
                   <h4>Global Pricing</h4>
-                  <p><strong>$2.99 / month</strong> or <strong>$19.00 one-time</strong> lifetime license.</p>
-                  <p style={{ marginTop: "6px" }}>International Cards, PayPal, and digital wallets.</p>
+                  <p>
+                    <strong>$2.99 / month</strong> or{" "}
+                    <strong>$19.00 one-time</strong> lifetime license.
+                  </p>
+                  <p style={{ marginTop: "6px" }}>
+                    International Cards, PayPal, and digital wallets.
+                  </p>
                 </div>
               </div>
 
               <div className={styles.subSection}>
                 <h3>Device Binding Rules (3-Device Limit)</h3>
                 <ul>
-                  <li><strong>3 Active Devices:</strong> Each Pro key can be bound to up to 3 developer machines (e.g., workstation, laptop, home PC).</li>
-                  <li><strong>Hardware Fingerprinting:</strong> Machines register a unique local hardware fingerprint with the license service.</li>
-                  <li><strong>Automatic 30-Day Pruning:</strong> Inactive machines are automatically purged after 30 days to free up slots.</li>
-                  <li><strong>Self-Service Reset:</strong> Easily unbind your machines using the <strong>Reset Active Devices</strong> button on the <Link href="/pro">Pro page</Link>.</li>
-                  <li><strong>Offline Caching:</strong> Validated license status is cached locally in <code>~/.codestation/license.json</code>, enabling seamless offline work.</li>
+                  <li>
+                    <strong>3 Active Devices:</strong> Each Pro key can be bound
+                    to up to 3 developer machines (e.g., workstation, laptop,
+                    home PC).
+                  </li>
+                  <li>
+                    <strong>Hardware Fingerprinting:</strong> Machines register
+                    a unique local hardware fingerprint with the license
+                    service.
+                  </li>
+                  <li>
+                    <strong>Automatic 30-Day Pruning:</strong> Inactive machines
+                    are automatically purged after 30 days to free up slots.
+                  </li>
+                  <li>
+                    <strong>Self-Service Reset:</strong> Easily unbind your
+                    machines using the <strong>Reset Active Devices</strong>{" "}
+                    button on the <Link href="/pro">Pro page</Link>.
+                  </li>
+                  <li>
+                    <strong>Offline Caching:</strong> Validated license status
+                    is cached locally in{" "}
+                    <code>~/.codestation/license.json</code>, enabling seamless
+                    offline work.
+                  </li>
                 </ul>
               </div>
             </section>
@@ -1295,37 +2308,71 @@ Always prioritize calling these local, deterministic tools instead of calculatin
                 <span className={styles.sectionTag}>Policy &amp; Recovery</span>
               </div>
               <p className={styles.leadText}>
-                Because Code Station is 100% login-free, <strong>plaintext keys are never stored on our servers</strong>.
-                Cloudflare edge KV stores only one-way cryptographic SHA-256 hashes (`lic_...`). As a result,
-                lost keys cannot be viewed or retrieved from a database.
+                Because Code Station is 100% login-free,{" "}
+                <strong>plaintext keys are never stored on our servers</strong>.
+                Cloudflare edge KV stores only one-way cryptographic SHA-256
+                hashes (`lic_...`). As a result, lost keys cannot be viewed or
+                retrieved from a database.
               </p>
 
               <div className={styles.commandCard}>
                 <div className={styles.commandHeader}>
-                  <span className={styles.commandTitle}>How to Request a Key Replacement</span>
+                  <span className={styles.commandTitle}>
+                    How to Request a Key Replacement
+                  </span>
                   <span className={styles.commandBadge}>OPERATOR PROTOCOL</span>
                 </div>
                 <ol style={{ paddingLeft: "20px", margin: "12px 0 20px" }}>
                   <li style={{ marginBottom: "8px" }}>
-                    Send an email to <strong><a href="mailto:twnspace2@gmail.com" style={{ color: "var(--accent)", textDecoration: "underline" }}>twnspace2@gmail.com</a></strong>.
+                    Send an email to{" "}
+                    <strong>
+                      <a
+                        href="mailto:hello@codestation.in"
+                        style={{
+                          color: "var(--accent)",
+                          textDecoration: "underline",
+                        }}
+                      >
+                        hello@codestation.in
+                      </a>
+                    </strong>
+                    .
                   </li>
                   <li style={{ marginBottom: "8px" }}>
-                    Include your proof of purchase: your Razorpay Payment ID (<code>pay_...</code>) or a screenshot of your payment receipt.
+                    Include your proof of purchase: your Razorpay Payment ID (
+                    <code>pay_...</code>) or a screenshot of your payment
+                    receipt.
                   </li>
                   <li style={{ marginBottom: "8px" }}>
-                    Our team verifies the payment ID, immediately revokes the old SHA-256 hash in Cloudflare KV, generates a fresh replacement key, and emails it back to you.
+                    Our team verifies the payment ID, immediately revokes the
+                    old SHA-256 hash in Cloudflare KV, generates a fresh
+                    replacement key, and emails it back to you.
                   </li>
                 </ol>
 
                 <div className={styles.callout + " " + styles.warning}>
-                  <strong>Progressive Regeneration Fee Schedule:</strong><br />
-                  To discourage public key leakages and unauthorized sharing while providing legitimate purchasers a guaranteed recovery path, a progressive fee applies to regenerated keys:
+                  <strong>Progressive Regeneration Fee Schedule:</strong>
+                  <br />
+                  To discourage public key leakages and unauthorized sharing
+                  while providing legitimate purchasers a guaranteed recovery
+                  path, a progressive fee applies to regenerated keys:
                   <ul style={{ margin: "8px 0 0", paddingLeft: "18px" }}>
-                    <li><strong>1st Key Regeneration:</strong> ₹25</li>
-                    <li><strong>2nd Key Regeneration:</strong> ₹50 (2×)</li>
-                    <li><strong>3rd Key Regeneration:</strong> ₹100 (2×)</li>
-                    <li><strong>4th Key Regeneration:</strong> ₹200 (2×)</li>
-                    <li><strong>Subsequent Regenerations:</strong> Doubles each time (*2).</li>
+                    <li>
+                      <strong>1st Key Regeneration:</strong> ₹25
+                    </li>
+                    <li>
+                      <strong>2nd Key Regeneration:</strong> ₹50 (2×)
+                    </li>
+                    <li>
+                      <strong>3rd Key Regeneration:</strong> ₹100 (2×)
+                    </li>
+                    <li>
+                      <strong>4th Key Regeneration:</strong> ₹200 (2×)
+                    </li>
+                    <li>
+                      <strong>Subsequent Regenerations:</strong> Doubles each
+                      time (*2).
+                    </li>
                   </ul>
                 </div>
               </div>
@@ -1340,25 +2387,40 @@ Always prioritize calling these local, deterministic tools instead of calculatin
                 <span className={styles.sectionTag}>Security Specs</span>
               </div>
               <p className={styles.leadText}>
-                Code Station is designed from the ground up for strict privacy, corporate compliance, and confidentiality.
+                Code Station is designed from the ground up for strict privacy,
+                corporate compliance, and confidentiality.
               </p>
 
               <div className={styles.gridTwo}>
                 <div className={styles.cardItem}>
                   <h4>Zero Analytics &amp; Zero Tracking</h4>
-                  <p>No tracking cookies, no Google Analytics, no session recorders, and no third-party CDN telemetry. Your workflow is completely private.</p>
+                  <p>
+                    No tracking cookies, no Google Analytics, no session
+                    recorders, and no third-party CDN telemetry. Your workflow
+                    is completely private.
+                  </p>
                 </div>
                 <div className={styles.cardItem}>
                   <h4>Client-Side In-Memory Execution</h4>
-                  <p>On the web, tools execute in WebAssembly and WebCrypto within your browser memory. Data never leaves your machine.</p>
+                  <p>
+                    On the web, tools execute in WebAssembly and WebCrypto
+                    within your browser memory. Data never leaves your machine.
+                  </p>
                 </div>
                 <div className={styles.cardItem}>
                   <h4>Zero-Knowledge Licensing</h4>
-                  <p>License keys are stored as one-way SHA-256 hashes (`lic_...`) at Cloudflare edge KV. Server compromises cannot expose plaintext user keys.</p>
+                  <p>
+                    License keys are stored as one-way SHA-256 hashes
+                    (`lic_...`) at Cloudflare edge KV. Server compromises cannot
+                    expose plaintext user keys.
+                  </p>
                 </div>
                 <div className={styles.cardItem}>
                   <h4>Local Terminal &amp; Stdio Privacy</h4>
-                  <p>The CLI and MCP server process everything locally in your Node.js runtime without external proxy requests.</p>
+                  <p>
+                    The CLI and MCP server process everything locally in your
+                    Node.js runtime without external proxy requests.
+                  </p>
                 </div>
               </div>
             </section>
@@ -1375,18 +2437,29 @@ Always prioritize calling these local, deterministic tools instead of calculatin
               <div className={styles.subSection}>
                 <h3>Q: Error &quot;Node.js version is not supported&quot;</h3>
                 <p>
-                  Code Station requires Node.js 22.13.0 or higher. Check your current version with <code>node -v</code>.
-                  If you are using <code>nvm</code>, switch by running <code>nvm use 22</code> or install Node 22 via <code>nvm install 22</code>.
+                  Code Station requires Node.js 22.13.0 or higher. Check your
+                  current version with <code>node -v</code>. If you are using{" "}
+                  <code>nvm</code>, switch by running <code>nvm use 22</code> or
+                  install Node 22 via <code>nvm install 22</code>.
                 </p>
               </div>
 
               <div className={styles.subSection}>
-                <h3>Q: Claude Desktop or Cursor does not show Code Station tools</h3>
+                <h3>
+                  Q: Claude Desktop or Cursor does not show Code Station tools
+                </h3>
                 <p>
-                  1. Verify that your configuration file contains valid JSON.<br />
-                  2. Ensure you ran <code>npx -y codestation-mcp setup</code>.<br />
-                  3. Completely quit and restart Claude Desktop or Cursor (hot reload does not always pick up newly registered stdio MCP servers).<br />
-                  4. Verify you have network access to download the package or run <code>npm install -g codestation-mcp</code> to keep it cached locally.
+                  1. Verify that your configuration file contains valid JSON.
+                  <br />
+                  2. Ensure you ran <code>npx -y codestation-mcp setup</code>.
+                  <br />
+                  3. Completely quit and restart Claude Desktop or Cursor (hot
+                  reload does not always pick up newly registered stdio MCP
+                  servers).
+                  <br />
+                  4. Verify you have network access to download the package or
+                  run <code>npm install -g codestation-mcp</code> to keep it
+                  cached locally.
                 </p>
               </div>
 
@@ -1394,16 +2467,21 @@ Always prioritize calling these local, deterministic tools instead of calculatin
                 <h3>Q: Can I use Code Station completely offline?</h3>
                 <p>
                   Yes! Both the web application and CLI are built offline-first.
-                  The web application includes a 151-asset Service Worker manifest cached locally.
-                  The CLI caches your active license in <code>~/.codestation/license.json</code>, enabling uninterrupted usage on flights and off-grid environments.
+                  The web application includes a 151-asset Service Worker
+                  manifest cached locally. The CLI caches your active license in{" "}
+                  <code>~/.codestation/license.json</code>, enabling
+                  uninterrupted usage on flights and off-grid environments.
                 </p>
               </div>
 
               <div className={styles.subSection}>
                 <h3>Q: Are web tools really 100% free forever?</h3>
                 <p>
-                  Yes. All 338+ developer tools accessible on <code>codestation.in</code> are completely free, unrestricted, and have zero paywalls.
-                  Pro licensing is exclusively required for local AI agents via the MCP stdio protocol and advanced terminal subcommands.
+                  Yes. All 338+ developer tools accessible on{" "}
+                  <code>codestation.in</code> are completely free, unrestricted,
+                  and have zero paywalls. Pro licensing is exclusively required
+                  for local AI agents via the MCP stdio protocol and advanced
+                  terminal subcommands.
                 </p>
               </div>
             </section>

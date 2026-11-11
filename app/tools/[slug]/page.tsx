@@ -179,5 +179,8 @@ export default async function ToolPage({ params }: { params: Promise<{ slug: str
         <BannerAd size="rectangle" />
       </div>
     </div>
+    <div style={{ display: "flex", justifyContent: "center", margin: "48px 0 16px", width: "100%" }}>
+      <BannerAd size="leaderboard" />
+    </div>
   </section></main>;
 }
