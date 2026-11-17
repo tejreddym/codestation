@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import { siteConfig } from "@/config/site";
 
-export const homeTitle = "Free Browser Developer Tools — 380 Utilities in 30 Stations";
+export const homeTitle = "Free Browser Developer Tools — 381 Utilities in 30 Stations";
 export const homeBrandedTitle = `${homeTitle} | ${siteConfig.name}`;
-export const homeDescription = "Explore 380 free, browser-based developer tools across 30 stations. Format, convert, hash, inspect and generate data locally with no uploads or accounts.";
+export const homeDescription = "Explore 381 free, browser-based developer tools across 30 stations. Format, convert, hash, inspect and generate data locally with no uploads or accounts.";
 
 export function buildHomeMetadata(origin = siteConfig.origin, indexing = siteConfig.indexing): Metadata {
   return {
@@ -33,7 +33,7 @@ export function buildHomeMetadata(origin = siteConfig.origin, indexing = siteCon
 export const homeFaqs = [
   {
     question: "Is Code Station free?",
-    answer: "Yes. All 380 browser tools are free and unlimited, and no account is required. Pro is only for the local MCP server used by AI agent clients.",
+    answer: "Yes. All 381 browser tools are free and unlimited, and no account is required. Pro is only for the local MCP server used by AI agent clients.",
   },
   {
     question: "Are my files uploaded?",

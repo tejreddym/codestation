@@ -12,9 +12,9 @@ import {
 import { serializeToolToWebMcp, serializeToolToLocalMcp } from "@/lib/engine/mcpBridge";
 import { describeToolContract } from "@/lib/engine/__tests__/contractHarness";
 
-describe("Registry Contract & Engine Unification (All 380 Tools)", () => {
-  it("contains the full 380-tool registry", () => {
-    expect(tools).toHaveLength(380);
+describe("Registry Contract & Engine Unification (All 381 Tools)", () => {
+  it("contains the full 381-tool registry", () => {
+    expect(tools).toHaveLength(381);
     expect(stations).toHaveLength(30);
   });
 

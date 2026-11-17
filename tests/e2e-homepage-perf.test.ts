@@ -306,7 +306,7 @@ describe("Tier 1: Feature Coverage", () => {
       const eyebrowText = screen.getByText(/PRIVATE TOOLS · WEBMCP BROWSER AI PROTOCOL · 30 STATIONS/i);
       expect(eyebrowText).toBeDefined();
 
-      const introText = screen.getByText(/380 focused utilities across 30 stations/i);
+      const introText = screen.getByText(/381 focused utilities across 30 stations/i);
       expect(introText).toBeDefined();
     });
 

@@ -153,7 +153,7 @@ export default function HomeSearch({ tools, children }: HomeSearchProps) {
         <div className={styles.eyebrow}><span aria-hidden="true">[</span> 370+ PRIVATE TOOLS · WEBMCP BROWSER AI PROTOCOL · 30 STATIONS <span aria-hidden="true">]</span></div>
         <h1 id="home-title">Less friction.<br /><span>More building.</span></h1>
         <p className={styles.intro}>
-          Code Station is a free browser-based toolbox for developers, designers, and technical teams: 380 focused utilities across 30 stations for formatting, converting, generating, and inspecting data. Native <strong>WebMCP (<code>document.modelContext</code>)</strong> lets AI agents run supported tools in the page, and everything stays client-side with zero server uploads.
+          Code Station is a free browser-based toolbox for developers, designers, and technical teams: 381 focused utilities across 30 stations for formatting, converting, generating, and inspecting data. Native <strong>WebMCP (<code>document.modelContext</code>)</strong> lets AI agents run supported tools in the page, and everything stays client-side with zero server uploads.
         </p>
         <label className={styles.search} htmlFor="global-tool-search">
           <Search size={21} aria-hidden="true" />

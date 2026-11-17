@@ -42,6 +42,13 @@ const PomodoroTimer = dynamic(() => import("./PomodoroTimer"), {
   loading: () => <p role="status">Loading Pomodoro Timer controls…</p>,
 });
 
+const InvoiceGeneratorTool = dynamic(
+  () => import("./InvoiceGeneratorTool").then((mod) => mod.InvoiceGeneratorTool),
+  {
+    loading: () => <p role="status">Loading Invoice Generator controls…</p>,
+  }
+);
+
 const GitStation = dynamic(() => import("./GitStation"), {
   loading: () => <p role="status">Loading Git &amp; Version Control controls…</p>,
 });
@@ -139,7 +146,10 @@ const NumericStation = dynamic(() => import("./NumericStation"), {
 import WebMcpBridge from "./WebMcpBridge";
 
 function renderStation(toolId: RegisteredToolId) {
-  if (isProductivityToolId(toolId)) return <PomodoroTimer key={toolId} />;
+  if (isProductivityToolId(toolId)) {
+    if (toolId === "invoice-generator") return <InvoiceGeneratorTool key={toolId} />;
+    return <PomodoroTimer key={toolId} />;
+  }
   if (isFinanceToolId(toolId)) return <FinanceStation key={toolId} toolId={toolId} />;
   if (isGitToolId(toolId)) return <GitStation key={toolId} toolId={toolId} />;
   if (isVideoToolId(toolId)) return <VideoStation key={toolId} toolId={toolId} />;

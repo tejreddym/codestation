@@ -171,6 +171,7 @@ import {
   type GstSupply,
 } from "../tools/finance/gst";
 import { projectSip } from "../tools/finance/sip";
+import { calculateInvoiceTotals, getSampleInvoice } from "../tools/productivity/invoice";
 import { getTool } from "../../config/tools";
 
 function uint8ArrayToBase64(bytes: Uint8Array): string {
@@ -1002,6 +1003,38 @@ export async function dispatchToolExecution(
           canonicalUrl: `https://codestation.in/tools/${toolDef?.slug ?? normId}`,
           notice:
             "This timer needs the visible Start, Pause, Resume, Reset and Skip controls over real elapsed time. WebMCP cannot run a live countdown on this page, so no session is started by this call. Open the tool and control the timer in the browser UI.",
+        },
+        null,
+        2
+      );
+    }
+
+    case "invoice-generator": {
+      const toolDef = getTool(normId);
+      const sample = getSampleInvoice();
+      const items = Array.isArray(options?.items) && options.items.length > 0 ? options.items : sample.items;
+      const taxRate = Number(options?.taxRate ?? sample.taxRate);
+      const discount = Number(options?.discount ?? sample.discount);
+      const discountType = options?.discountType === "fixed" ? "fixed" : "percentage";
+      const shipping = Number(options?.shipping ?? sample.shipping);
+      const currency = String(options?.currency || sample.currency);
+      const currencySymbol = String(options?.currencySymbol || sample.currencySymbol);
+      const totals = calculateInvoiceTotals({ items, taxRate, discount, discountType, shipping });
+
+      return JSON.stringify(
+        {
+          tool: toolDef?.name ?? normId,
+          id: normId,
+          category: "Productivity",
+          invoiceNumber: String(options?.invoiceNumber || sample.invoiceNumber),
+          currency,
+          currencySymbol,
+          itemsCount: items.length,
+          items,
+          totals,
+          canonicalUrl: `https://codestation.in/tools/${toolDef?.slug ?? normId}`,
+          notice:
+            "100% in-browser generation. Zero server uploads. Open the tool UI in the browser to upload logos and download vector PDFs.",
         },
         null,
         2
