@@ -9,6 +9,17 @@ import { SpreadsheetError, type SpreadsheetInfo, type SpreadsheetResult, type Sp
 import { ingestTabularData, executeSqlOnTable, exportQueryResultToCsv, exportQueryResultToJson, type IngestedTable, type SqlQueryResult } from "@/lib/tools/spreadsheet/sql-engine";
 import SpreadsheetControls from "./SpreadsheetControls";
 import SpreadsheetPreview, { SpreadsheetData } from "./SpreadsheetPreview";
+import { Button, ButtonLink } from "./ui/Button";
+import { Callout } from "./ui/Callout";
+import { Field, Hint } from "./ui/Field";
+import { Select, Textarea, TextInput } from "./ui/controls";
+import { EmptyState } from "./ui/EmptyState";
+import { Panel } from "./ui/Panel";
+import { PrivacyNote } from "./ui/PrivacyNote";
+import { StatusLine } from "./ui/StatusLine";
+import { ToolLayout } from "./ui/ToolLayout";
+import { useCopy } from "./ui/useCopy";
+import ui from "./ui/ui.module.css";
 import styles from "./SpreadsheetStation.module.css";
 
 type Definition = NonNullable<ReturnType<typeof getSpreadsheetDefinition>>;
@@ -28,6 +39,7 @@ function Station({ definition }: { definition: Definition }) {
   const errorRef = useRef<HTMLParagraphElement>(null);
   const revision = useRef(0);
   const mounted = useRef(false);
+  const { copy: copyText } = useCopy();
   const work = useRef<AbortController | null>(null);
   const inspection = useRef<AbortController | null>(null);
   const downloadUrls = useRef(new Map<string, ReturnType<typeof setTimeout>>());
@@ -152,11 +164,9 @@ function Station({ definition }: { definition: Definition }) {
   async function copy() {
     if (result?.text === undefined) return;
     const current = revision.current;
-    try {
-      if (!navigator.clipboard?.writeText) throw new Error("Clipboard unavailable");
-      await navigator.clipboard.writeText(result.text);
-      if (mounted.current && current === revision.current) setNotice("Generated text copied.");
-    } catch { if (mounted.current && current === revision.current) setNotice("Could not copy. Select the generated text and copy it manually."); }
+    const ok = await copyText(result.text);
+    if (!mounted.current || current !== revision.current) return;
+    setNotice(ok ? "Generated text copied." : "Could not copy. Select the generated text and copy it manually.");
   }
   function download(file: NonNullable<SpreadsheetResult["files"]>[number]) {
     let url = "";
@@ -172,28 +182,44 @@ function Station({ definition }: { definition: Definition }) {
   }
   const outputs = contract.outputs.join(" · ");
   return <div className={styles.station}>
-    <div className={styles.layout}>
-      <form ref={form} className={styles.panel} onSubmit={submit} noValidate autoComplete="off" aria-labelledby={`${id}-input`} aria-describedby={`${id}-status${error ? ` ${id}-error` : ""}`} aria-busy={busy || inspecting}>
-        <div className={styles.panelHead}><h2 id={`${id}-input`}>{definition.name} input</h2>{isConverter && <label>Output Format <select id={`${id}-output-format`} className={styles.input} value={converter?.target ?? ""} onChange={event => selectTarget(event.target.value)}><option value="" disabled>Choose target</option>{targetOptions.map(target => <option key={target}>{target.toUpperCase()}</option>)}</select><small>Source: {saved?.format ?? converter?.source} (selected route)</small></label>}</div>
-        <SpreadsheetControls id={id} fields={contract.fields} values={values} info={info} error={error} onChange={change} onFiles={(name, files) => void chooseFiles(name, files)} />
-        <div className={styles.fields}>{contract.notices.map((text, index) => <p key={index} className={styles.note}>{text}</p>)}</div>
-        <div className={`${styles.actions} ${styles.formActions}`}><button type="submit" className="button primary" disabled={busy || inspecting}>{busy ? "Processing…" : contract.action}</button><button type="button" className="button" onClick={clear}>Clear</button>{busy && <button type="button" className="button" onClick={() => { invalidate(); setNotice("Processing cancelled."); }}>Cancel</button>}</div>
-      </form>
-      <section className={styles.panel} aria-labelledby={`${id}-output`} aria-busy={busy}>
-        <div className={styles.panelHead}><h2 id={`${id}-output`}>{outputs}</h2>{result?.text !== undefined && <button type="button" className="button" aria-label={`Copy ${contract.outputs[0] ?? "generated text"}`} onClick={() => void copy()}>Copy</button>}</div>
+    <ToolLayout kind="form" className={styles.layout}>
+      <Panel title={`${definition.name} input`} headingId={`${id}-input`} padded aria-busy={busy || inspecting}>
+        <form ref={form} className={styles.form} onSubmit={submit} noValidate autoComplete="off" aria-labelledby={`${id}-input`} aria-describedby={`${id}-status${error ? ` ${id}-error` : ""}`}>
+          {isConverter && <Field id={`${id}-output-format`} label="Output Format" hint={`Source: ${saved?.format ?? converter?.source} (selected route)`}>
+            <Select id={`${id}-output-format`} value={converter?.target ?? ""} onChange={event => selectTarget(event.target.value)}>
+              <option value="" disabled>Choose target</option>
+              {targetOptions.map(target => <option key={target}>{target.toUpperCase()}</option>)}
+            </Select>
+          </Field>}
+          <SpreadsheetControls id={id} fields={contract.fields} values={values} info={info} error={error} onChange={change} onFiles={(name, files) => void chooseFiles(name, files)} />
+          {contract.notices.map((text, index) => <Hint key={index} className={styles.note}>{text}</Hint>)}
+          <div className={ui.actions}>
+            <Button type="submit" variant="primary" disabled={busy || inspecting}>{busy ? "Processing…" : contract.action}</Button>
+            <Button onClick={clear}>Clear</Button>
+            {busy && <Button onClick={() => { invalidate(); setNotice("Processing cancelled."); }}>Cancel</Button>}
+          </div>
+        </form>
+      </Panel>
+      <Panel
+        title={outputs}
+        headingId={`${id}-output`}
+        padded
+        aria-busy={busy}
+        actions={result?.text !== undefined ? <Button size="sm" aria-label={`Copy ${contract.outputs[0] ?? "generated text"}`} onClick={() => void copy()}>Copy</Button> : undefined}
+      >
         {result ? <div className={styles.result}>
           {!!result.warnings?.length && <div className={styles.warning} role="alert">{result.warnings.map((warning, index) => <p key={index}>{warning}</p>)}</div>}
-          {result.text !== undefined && <pre className={styles.output} tabIndex={0} aria-label="Generated text">{result.text}</pre>}
+          {result.text !== undefined && <pre className={ui.output} tabIndex={0} aria-label="Generated text">{result.text}</pre>}
           {result.preview && <SpreadsheetPreview id={id} preview={result.preview} switching={busy} onSheet={isViewer ? sheet => void process({ ...values, sheet }, true) : undefined} />}
           {Object.keys(result.data).length > 0 && <div aria-label={`${outputs} values`}><SpreadsheetData value={result.data} /></div>}
-          {!!result.files?.length && <div className={styles.actions} aria-label="Generated files">{result.files.map((file, index) => <button key={index} type="button" className="button" onClick={() => download(file)}>Download {file.name}</button>)}</div>}
-        </div> : <p className={styles.empty}>Your result will appear after you {contract.action.toLowerCase()}. Editing an input clears the previous result.</p>}
-      </section>
-    </div>
-    {error && <p ref={errorRef} id={`${id}-error`} className={styles.error} role="alert" tabIndex={-1}>{error.message}</p>}
-    <p id={`${id}-status`} className={styles.status} role="status" aria-atomic="true">{notice}</p>
-    {definition.pairedTool && <a className={styles.pairLink} href={`/tools/${definition.pairedTool}`}>Open {getSpreadsheetDefinition(definition.pairedTool)?.name ?? "paired tool"}</a>}
-    <p className={styles.privacy}>All processing stays in this browser. Files, names and cells are not transmitted or saved.</p>
+          {!!result.files?.length && <div className={ui.actions} aria-label="Generated files">{result.files.map((file, index) => <Button size="sm" key={index} onClick={() => download(file)}>Download {file.name}</Button>)}</div>}
+        </div> : <EmptyState>Your result will appear after you {contract.action.toLowerCase()}. Editing an input clears the previous result.</EmptyState>}
+      </Panel>
+    </ToolLayout>
+    {error && <Callout kind="error" ref={errorRef} id={`${id}-error`} className={styles.error} tabIndex={-1}>{error.message}</Callout>}
+    <StatusLine id={`${id}-status`} className={styles.status}>{notice}</StatusLine>
+    {definition.pairedTool && <ButtonLink size="sm" className={styles.pairLink} href={`/tools/${definition.pairedTool}`}>Open {getSpreadsheetDefinition(definition.pairedTool)?.name ?? "paired tool"}</ButtonLink>}
+    <PrivacyNote className={styles.privacy}>All processing stays in this browser. Files, names and cells are not transmitted or saved.</PrivacyNote>
   </div>;
 }
 
@@ -226,6 +252,7 @@ function SpreadsheetSqlStation({ definition }: { definition: Definition }) {
   const [pageSize, setPageSize] = useState<number>(10);
   const [pageIndex, setPageIndex] = useState<number>(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { copy: copyText } = useCopy();
 
   function downloadText(content: string, filename: string, mimeType: string) {
     const blob = new Blob([content], { type: mimeType });
@@ -339,24 +366,16 @@ function SpreadsheetSqlStation({ definition }: { definition: Definition }) {
 
   const handleCopyCsv = async () => {
     if (!result) return;
-    try {
-      const csv = exportQueryResultToCsv(result);
-      await navigator.clipboard.writeText(csv);
-      setNotice("Results copied as CSV.");
-    } catch {
-      setNotice("Could not copy to clipboard.");
-    }
+    const csv = exportQueryResultToCsv(result);
+    const ok = await copyText(csv);
+    setNotice(ok ? "Results copied as CSV." : "Could not copy to clipboard.");
   };
 
   const handleCopyJson = async () => {
     if (!result) return;
-    try {
-      const json = exportQueryResultToJson(result);
-      await navigator.clipboard.writeText(json);
-      setNotice("Results copied as JSON.");
-    } catch {
-      setNotice("Could not copy to clipboard.");
-    }
+    const json = exportQueryResultToJson(result);
+    const ok = await copyText(json);
+    setNotice(ok ? "Results copied as JSON." : "Could not copy to clipboard.");
   };
 
   const handleDownloadCsv = () => {
@@ -391,40 +410,29 @@ function SpreadsheetSqlStation({ definition }: { definition: Definition }) {
 
   return (
     <div className={styles.station}>
-      <div className={styles.layout}>
-        {/* Left Panel: Input Tabular Data & SQL Query */}
-        <section className={styles.panel} aria-labelledby={`${id}-input`} aria-busy={isIngesting || isExecuting}>
-          <div className={styles.panelHead}>
-            <h2 id={`${id}-input`}>{definition.name}</h2>
-            <div className={styles.actions}>
-              <button
-                type="button"
-                className="button"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isIngesting}
-              >
-                Upload CSV/TSV
-              </button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".csv,.tsv,text/csv,text/tab-separated-values,text/plain"
-                style={{ display: "none" }}
-                onChange={handleFileUpload}
-              />
-              <button type="button" className="button" onClick={handleReset}>
-                Reset Sample
-              </button>
-            </div>
-          </div>
-
-          <div className={styles.fields}>
-            {/* Tabular Data Input */}
-            <div className={styles.field}>
-              <label htmlFor={`${id}-data`}>CSV or TSV Data (Table: &apos;table&apos; / &apos;data&apos;)</label>
-              <textarea
+      <ToolLayout kind="form" className={styles.layout}>
+        <Panel
+          title={definition.name}
+          headingId={`${id}-input`}
+          padded
+          aria-busy={isIngesting || isExecuting}
+          actions={<>
+            <Button size="sm" onClick={() => fileInputRef.current?.click()} disabled={isIngesting}>Upload CSV/TSV</Button>
+            <Button size="sm" onClick={handleReset}>Reset Sample</Button>
+          </>}
+        >
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".csv,.tsv,text/csv,text/tab-separated-values,text/plain"
+            style={{ display: "none" }}
+            onChange={handleFileUpload}
+          />
+          <div className={styles.form}>
+            <Field id={`${id}-data`} label="CSV or TSV Data (Table: 'table' / 'data')">
+              <Textarea
                 id={`${id}-data`}
-                className={`${styles.input} ${styles.textarea}`}
+                className={ui.mono}
                 rows={6}
                 value={dataText}
                 spellCheck={false}
@@ -432,11 +440,10 @@ function SpreadsheetSqlStation({ definition }: { definition: Definition }) {
                 placeholder="Paste CSV or TSV data here..."
                 onChange={(e) => setDataText(e.target.value)}
               />
-            </div>
+            </Field>
 
-            {/* Ingested Table Schema */}
             {ingestedTable && (
-              <div className={styles.schemaBar} aria-label="Detected table schema">
+              <div className={styles.schema} aria-label="Detected table schema">
                 <strong>Table &apos;table&apos;:</strong>
                 <span>{ingestedTable.rowCount} row(s)</span>
                 {ingestedTable.columns.map((col) => (
@@ -450,15 +457,10 @@ function SpreadsheetSqlStation({ definition }: { definition: Definition }) {
               </div>
             )}
 
-            {/* SQL Query Input */}
-            <div className={styles.field}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <label htmlFor={`${id}-query`}>SQL Query</label>
-                <span className={styles.shortcutHint}>Shortcut: Cmd/Ctrl + Enter</span>
-              </div>
-              <textarea
+            <Field id={`${id}-query`} label="SQL Query" hint="Shortcut: Cmd/Ctrl + Enter">
+              <Textarea
                 id={`${id}-query`}
-                className={styles.sqlEditor}
+                className={ui.mono}
                 rows={4}
                 value={query}
                 spellCheck={false}
@@ -467,155 +469,106 @@ function SpreadsheetSqlStation({ definition }: { definition: Definition }) {
                 onKeyDown={handleKeyDown}
                 onChange={(e) => setQuery(e.target.value)}
               />
-            </div>
+            </Field>
 
-            {/* Sample Queries */}
-            <div className={styles.field}>
-              <label>Sample Queries</label>
+            <fieldset className={ui.fieldset}>
+              <legend className={ui.legend}>Sample Queries</legend>
               <div className={styles.sampleBar}>
                 {SAMPLE_SQL_QUERIES.map((sq, idx) => (
-                  <button
+                  <Button
                     key={idx}
-                    type="button"
-                    className={styles.sampleBtn}
+                    size="sm"
                     onClick={() => {
                       setQuery(sq.query);
                       void runQuery(ingestedTable ?? undefined, sq.query);
                     }}
                   >
                     {sq.label}
-                  </button>
+                  </Button>
                 ))}
               </div>
-            </div>
+            </fieldset>
 
-            {/* Actions */}
-            <div className={styles.actions}>
-              <button
-                type="button"
-                className="button primary"
-                disabled={isExecuting || isIngesting}
-                onClick={() => void runQuery()}
-              >
-                {isExecuting && <span className={styles.spinner} />}
+            <div className={ui.actions}>
+              <Button variant="primary" disabled={isExecuting || isIngesting} onClick={() => void runQuery()}>
+                {isExecuting && <span className={styles.spinner} aria-hidden="true" />}
                 {isExecuting ? "Executing…" : "Execute SQL"}
-              </button>
-              <button
-                type="button"
-                className="button"
-                disabled={isExecuting}
-                onClick={() => setQuery("")}
-              >
-                Clear Query
-              </button>
+              </Button>
+              <Button disabled={isExecuting} onClick={() => setQuery("")}>Clear Query</Button>
             </div>
           </div>
-        </section>
+        </Panel>
 
-        {/* Right Panel: Query Results */}
-        <section className={styles.panel} aria-labelledby={`${id}-output`} aria-busy={isExecuting}>
-          <div className={styles.panelHead}>
-            <h2 id={`${id}-output`}>Query Results</h2>
-            {result && result.rowCount > 0 && (
-              <div className={styles.actions}>
-                <button type="button" className="button" onClick={handleCopyCsv}>
-                  Copy CSV
-                </button>
-                <button type="button" className="button" onClick={handleCopyJson}>
-                  Copy JSON
-                </button>
-                <button type="button" className="button" onClick={handleDownloadCsv}>
-                  Download CSV
-                </button>
-                <button type="button" className="button" onClick={handleDownloadJson}>
-                  Download JSON
-                </button>
-              </div>
-            )}
-          </div>
+        <Panel
+          title="Query Results"
+          headingId={`${id}-output`}
+          padded
+          aria-busy={isExecuting}
+          actions={result && result.rowCount > 0 ? <>
+            <Button size="sm" onClick={handleCopyCsv}>Copy CSV</Button>
+            <Button size="sm" onClick={handleCopyJson}>Copy JSON</Button>
+            <Button size="sm" onClick={handleDownloadCsv}>Download CSV</Button>
+            <Button size="sm" onClick={handleDownloadJson}>Download JSON</Button>
+          </> : undefined}
+        >
+          {isExecuting ? (
+            <p className={styles.status}>
+              <span className={styles.spinner} aria-hidden="true" /> Executing SQL query in browser…
+            </p>
+          ) : result ? (
+            <div className={styles.result}>
+              <span className={styles.metrics}>
+                {result.rowCount} row(s) returned in {result.executionTimeMs}ms ({result.columns.length} columns)
+              </span>
 
-          <div className={styles.result}>
-            {isExecuting ? (
-              <p className={styles.status} role="status">
-                <span className={styles.spinner} /> Executing SQL query in browser…
-              </p>
-            ) : result ? (
-              <>
-                <div className={styles.metricsBadge}>
-                  {result.rowCount} row(s) returned in {result.executionTimeMs}ms ({result.columns.length} columns)
-                </div>
-
-                {result.columns.length > 0 ? (
-                  <>
-                    <div className={styles.tableScroll} tabIndex={0} aria-label="Query results table">
-                      <table data-testid="sql-results-table">
-                        <thead>
-                          <tr>
-                            {result.columns.map((col, idx) => (
-                              <th key={idx} scope="col">
-                                {col}
-                              </th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {visibleRows.length > 0 ? (
-                            visibleRows.map((row, rIdx) => (
-                              <tr key={rIdx}>
-                                {row.map((cell, cIdx) => (
-                                  <td key={cIdx}>
-                                    {cell === null || cell === undefined ? (
-                                      <span className={styles.nullCell}>NULL</span>
-                                    ) : typeof cell === "boolean" ? (
-                                      cell ? "TRUE" : "FALSE"
-                                    ) : (
-                                      String(cell)
-                                    )}
-                                  </td>
-                                ))}
-                              </tr>
-                            ))
-                          ) : (
-                            <tr>
-                              <td colSpan={result.columns.length} style={{ textAlign: "center", color: "var(--muted)" }}>
-                                Query returned 0 rows.
-                              </td>
+              {result.columns.length > 0 ? (
+                <>
+                  <div className={ui.tableWrap} tabIndex={0} aria-label="Query results table">
+                    <table data-testid="sql-results-table" className={ui.table}>
+                      <thead>
+                        <tr>
+                          {result.columns.map((col, idx) => (
+                            <th key={idx} scope="col">{col}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {visibleRows.length > 0 ? (
+                          visibleRows.map((row, rIdx) => (
+                            <tr key={rIdx}>
+                              {row.map((cell, cIdx) => (
+                                <td key={cIdx}>
+                                  {cell === null || cell === undefined ? (
+                                    <span className={styles.nullCell}>NULL</span>
+                                  ) : typeof cell === "boolean" ? (
+                                    cell ? "TRUE" : "FALSE"
+                                  ) : (
+                                    String(cell)
+                                  )}
+                                </td>
+                              ))}
                             </tr>
-                          )}
-                        </tbody>
-                      </table>
-                    </div>
+                          ))
+                        ) : (
+                          <tr>
+                            <td colSpan={result.columns.length} className={styles.emptyCell}>Query returned 0 rows.</td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
 
-                    {/* Pagination Bar */}
-                    {totalRows > 0 && (
-                      <div className={styles.paginationBar}>
-                        <div className={styles.paginationControls}>
-                          <button
-                            type="button"
-                            className="button"
-                            disabled={currentPage === 0}
-                            onClick={() => setPageIndex((p) => Math.max(0, p - 1))}
-                          >
-                            ← Previous
-                          </button>
-                          <span>
-                            Page {currentPage + 1} of {totalPages} ({startRowIdx + 1}–{endRowIdx} of {totalRows})
-                          </span>
-                          <button
-                            type="button"
-                            className="button"
-                            disabled={currentPage >= totalPages - 1}
-                            onClick={() => setPageIndex((p) => Math.min(totalPages - 1, p + 1))}
-                          >
-                            Next →
-                          </button>
-                        </div>
-
-                        <div className={styles.paginationPageSize}>
-                          <label htmlFor={`${id}-pagesize`}>Rows per page:</label>
-                          <select
+                  {totalRows > 0 && (
+                    <div className={styles.pagination}>
+                      <div className={styles.paginationControls}>
+                        <Button size="sm" disabled={currentPage === 0} onClick={() => setPageIndex((p) => Math.max(0, p - 1))}>← Previous</Button>
+                        <span>Page {currentPage + 1} of {totalPages} ({startRowIdx + 1}–{endRowIdx} of {totalRows})</span>
+                        <Button size="sm" disabled={currentPage >= totalPages - 1} onClick={() => setPageIndex((p) => Math.min(totalPages - 1, p + 1))}>Next →</Button>
+                      </div>
+                      <div className={styles.pageSize}>
+                        <Field id={`${id}-pagesize`} label="Rows per page:">
+                          <Select
                             id={`${id}-pagesize`}
-                            className={styles.pageSizeSelect}
                             value={pageSize}
                             onChange={(e) => {
                               setPageSize(Number(e.target.value));
@@ -626,37 +579,27 @@ function SpreadsheetSqlStation({ definition }: { definition: Definition }) {
                             <option value={25}>25</option>
                             <option value={50}>50</option>
                             <option value={100}>100</option>
-                          </select>
-                        </div>
+                          </Select>
+                        </Field>
                       </div>
-                    )}
-                  </>
-                ) : (
-                  <p className={styles.empty}>Query executed successfully but produced no output columns.</p>
-                )}
-              </>
-            ) : (
-              <p className={styles.empty}>
-                Your query results will appear here. Press Execute SQL or Cmd/Ctrl + Enter to run.
-              </p>
-            )}
-          </div>
-        </section>
-      </div>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <EmptyState>Query executed successfully but produced no output columns.</EmptyState>
+              )}
+            </div>
+          ) : (
+            <EmptyState>Your query results will appear here. Press Execute SQL or Cmd/Ctrl + Enter to run.</EmptyState>
+          )}
+        </Panel>
+      </ToolLayout>
 
-      {error && (
-        <p id={`${id}-error`} className={styles.error} role="alert" tabIndex={-1}>
-          {error}
-        </p>
-      )}
+      {error && <Callout kind="error" id={`${id}-error`} className={styles.error}>{error}</Callout>}
 
-      <p id={`${id}-status`} className={styles.status} role="status" aria-atomic="true">
-        {notice}
-      </p>
+      <StatusLine id={`${id}-status`} className={styles.status}>{notice}</StatusLine>
 
-      <p className={styles.privacy}>
-        All SQL queries execute 100% in-browser using AlaSQL. Zero server uploads, tracking, or network roundtrips.
-      </p>
+      <PrivacyNote className={styles.privacy}>All SQL queries execute 100% in-browser using AlaSQL. Zero server uploads, tracking, or network roundtrips.</PrivacyNote>
     </div>
   );
 }
@@ -669,4 +612,3 @@ export default function SpreadsheetStation({ toolId }: { toolId: SpreadsheetTool
   }
   return <Station key={definition.id} definition={definition} />;
 }
-

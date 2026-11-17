@@ -18,6 +18,11 @@ import {
   type AiModelId,
   type SystemPromptConfig,
 } from "@/lib/tools/ai-prompts/engine";
+import { StatusLine } from "./ui/StatusLine";
+import { useCopy } from "./ui/useCopy";
+import { downloadBlob } from "./ui/useDownload";
+import { cx } from "./ui/cx";
+import ui from "./ui/ui.module.css";
 import styles from "./AiPromptsStation.module.css";
 
 interface AiPromptsStationProps {
@@ -26,27 +31,10 @@ interface AiPromptsStationProps {
 
 export default function AiPromptsStation({ toolId }: AiPromptsStationProps) {
   const [activeTool, setActiveTool] = useState<AiPromptsToolId>(toolId ?? "ai-token-counter");
-  const [copiedKey, setCopiedKey] = useState<string | null>(null);
-
-  // Helper to copy text to clipboard with feedback
-  const handleCopy = (text: string, key: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedKey(key);
-    setTimeout(() => setCopiedKey(null), 2000);
-  };
-
-  // Helper to download text as file
-  const handleDownload = (content: string, filename: string, type = "text/plain") => {
-    const blob = new Blob([content], { type });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
+  const { copy, message: copyMessage } = useCopy({
+    success: "Copied to clipboard",
+    failure: "Copy failed — select the text and copy it manually",
+  });
 
   // ==========================================
   // STATE: Tool 1 - AI Token Counter
@@ -184,26 +172,9 @@ What are the performance implications? Don't forget edge cases! 🚀`;
     return buildSystemPrompt(systemConfig);
   }, [systemConfig]);
 
-  const activeDef = getAiPromptsDefinition(activeTool);
-
   return (
     <div className={styles.container} data-webmcp-station="ai-prompts">
-      {/* Station Navigation Header */}
-      <header className={styles.stationHeader}>
-        <div>
-          <div className={styles.stationTitle}>
-            <span className={styles.stationBadge}>Station 25</span>
-            <h1 style={{ margin: 0, fontSize: "1.5rem", letterSpacing: "-0.03em" }}>
-              AI &amp; Prompt Engineering
-            </h1>
-          </div>
-          <p className={styles.stationDescription}>
-            In-browser token estimation, LLM JSON repair, prompt template interpolation, vector geometries, and pattern builder.
-          </p>
-        </div>
-      </header>
-
-      {/* Tool Selector Tabs */}
+      {/* Tool Selector */}
       <nav className={styles.toolTabs} aria-label="AI & Prompt Engineering Tools">
         {aiPromptsToolIds.map((id) => {
           const def = getAiPromptsDefinition(id);
@@ -214,7 +185,7 @@ What are the performance implications? Don't forget edge cases! 🚀`;
               type="button"
               className={`${styles.toolTab} ${isActive ? styles.activeTab : ""}`}
               onClick={() => setActiveTool(id)}
-              aria-selected={isActive}
+              aria-pressed={isActive}
             >
               {id === "ai-token-counter" && "🔢"}
               {id === "json-repair" && "🔧"}
@@ -232,29 +203,29 @@ What are the performance implications? Don't forget edge cases! 🚀`;
       {/* ================================================================ */}
       {activeTool === "ai-token-counter" && (
         <section
-          className={styles.panel}
+          className={cx(ui.panel, styles.workspace)}
           data-webmcp-tool="ai-token-counter"
           data-webmcp-category="AI & Prompt Engineering"
           data-webmcp-slug="ai-token-counter"
         >
-          <div className={styles.panelHeader}>
+          <div className={cx(ui.panelHeader, styles.workspaceHeader)}>
             <div>
-              <h2 className={styles.panelTitle}>AI Token Counter &amp; Visual Boundaries</h2>
-              <span className={styles.panelSubtitle}>
+              <h2 className={ui.panelTitle}>AI Token Counter &amp; Visual Boundaries</h2>
+              <span className={cx(ui.hint, styles.subtitle)}>
                 Model-specific BPE estimation, alternating visual token boundaries, and API cost estimation.
               </span>
             </div>
             <div className={styles.controlsBar}>
               <button
                 type="button"
-                className={styles.button}
+                className={ui.button}
                 onClick={() => setTokenInput(sampleTokenText)}
               >
                 Sample Prompt
               </button>
               <button
                 type="button"
-                className={`${styles.button} ${styles.buttonDanger}`}
+                className={`${ui.button} ${ui.danger}`}
                 onClick={() => setTokenInput("")}
               >
                 Clear
@@ -374,24 +345,24 @@ What are the performance implications? Don't forget edge cases! 🚀`;
               <div className={styles.controlsBar}>
                 <button
                   type="button"
-                  className={`${styles.button} ${styles.buttonSmall} ${tokenViewMode === "visual" ? styles.buttonPrimary : ""}`}
+                  className={`${ui.button} ${ui.small} ${tokenViewMode === "visual" ? ui.primary : ""}`}
                   onClick={() => setTokenViewMode("visual")}
                 >
                   Visual Tints
                 </button>
                 <button
                   type="button"
-                  className={`${styles.button} ${styles.buttonSmall} ${tokenViewMode === "table" ? styles.buttonPrimary : ""}`}
+                  className={`${ui.button} ${ui.small} ${tokenViewMode === "table" ? ui.primary : ""}`}
                   onClick={() => setTokenViewMode("table")}
                 >
                   Token Table
                 </button>
                 <button
                   type="button"
-                  className={`${styles.button} ${styles.buttonSmall}`}
-                  onClick={() => handleCopy(tokenInput, "tokens-raw")}
+                  className={`${ui.button} ${ui.small}`}
+                  onClick={() => void copy(tokenInput)}
                 >
-                  {copiedKey === "tokens-raw" ? "Copied!" : "Copy Text"}
+                  Copy Text
                 </button>
               </div>
             </div>
@@ -455,36 +426,36 @@ What are the performance implications? Don't forget edge cases! 🚀`;
       {/* ================================================================ */}
       {activeTool === "json-repair" && (
         <section
-          className={styles.panel}
+          className={cx(ui.panel, styles.workspace)}
           data-webmcp-tool="json-repair"
           data-webmcp-category="AI & Prompt Engineering"
           data-webmcp-slug="json-repair"
         >
-          <div className={styles.panelHeader}>
+          <div className={cx(ui.panelHeader, styles.workspaceHeader)}>
             <div>
-              <h2 className={styles.panelTitle}>LLM JSON Repair &amp; Syntax Fixer</h2>
-              <span className={styles.panelSubtitle}>
+              <h2 className={ui.panelTitle}>LLM JSON Repair &amp; Syntax Fixer</h2>
+              <span className={cx(ui.hint, styles.subtitle)}>
                 Automatically strips markdown fences, fixes Python literals, repairs comments, quotes keys, and balances truncated braces.
               </span>
             </div>
             <div className={styles.controlsBar}>
               <button
                 type="button"
-                className={styles.button}
+                className={ui.button}
                 onClick={() => setJsonInput(sampleBrokenJson1)}
               >
                 Sample: Fences &amp; Literals
               </button>
               <button
                 type="button"
-                className={styles.button}
+                className={ui.button}
                 onClick={() => setJsonInput(sampleBrokenJson2)}
               >
                 Sample: Truncated Cutoff
               </button>
               <button
                 type="button"
-                className={`${styles.button} ${styles.buttonDanger}`}
+                className={`${ui.button} ${ui.danger}`}
                 onClick={() => setJsonInput("")}
               >
                 Clear
@@ -560,15 +531,15 @@ What are the performance implications? Don't forget edge cases! 🚀`;
                 <div className={styles.controlsBar}>
                   <button
                     type="button"
-                    className={`${styles.button} ${styles.buttonSmall}`}
-                    onClick={() => handleCopy(jsonRepairResult.repaired, "repaired-json")}
+                    className={`${ui.button} ${ui.small}`}
+                    onClick={() => void copy(jsonRepairResult.repaired)}
                   >
-                    {copiedKey === "repaired-json" ? "Copied!" : "Copy JSON"}
+                    Copy JSON
                   </button>
                   <button
                     type="button"
-                    className={`${styles.button} ${styles.buttonSmall}`}
-                    onClick={() => handleDownload(jsonRepairResult.repaired, "repaired.json", "application/json")}
+                    className={`${ui.button} ${ui.small}`}
+                    onClick={() => downloadBlob(jsonRepairResult.repaired, "repaired.json", "application/json")}
                   >
                     Download
                   </button>
@@ -590,22 +561,22 @@ What are the performance implications? Don't forget edge cases! 🚀`;
       {/* ================================================================ */}
       {activeTool === "prompt-interpolator" && (
         <section
-          className={styles.panel}
+          className={cx(ui.panel, styles.workspace)}
           data-webmcp-tool="prompt-interpolator"
           data-webmcp-category="AI & Prompt Engineering"
           data-webmcp-slug="prompt-interpolator"
         >
-          <div className={styles.panelHeader}>
+          <div className={cx(ui.panelHeader, styles.workspaceHeader)}>
             <div>
-              <h2 className={styles.panelTitle}>Prompt Template Interpolator &amp; Test Matrix</h2>
-              <span className={styles.panelSubtitle}>
+              <h2 className={ui.panelTitle}>Prompt Template Interpolator &amp; Test Matrix</h2>
+              <span className={cx(ui.hint, styles.subtitle)}>
                 Interpolate Mustache <code>{"{{variable}}"}</code> and single-brace <code>{"{variable}"}</code> across test records. Formats OpenAI &amp; Anthropic API messages.
               </span>
             </div>
             <div className={styles.controlsBar}>
               <button
                 type="button"
-                className={styles.button}
+                className={ui.button}
                 onClick={() => {
                   setPromptSysTemplate(defaultSysTemplate);
                   setPromptUserTemplate(defaultUserTemplate);
@@ -668,7 +639,7 @@ What are the performance implications? Don't forget edge cases! 🚀`;
               </span>
               <button
                 type="button"
-                className={`${styles.button} ${styles.buttonSmall} ${styles.buttonPrimary}`}
+                className={`${ui.button} ${ui.small} ${ui.primary}`}
                 onClick={() => {
                   const newRec: Record<string, string> = {};
                   interpolationResults.variables.forEach((v) => {
@@ -732,7 +703,7 @@ What are the performance implications? Don't forget edge cases! 🚀`;
                         {records.length > 1 && (
                           <button
                             type="button"
-                            className={`${styles.button} ${styles.buttonSmall} ${styles.buttonDanger}`}
+                            className={`${ui.button} ${ui.small} ${ui.danger}`}
                             onClick={() => {
                               const filtered = records.filter((_, i) => i !== rIdx);
                               setRecords(filtered);
@@ -773,7 +744,7 @@ What are the performance implications? Don't forget edge cases! 🚀`;
                 <div className={styles.controlsBar}>
                   <button
                     type="button"
-                    className={`${styles.button} ${styles.buttonSmall}`}
+                    className={`${ui.button} ${ui.small}`}
                     disabled={selectedRecordIndex <= 0}
                     onClick={() => setSelectedRecordIndex((i) => Math.max(0, i - 1))}
                   >
@@ -784,7 +755,7 @@ What are the performance implications? Don't forget edge cases! 🚀`;
                   </span>
                   <button
                     type="button"
-                    className={`${styles.button} ${styles.buttonSmall}`}
+                    className={`${ui.button} ${ui.small}`}
                     disabled={selectedRecordIndex >= records.length - 1}
                     onClick={() => setSelectedRecordIndex((i) => Math.min(records.length - 1, i + 1))}
                   >
@@ -796,7 +767,7 @@ What are the performance implications? Don't forget edge cases! 🚀`;
               <div className={styles.controlsBar}>
                 <button
                   type="button"
-                  className={`${styles.button} ${styles.buttonSmall}`}
+                  className={`${ui.button} ${ui.small}`}
                   onClick={() => {
                     const text =
                       exportFormat === "openai"
@@ -806,16 +777,16 @@ What are the performance implications? Don't forget edge cases! 🚀`;
                         : exportFormat === "markdown"
                         ? interpolationResults.markdownExport
                         : JSON.stringify(interpolationResults.results[selectedRecordIndex]?.messages, null, 2);
-                    handleCopy(text, "export-prompt");
+                    void copy(text);
                   }}
                 >
-                  {copiedKey === "export-prompt" ? "Copied!" : "Copy Output"}
+                  Copy Output
                 </button>
               </div>
             </div>
 
             {exportFormat === "preview" ? (
-              <div className={styles.panel} style={{ background: "var(--surface-alt)" }}>
+              <div className={styles.previewBox}>
                 {interpolationResults.results[selectedRecordIndex]?.messages.map((msg, i) => (
                   <div key={i} style={{ marginBottom: "0.5rem" }}>
                     <div style={{ fontSize: "0.75rem", fontWeight: 700, textTransform: "uppercase", color: "var(--muted)" }}>
@@ -860,22 +831,22 @@ What are the performance implications? Don't forget edge cases! 🚀`;
       {/* ================================================================ */}
       {activeTool === "vector-similarity" && (
         <section
-          className={styles.panel}
+          className={cx(ui.panel, styles.workspace)}
           data-webmcp-tool="vector-similarity"
           data-webmcp-category="AI & Prompt Engineering"
           data-webmcp-slug="vector-similarity"
         >
-          <div className={styles.panelHeader}>
+          <div className={cx(ui.panelHeader, styles.workspaceHeader)}>
             <div>
-              <h2 className={styles.panelTitle}>Vector Similarity &amp; Geometry Calculator</h2>
-              <span className={styles.panelSubtitle}>
+              <h2 className={ui.panelTitle}>Vector Similarity &amp; Geometry Calculator</h2>
+              <span className={cx(ui.hint, styles.subtitle)}>
                 Compare embedding vectors using Cosine similarity, Euclidean distance (L2), Dot product, Manhattan distance (L1), angles, and dimensional breakdown.
               </span>
             </div>
             <div className={styles.controlsBar}>
               <button
                 type="button"
-                className={styles.button}
+                className={ui.button}
                 onClick={() => {
                   setVecAInput("[0.92, 0.45, -0.15, 0.77, 0.33]");
                   setVecBInput("[0.88, 0.42, -0.12, 0.81, 0.30]");
@@ -885,7 +856,7 @@ What are the performance implications? Don't forget edge cases! 🚀`;
               </button>
               <button
                 type="button"
-                className={styles.button}
+                className={ui.button}
                 onClick={() => {
                   setVecAInput("[1, 0, 0, 0]");
                   setVecBInput("[0, 1, 0, 0]");
@@ -895,7 +866,7 @@ What are the performance implications? Don't forget edge cases! 🚀`;
               </button>
               <button
                 type="button"
-                className={styles.button}
+                className={ui.button}
                 onClick={() => {
                   setVecAInput("[0.5, 0.5, 0.5]");
                   setVecBInput("[-0.5, -0.5, -0.5]");
@@ -1053,15 +1024,15 @@ What are the performance implications? Don't forget edge cases! 🚀`;
       {/* ================================================================ */}
       {activeTool === "system-prompt-builder" && (
         <section
-          className={styles.panel}
+          className={cx(ui.panel, styles.workspace)}
           data-webmcp-tool="system-prompt-builder"
           data-webmcp-category="AI & Prompt Engineering"
           data-webmcp-slug="system-prompt-builder"
         >
-          <div className={styles.panelHeader}>
+          <div className={cx(ui.panelHeader, styles.workspaceHeader)}>
             <div>
-              <h2 className={styles.panelTitle}>System Prompt Pattern Builder &amp; Optimizer</h2>
-              <span className={styles.panelSubtitle}>
+              <h2 className={ui.panelTitle}>System Prompt Pattern Builder &amp; Optimizer</h2>
+              <span className={cx(ui.hint, styles.subtitle)}>
                 Construct modular system prompts with Anthropic XML tags, negative guardrails, chain-of-thought scratchpad, and few-shot examples.
               </span>
             </div>
@@ -1225,15 +1196,15 @@ What are the performance implications? Don't forget edge cases! 🚀`;
               <div className={styles.controlsBar}>
                 <button
                   type="button"
-                  className={`${styles.button} ${styles.buttonSmall} ${styles.buttonPrimary}`}
-                  onClick={() => handleCopy(builtSystemPrompt.assembledPrompt, "system-prompt")}
+                  className={`${ui.button} ${ui.small} ${ui.primary}`}
+                  onClick={() => void copy(builtSystemPrompt.assembledPrompt)}
                 >
-                  {copiedKey === "system-prompt" ? "Copied!" : "Copy System Prompt"}
+                  Copy System Prompt
                 </button>
                 <button
                   type="button"
-                  className={`${styles.button} ${styles.buttonSmall}`}
-                  onClick={() => handleDownload(builtSystemPrompt.assembledPrompt, "system-prompt.txt")}
+                  className={`${ui.button} ${ui.small}`}
+                  onClick={() => downloadBlob(builtSystemPrompt.assembledPrompt, "system-prompt.txt")}
                 >
                   Download .txt
                 </button>
@@ -1249,6 +1220,8 @@ What are the performance implications? Don't forget edge cases! 🚀`;
           </div>
         </section>
       )}
+
+      <StatusLine>{copyMessage}</StatusLine>
     </div>
   );
 }

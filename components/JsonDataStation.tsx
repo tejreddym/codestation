@@ -1,11 +1,22 @@
 "use client";
 import { useToolHandoff } from "./WorkbenchProvider";
 
-import Link from "next/link";
 import { useSafePathname, useSafeRouter } from "./useSafeNavigation";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { getJsonDataDefinition, type DataInputField, type JsonDataDefinition, type JsonDataToolId } from "@/config/json-data-tools";
 import type { DataInputs, DataResult } from "@/lib/tools/json-data/types";
+import { Button, ButtonLink } from "./ui/Button";
+import { Callout } from "./ui/Callout";
+import { Select, Textarea, TextInput } from "./ui/controls";
+import { EmptyState } from "./ui/EmptyState";
+import { Field } from "./ui/Field";
+import { Panel } from "./ui/Panel";
+import { PrivacyNote } from "./ui/PrivacyNote";
+import { cx } from "./ui/cx";
+import { StatusLine } from "./ui/StatusLine";
+import { ToolLayout } from "./ui/ToolLayout";
+import { useCopy } from "./ui/useCopy";
+import ui from "./ui/ui.module.css";
 import styles from "./JsonDataStation.module.css";
 import { capabilityForRoute, capabilitiesFor } from "@/config/conversion-capabilities";
 import { useConverterSession } from "./ConverterSession";
@@ -26,7 +37,7 @@ function TreeNode({ label, value, root = false }: { label: string; value: unknow
   const entries = Object.entries(value);
   return <details className={styles.branch} open={open} onToggle={(event) => setOpen(event.currentTarget.open)}>
     <summary><strong>{label}</strong> <span className={styles.type}>{type} · {entries.length} {isArray ? "items" : "keys"}</span></summary>
-    {open && <div className={styles.children}>{entries.slice(0, visibleCount).map(([key, child]) => <TreeNode key={key} label={isArray ? `[${key}]` : JSON.stringify(key)} value={child} />)}{entries.length > visibleCount && <button type="button" className={styles.button} onClick={() => setVisibleCount(count => count + 200)}>Show next {Math.min(200, entries.length - visibleCount)} nodes</button>}</div>}
+    {open && <div className={styles.children}>{entries.slice(0, visibleCount).map(([key, child]) => <TreeNode key={key} label={isArray ? `[${key}]` : JSON.stringify(key)} value={child} />)}{entries.length > visibleCount && <Button size="sm" onClick={() => setVisibleCount(count => count + 200)}>Show next {Math.min(200, entries.length - visibleCount)} nodes</Button>}</div>}
   </details>;
 }
 
@@ -49,6 +60,7 @@ function Station({ definition }: { definition: JsonDataDefinition }) {
   const savedSource = converterSource ? session.get("json-data") : undefined;
   const targets = converterSource ? capabilitiesFor("json-data", savedSource?.format ?? converterSource).map(item => item.target) : [];
   const revision = useRef(0);
+  const { copy: copyText } = useCopy();
   const processing = useRef<AbortController | null>(null);
   const paired = definition.pairedTool ? getJsonDataDefinition(definition.pairedTool) : undefined;
 
@@ -133,13 +145,10 @@ function Station({ definition }: { definition: JsonDataDefinition }) {
     const currentRevision = revision.current;
     setNotice("");
     setActionError("");
-    try {
-      if (!navigator.clipboard?.writeText) throw new Error("Clipboard unavailable");
-      await navigator.clipboard.writeText(result.text);
-      if (revision.current === currentRevision) setNotice("Result copied.");
-    } catch {
-      if (revision.current === currentRevision) setActionError("Could not copy. Select the result and copy it manually.");
-    }
+    const ok = await copyText(result.text);
+    if (revision.current !== currentRevision) return;
+    if (ok) setNotice("Result copied.");
+    else setActionError("Could not copy. Select the result and copy it manually.");
   }
 
   function download() {
@@ -175,53 +184,70 @@ function Station({ definition }: { definition: JsonDataDefinition }) {
     const describedBy = [field.hint ? `${id}-hint` : "", fieldError ? `${scope}-error` : "", invalidResult ? `${scope}-result` : ""].filter(Boolean).join(" ") || undefined;
     const common = {
       id, name: field.name, value: inputs[field.name] ?? "", required: field.required,
-      "aria-invalid": Boolean(fieldError || invalidResult), "aria-describedby": describedBy,
-      className: styles.control,
+      "aria-invalid": Boolean(fieldError || invalidResult) || undefined, "aria-describedby": describedBy,
       onChange: (event: { target: { value: string } }) => edit(field.name, event.target.value),
     };
-    return <div className={styles.field} key={field.name}>
-      <label htmlFor={id}>{field.label}</label>
-      {field.control === "select" ? <select {...common}>{field.options?.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select>
-        : field.control === "textarea" ? <textarea {...common} className={`${styles.control} ${field.name === "input" || field.name === "secondary" ? styles.editor : styles.smallEditor}`} placeholder={field.placeholder} spellCheck={false} autoComplete="off" autoCapitalize="off" />
-          : <input {...common} type="text" placeholder={field.placeholder} spellCheck={false} autoComplete="off" autoCapitalize="off" />}
-      {field.hint && <p id={`${id}-hint`} className={styles.hint}>{field.hint}</p>}
-    </div>;
+    const editorClass = field.name === "input" || field.name === "secondary" ? styles.editor : styles.smallEditor;
+    return <Field key={field.name} id={id} label={field.label} hint={field.hint}>
+      {field.control === "select" ? <Select {...common}>{field.options?.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</Select>
+        : field.control === "textarea" ? <Textarea {...common} className={cx(ui.mono, editorClass)} placeholder={field.placeholder} spellCheck={false} autoComplete="off" autoCapitalize="off" />
+          : <TextInput {...common} type="text" placeholder={field.placeholder} spellCheck={false} autoComplete="off" autoCapitalize="off" />}
+    </Field>;
   }
 
   return <div className={styles.station}>
-    {paired && <nav className={styles.direction} aria-label="Conversion direction">
-      <span><strong>{definition.inputFormat}</strong> <span aria-hidden="true">→</span> <strong>{definition.outputFormat}</strong></span>
-      <Link className={styles.reverseLink} href={`/tools/${paired.slug}`}>Switch to {paired.name} <span aria-hidden="true">↔</span></Link>
+    {paired && <nav className={`${ui.pair} ${styles.direction}`} aria-label="Conversion direction">
+      <span className={ui.pairLabel}><strong>{definition.inputFormat}</strong> <span aria-hidden="true">→</span> <strong>{definition.outputFormat}</strong></span>
+      <ButtonLink href={`/tools/${paired.slug}`} size="sm" variant="ghost" aria-label={`Switch to ${paired.name}`}>Switch to {paired.name} <span aria-hidden="true">↔</span></ButtonLink>
     </nav>}
-    <div className={styles.layout}>
-      <form className={styles.panel} onSubmit={run} noValidate aria-labelledby={`${scope}-input-heading`}>
-        <div className={styles.panelHead}><h2 id={`${scope}-input-heading`}>Input</h2><span className={styles.format}>Accepts {definition.inputFormat}</span>{converterSource && <label className={styles.format} htmlFor={`${scope}-output-format`}>Output Format <select id={`${scope}-output-format`} value={converter?.target ?? ""} onChange={event => selectTarget(event.target.value)}><option value="" disabled>Choose target</option>{targets.map(target => <option key={target} value={target}>{target.toUpperCase()}</option>)}</select><small>Source: {savedSource?.format ?? converterSource} (selected route)</small></label>}</div>
-        <div className={styles.fields}>{contract.fields.map(fieldControl)}</div>
-        {error && <p className={styles.error} id={`${scope}-error`} role="alert">Invalid: {error.message}</p>}
-        <div className={styles.actions}>
-          <button className={`${styles.button} ${styles.primary}`} type="submit" disabled={busy}>{busy ? "Processing…" : contract.action}</button>
-          <button className={styles.button} type="button" onClick={example}>Load example</button>
-          <button className={styles.button} type="button" onClick={clear}>Clear</button>
-        </div>
-      </form>
-      <section className={styles.panel} aria-labelledby={`${scope}-output-heading`} aria-busy={busy}>
-        <div className={styles.panelHead}><h2 id={`${scope}-output-heading`}>{contract.output.label}</h2>
-          {result && <div className={styles.outputActions}>
-            <button className={styles.button} type="button" onClick={copy}>Copy</button>
-            {contract.output.kind === "data" && contract.output.extension && !result.invalid && <button className={styles.button} type="button" onClick={download}>Download .{contract.output.extension}</button>}
-          </div>}
-        </div>
-        {result ? <div id={`${scope}-result`} className={result.invalid ? styles.invalidResult : styles.result}>
-          {definition.slug.endsWith("validator") && <p><strong>{result.invalid ? "Invalid" : "Valid"}</strong></p>}
+    <ToolLayout kind="form" className={styles.layout}>
+      <Panel
+        title="Input"
+        headingId={`${scope}-input-heading`}
+        actions={<>
+          <span className={styles.format}>Accepts {definition.inputFormat}</span>
+          {converterSource && <label className={styles.converter} htmlFor={`${scope}-output-format`}>
+            <span>Output Format</span>
+            <Select id={`${scope}-output-format`} value={converter?.target ?? ""} onChange={event => selectTarget(event.target.value)}>
+              <option value="" disabled>Choose target</option>
+              {targets.map(target => <option key={target} value={target}>{target.toUpperCase()}</option>)}
+            </Select>
+            <small className={styles.format}>Source: {savedSource?.format ?? converterSource} (selected route)</small>
+          </label>}
+        </>}
+        padded
+      >
+        <form onSubmit={run} noValidate aria-labelledby={`${scope}-input-heading`}>
+          <div className={styles.fields}>{contract.fields.map(fieldControl)}</div>
+          {error && <Callout kind="error" id={`${scope}-error`} className={styles.alert}>Invalid: {error.message}</Callout>}
+          <div className={ui.actions}>
+            <Button type="submit" variant="primary" disabled={busy} aria-busy={busy}>{busy ? "Processing…" : contract.action}</Button>
+            <Button onClick={example}>Load example</Button>
+            <Button onClick={clear}>Clear</Button>
+          </div>
+        </form>
+      </Panel>
+      <Panel
+        title={contract.output.label}
+        headingId={`${scope}-output-heading`}
+        aria-busy={busy || undefined}
+        padded
+        actions={result ? <>
+          <Button size="sm" onClick={copy}>Copy</Button>
+          {contract.output.kind === "data" && contract.output.extension && !result.invalid && <Button size="sm" onClick={download}>Download .{contract.output.extension}</Button>}
+        </> : undefined}
+      >
+        {result ? <div id={`${scope}-result`} className={cx(styles.result, result.invalid && styles.invalidResult)}>
+          {definition.slug.endsWith("validator") && <p className={styles.verdict}><strong>{result.invalid ? "Invalid" : "Valid"}</strong></p>}
           {contract.output.kind === "tree" && "tree" in result ? <div className={styles.tree}><TreeNode key={revision.current} label="$" value={result.tree} root /></div>
-            : <pre className={styles.output} tabIndex={0} aria-label={contract.output.label}>{result.text}</pre>}
-        </div> : <p className={styles.empty}>{busy ? "Processing your input locally…" : `Enter ${definition.inputFormat}, then choose “${contract.action}”. Your result will appear here.`}</p>}
-        {actionError && <p className={styles.error} role="alert">{actionError}</p>}
-      </section>
-    </div>
-    <p className={styles.notice} role="status" aria-live="polite">{notice}</p>
-    <p className={styles.privacy}>Processed in your browser. Inputs stay in this page’s memory and are not uploaded or saved.</p>
-    {contract.notes.length > 0 && <ul className={styles.notes}>{contract.notes.map((note) => <li key={note}>{note}</li>)}</ul>}
+            : <pre className={ui.output} tabIndex={0} aria-label={contract.output.label}>{result.text}</pre>}
+        </div> : <EmptyState>{busy ? "Processing your input locally…" : `Enter ${definition.inputFormat}, then choose “${contract.action}”. Your result will appear here.`}</EmptyState>}
+        {actionError && <Callout kind="error" className={styles.alert}>{actionError}</Callout>}
+      </Panel>
+    </ToolLayout>
+    <StatusLine>{notice}</StatusLine>
+    <PrivacyNote>Processed in your browser. Inputs stay in this page’s memory and are not uploaded or saved.</PrivacyNote>
+    {contract.notes.length > 0 && <ul className={styles.notes}>{contract.notes.map((note) => <li key={note} className={ui.hint}>{note}</li>)}</ul>}
   </div>;
 }
 

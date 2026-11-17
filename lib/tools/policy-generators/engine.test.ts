@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   cleanPositiveNumber,
   cleanStr,
@@ -699,12 +699,14 @@ describe("Policy Generator Engine — Core & Serializers", () => {
         expect(textNaN).toContain("under the age of 13");
         expect(textNaN).toContain("children under 13");
 
-        // 2. Test negative number (-5)
+        // 2. Test negative number (-5). Assert the clause, not the bare
+        // substring: generated metadata includes a YYYY-MM-DD effective date,
+        // so a bare "-5"/"-15" assertion collides on the 5th/15th of a month.
         const textNeg = generatePolicyText("privacy-policy-generator", "markdown", {
           minimumAge: -5,
         });
-        expect(textNeg).not.toContain("-5");
         expect(textNeg).not.toContain("under the age of -5");
+        expect(textNeg).not.toContain("children under -5");
         expect(textNeg).toContain("under the age of 13");
 
         // 3. Test 0 and Infinity
@@ -744,13 +746,15 @@ describe("Policy Generator Engine — Core & Serializers", () => {
         expect(textNaN).toContain("at least 13 years of age");
         expect(textNaN).toContain("within 30 calendar days of first accepting these Terms");
 
-        // 2. Test negative numbers (-5 and -15)
+        // 2. Test negative numbers (-5 and -15). The date-collision note above
+        // applies: assert the sanitised clauses, never the bare numbers.
         const textNeg = generatePolicyText("terms-and-conditions-generator", "markdown", {
           minimumAge: -5,
           arbitrationOptOutDays: -15,
         });
-        expect(textNeg).not.toContain("-5");
-        expect(textNeg).not.toContain("-15");
+        expect(textNeg).not.toContain("at least -5 years of age");
+        expect(textNeg).not.toContain("within -15 calendar days");
+        expect(textNeg).not.toContain("-15-Day Right to Opt Out");
         expect(textNeg).toContain("at least 13 years of age");
         expect(textNeg).toContain("within 30 calendar days of first accepting these Terms");
 
@@ -783,12 +787,13 @@ describe("Policy Generator Engine — Core & Serializers", () => {
         expect(textNaN).toContain("30-Day Satisfaction Guarantee");
         expect(textNaN).toContain("within 30 calendar days from the date of confirmed delivery");
 
-        // 2. Standard Returns with negative number (-15)
+        // 2. Standard Returns with negative number (-15). The date-collision
+        // note above applies, so the assertion targets the rendered clause.
         const textNeg = generatePolicyText("refund-policy-generator", "markdown", {
           policyType: "standardReturns",
           returnWindowDays: -15,
         });
-        expect(textNeg).not.toContain("-15");
+        expect(textNeg).not.toContain("within -15 calendar days");
         expect(textNeg).not.toContain("-15-Day Satisfaction Guarantee");
         expect(textNeg).toContain("30-Day Satisfaction Guarantee");
         expect(textNeg).toContain("within 30 calendar days from the date of confirmed delivery");
@@ -802,12 +807,13 @@ describe("Policy Generator Engine — Core & Serializers", () => {
         expect(textStoreCreditNaN).toContain("30-day return window");
         expect(textStoreCreditNaN).toContain("within 30 days of receipt");
 
-        // 4. Conditional Refunds with negative (-30)
+        // 4. Conditional Refunds with negative (-30). Bare "-30" would collide
+        // with a YYYY-MM-30 effective date, so assert the rendered clause.
         const textCondNeg = generatePolicyText("refund-policy-generator", "markdown", {
           policyType: "conditionalRefunds",
           returnWindowDays: -30,
         });
-        expect(textCondNeg).not.toContain("-30");
+        expect(textCondNeg).not.toContain("within -30 calendar days");
         expect(textCondNeg).toContain("within 30 calendar days of purchase");
 
         // 5. Zero and Infinity
@@ -827,6 +833,35 @@ describe("Policy Generator Engine — Core & Serializers", () => {
         });
         expect(textValid).toContain("45-Day Satisfaction Guarantee");
         expect(textValid).toContain("within 45 calendar days");
+      });
+
+      it("stays independent of today's date when sanitising negative values", () => {
+        vi.useFakeTimers();
+        try {
+          for (const date of ["2026-01-05", "2026-01-15", "2026-01-30"]) {
+            vi.setSystemTime(new Date(`${date}T12:00:00.000Z`));
+
+            const terms = generatePolicyText("terms-and-conditions-generator", "markdown", {
+              minimumAge: -5,
+              arbitrationOptOutDays: -15,
+            });
+            expect(terms).toContain(`**Effective Date:** ${date}`);
+            expect(terms).not.toContain("at least -5 years of age");
+            expect(terms).not.toContain("within -15 calendar days");
+            expect(terms).toContain("at least 13 years of age");
+            expect(terms).toContain("within 30 calendar days");
+
+            const refund = generatePolicyText("refund-policy-generator", "markdown", {
+              policyType: "conditionalRefunds",
+              returnWindowDays: -30,
+            });
+            expect(refund).toContain(`**Effective Date:** ${date}`);
+            expect(refund).not.toContain("within -30 calendar days");
+            expect(refund).toContain("within 30 calendar days of purchase");
+          }
+        } finally {
+          vi.useRealTimers();
+        }
       });
     });
 

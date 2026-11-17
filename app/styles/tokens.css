@@ -1,0 +1,134 @@
+/*
+ * Code Station design tokens — the single source of truth for color,
+ * typography, spacing, control geometry, radii, elevation, z-index and motion.
+ *
+ * Rule: components consume these with var(); they do not declare parallel
+ * palettes. The palette below is the shipping olive/lime editorial theme,
+ * copied verbatim from the previously winning block so rendering is unchanged.
+ *
+ * Future palette changes happen here only.
+ */
+:root {
+  /* Color — surfaces */
+  --canvas: #f6f5f1;
+  --surface: #ffffff;
+  --surface-alt: #eeeee7;
+  --elevated: #ffffff;
+
+  /* Color — text */
+  --ink: #151713;
+  --secondary: #596153;
+  --muted: #596153;
+
+  /* Color — lines */
+  --line: #d3d6ca;
+  --line-strong: #838b7b;
+
+  /* Color — accent and actions */
+  --accent: #476511;
+  --accent-hover: #354d09;
+  --accent-soft: #eaf1d9;
+  --action-bg: #d9f975;
+  --action-hover: #c8ec59;
+  --action-border: #a3bb57;
+  --action-border-hover: #829944;
+  --action-ink: #151713;
+  --button-primary-text: #ffffff;
+
+  /* Color — semantic status */
+  --yellow: #b45309;
+  --green: #147d64;
+  --red: #c2414d;
+  --info: #2563a6;
+
+  /* Color — code and focus */
+  --code: #0f1722;
+  --code-ink: #e7eef7;
+  --focus: #476511;
+
+  /* Typography */
+  --font-sans: Arial, Helvetica, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+  --text-xs: 12px;
+  --text-sm: 13px;
+  --text-md: 15px;
+  --text-lg: 17px;
+  --text-xl: 22px;
+  --text-2xl: 32px;
+  --leading-tight: 1.25;
+  --leading-normal: 1.55;
+
+  /* Spacing */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 32px;
+  --space-8: 40px;
+  --space-9: 48px;
+  --space-page: 28px;
+  --gutter: 16px;
+
+  /* Control geometry */
+  --control-h-sm: 36px;
+  --control-h-md: 44px;
+  --control-h-lg: 48px;
+  /* Current input height and radius; folded into --control-h-md / --radius-md in W1. */
+  --control-h-input: 46px;
+  --radius-control: 9px;
+
+  /* Radii */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-pill: 999px;
+
+  /* Elevation */
+  --shadow-sm: 0 1px 2px rgba(21, 23, 19, .06);
+  --shadow: 0 5px 16px rgba(21, 23, 19, .035);
+  --shadow-md: var(--shadow);
+  --shadow-tactile: 0 1px 2px rgba(21, 23, 19, .08);
+
+  /* Z-index */
+  --z-sticky: 10;
+  --z-overlay: 30;
+  --z-dialog: 50;
+  --z-toast: 60;
+
+  /* Motion */
+  --duration-fast: 120ms;
+  --duration-base: 180ms;
+  --ease: cubic-bezier(.2, .75, .2, 1);
+
+  color-scheme: light;
+}
+
+[data-theme="dark"] {
+  --canvas: #151713;
+  --surface: #20251d;
+  --surface-alt: #292f24;
+  --elevated: #1b2018;
+  --ink: #f6f5f1;
+  --secondary: #b7bcaf;
+  --muted: #b7bcaf;
+  --line: #3b4435;
+  --line-strong: #7d8773;
+  --accent: #d9f975;
+  --accent-hover: #e5ff9e;
+  --accent-soft: #323e22;
+  --yellow: #fbbf24;
+  --green: #6ee7b7;
+  --red: #fb7185;
+  --info: #93c5fd;
+  --code: #091019;
+  --code-ink: #e7eef7;
+  --focus: #d9f975;
+  --button-primary-text: #151713;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, .2);
+  --shadow: 0 5px 16px rgba(0, 0, 0, .12);
+  --shadow-tactile: 0 1px 2px rgba(0, 0, 0, .2);
+  color-scheme: dark;
+}

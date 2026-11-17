@@ -1,400 +1,282 @@
-.container {
+/* Layout-only styles for the Crypto & PKI station. Shared visuals come from components/ui. */
+
+.segmented {
   display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-  width: 100%;
+  flex-wrap: wrap;
+  gap: 6px;
 }
 
-.panel {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-md);
-  padding: 1.25rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1.1rem;
-  box-shadow: var(--shadow-tactile);
-}
-
-.panelHead {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 1px solid var(--line);
-  padding-bottom: 0.65rem;
-}
-
-.panelTitle {
-  font-size: 0.95rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--ink);
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.formGrid {
+.configGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--space-4);
+  min-width: 0;
 }
 
-.formRow {
+.configRow {
   display: flex;
-  gap: 1rem;
+  flex-wrap: wrap;
   align-items: flex-end;
-  flex-wrap: wrap;
+  gap: var(--space-4);
 }
 
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-  flex: 1;
-  min-width: 200px;
+.keySizeField {
+  max-width: 280px;
 }
 
-.field label {
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: var(--secondary);
+.algorithmField {
+  max-width: 240px;
 }
 
-.input,
-.select {
-  background: var(--canvas);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
-  padding: 0.55rem 0.75rem;
-  font-size: 0.9rem;
-  color: var(--ink);
-  transition: border-color 0.15s ease;
+.skewField {
+  max-width: 220px;
 }
 
-.input:focus,
-.select:focus,
-.textarea:focus {
-  outline: none;
-  border-color: var(--accent);
-}
-
-.textarea {
-  width: 100%;
-  min-height: 140px;
-  font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
-  font-size: 0.85rem;
-  line-height: 1.45;
-  background: var(--canvas);
-  color: var(--ink);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
-  padding: 0.75rem;
-  resize: vertical;
-}
-
-.checkboxRow {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.85rem;
-  font-weight: 500;
-  color: var(--ink);
-  cursor: pointer;
-}
-
-.checkboxRow input[type="checkbox"] {
-  accent-color: var(--accent);
-  width: 16px;
-  height: 16px;
-  cursor: pointer;
-}
-
-.buttonGroup {
+.inlineActions {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.65rem;
   align-items: center;
+  gap: 8px;
+  min-width: 0;
 }
 
-.button {
-  display: inline-flex;
+.inlineActions > input,
+.inlineActions > select,
+.inlineActions > textarea {
+  flex: 1 1 180px;
+  min-width: 0;
+}
+
+.resultBlock {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  margin: 0;
+}
+
+.resultBlockHead {
+  display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 0.45rem;
-  border: 1px solid var(--line-strong);
-  background: var(--surface);
-  color: var(--ink);
-  border-radius: var(--radius-sm);
-  padding: 0.5rem 0.9rem;
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
-  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.05);
-  transition: all 0.15s ease;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
-.button:hover {
-  border-color: var(--accent);
-  color: var(--accent);
-}
-
-.button:active {
-  transform: translateY(1px);
-}
-
-.buttonPrimary {
-  background: var(--action-bg);
-  color: var(--action-ink);
-  border-color: var(--action-bg);
-}
-
-.buttonPrimary:hover {
-  background: var(--action-hover);
-  border-color: var(--action-hover);
-  color: var(--action-ink);
-}
-
-.buttonSecondary {
-  background: var(--surface-alt);
+.resultLabel {
   color: var(--secondary);
-}
-
-.tabs {
-  display: flex;
-  gap: 0.35rem;
-  border-bottom: 1px solid var(--line);
-  padding-bottom: 0.25rem;
-  margin-bottom: 0.5rem;
-}
-
-.tab {
-  background: none;
-  border: none;
-  padding: 0.4rem 0.85rem;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--muted);
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.tab:hover {
-  color: var(--ink);
-  background: var(--surface-alt);
-}
-
-.tabActive {
-  color: var(--action-ink);
-  background: var(--action-bg);
-}
-
-.errorBanner {
-  background: color-mix(in srgb, var(--red) 12%, transparent);
-  border: 1px solid var(--red);
-  color: var(--red);
-  border-radius: var(--radius-sm);
-  padding: 0.75rem 1rem;
-  font-size: 0.85rem;
-  line-height: 1.4;
-  display: flex;
-  align-items: flex-start;
-  gap: 0.5rem;
-}
-
-.noticeBanner {
-  background: var(--accent-soft);
-  border: 1px solid var(--line);
-  color: var(--secondary);
-  border-radius: var(--radius-sm);
-  padding: 0.65rem 0.85rem;
-  font-size: 0.82rem;
-  line-height: 1.4;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  font-size: 0.75rem;
+  font-size: var(--text-xs);
   font-weight: 700;
-  padding: 0.2rem 0.55rem;
-  border-radius: 9999px;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
 }
 
-.badgeSuccess {
-  background: color-mix(in srgb, var(--green) 15%, transparent);
-  color: var(--green);
-  border: 1px solid var(--green);
-}
-
-.badgeWarning {
-  background: color-mix(in srgb, var(--yellow) 15%, transparent);
-  color: var(--yellow);
-  border: 1px solid var(--yellow);
-}
-
-.badgeDanger {
-  background: color-mix(in srgb, var(--red) 15%, transparent);
-  color: var(--red);
-  border: 1px solid var(--red);
-}
-
-.badgeInfo {
-  background: color-mix(in srgb, var(--accent) 15%, transparent);
-  color: var(--accent);
-  border: 1px solid var(--accent);
+.subjectValue {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  overflow-wrap: anywhere;
 }
 
 .statGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 10px;
+  min-width: 0;
 }
 
 .statCard {
-  background: var(--canvas);
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 10px 12px;
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
-  padding: 0.75rem 1rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
+  background: var(--surface-alt);
 }
 
 .statLabel {
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
   color: var(--muted);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
 }
 
 .statValue {
-  font-size: 0.9rem;
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
   font-weight: 700;
-  color: var(--ink);
-  font-family: var(--font-mono, ui-monospace, monospace);
-  word-break: break-all;
+  overflow-wrap: anywhere;
 }
 
-.resultsCard {
-  background: var(--canvas);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
-  padding: 1rem;
+.spanAll {
+  grid-column: 1 / -1;
+}
+
+.positive {
+  color: var(--green);
+}
+
+.negative {
+  color: var(--red);
+}
+
+.badgeSuccess,
+.badgeWarning,
+.badgeDanger {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border: 1px solid;
+  border-radius: var(--radius-pill);
+  font-size: var(--text-xs);
+  font-weight: 700;
+}
+
+.badgeSuccess {
+  color: var(--green);
+  border-color: var(--green);
+  background: color-mix(in srgb, var(--green) 12%, transparent);
+}
+
+.badgeWarning {
+  color: var(--yellow);
+  border-color: var(--yellow);
+  background: color-mix(in srgb, var(--yellow) 12%, transparent);
+}
+
+.badgeDanger {
+  color: var(--red);
+  border-color: var(--red);
+  background: color-mix(in srgb, var(--red) 12%, transparent);
+}
+
+.gradeGroup {
   display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.codeOutput {
-  background: var(--code);
-  color: var(--code-ink);
-  padding: 0.85rem;
-  border-radius: var(--radius-sm);
-  font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
-  font-size: 0.82rem;
-  line-height: 1.5;
-  white-space: pre-wrap;
-  word-break: break-all;
-  max-height: 280px;
-  overflow-y: auto;
-}
-
-.tagChipContainer {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-}
-
-.tagChip {
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 4px;
-  padding: 0.2rem 0.5rem;
-  font-size: 0.78rem;
-  font-family: var(--font-mono, ui-monospace, monospace);
-  color: var(--ink);
-}
-
-.asn1Box {
-  background: var(--surface-alt);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
-  padding: 0.75rem;
-  font-family: var(--font-mono, ui-monospace, monospace);
-  font-size: 0.8rem;
-  line-height: 1.5;
-  white-space: pre;
-  overflow-x: auto;
+  align-items: center;
+  gap: 10px;
 }
 
 .gradeCircle {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 48px;
-  height: 48px;
+  width: 44px;
+  height: 44px;
+  border: 2px solid currentColor;
   border-radius: 50%;
-  font-size: 1.25rem;
+  font-size: var(--text-md);
   font-weight: 800;
 }
 
 .gradeA {
-  background: color-mix(in srgb, var(--green) 20%, transparent);
   color: var(--green);
-  border: 2px solid var(--green);
+  background: color-mix(in srgb, var(--green) 16%, transparent);
 }
 
-.gradeB {
-  background: color-mix(in srgb, var(--yellow) 20%, transparent);
-  color: var(--yellow);
-  border: 2px solid var(--yellow);
-}
-
+.gradeB,
 .gradeC {
-  background: color-mix(in srgb, var(--yellow) 20%, transparent);
   color: var(--yellow);
-  border: 2px solid var(--yellow);
+  background: color-mix(in srgb, var(--yellow) 16%, transparent);
 }
 
 .gradeF {
-  background: color-mix(in srgb, var(--red) 20%, transparent);
   color: var(--red);
-  border: 2px solid var(--red);
+  background: color-mix(in srgb, var(--red) 16%, transparent);
+}
+
+.warningStack {
+  display: grid;
+  gap: 8px;
 }
 
 .warningItem {
-  padding: 0.75rem;
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
   border-radius: var(--radius-sm);
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
 }
 
 .warningCritical {
-  background: color-mix(in srgb, var(--red) 10%, transparent);
-  border: 1px solid var(--red);
-  color: var(--ink);
+  border-color: var(--red);
+  background: color-mix(in srgb, var(--red) 8%, transparent);
 }
 
 .warningModerate {
-  background: color-mix(in srgb, var(--yellow) 10%, transparent);
-  border: 1px solid var(--yellow);
-  color: var(--ink);
+  border-color: var(--yellow);
+  background: color-mix(in srgb, var(--yellow) 8%, transparent);
 }
 
 .warningInfo {
-  background: color-mix(in srgb, var(--accent) 10%, transparent);
-  border: 1px solid var(--accent);
+  border-color: var(--line-strong);
+  background: var(--surface-alt);
+}
+
+.warningRecommendation {
+  color: var(--secondary);
+  font-size: var(--text-xs);
+}
+
+.directiveGroup {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface-alt);
+  min-width: 0;
+}
+
+.directiveField {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.directiveLabel {
+  color: var(--secondary);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.tokenRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tagList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tagChip {
+  padding: 2px 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
   color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  overflow-wrap: anywhere;
+}
+
+.asn1Box {
+  margin: 0;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  line-height: 1.5;
+  white-space: pre;
+  overflow-x: auto;
 }

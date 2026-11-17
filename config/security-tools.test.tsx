@@ -6,6 +6,7 @@ import ToolPage, { generateMetadata, generateStaticParams } from "@/app/tools/[s
 import nextConfig from "../next.config";
 import { securityTools, securityLegacyRedirects } from "./security-tools";
 import { getTool, tools } from "./tools";
+import { extendedTools } from "./extended-tools";
 
 vi.mock("@/components/ToolWorkspace", () => ({ default: () => null }));
 afterEach(cleanup);
@@ -18,9 +19,10 @@ const expectedFields: Record<string, string[]> = {
   "hex-random-generator": ["bytes"], "secret-key-generator": ["keySize"],
 };
 describe("Security exact registry and route contracts", () => {
-  it("contains exactly 22 public tool identities without disturbing other registry IDs", () => {
+  it("contains 22 station identities plus the recategorised env-audit", () => {
     expect(securityTools.map(tool => tool.slug).sort()).toEqual(Object.keys(expectedFields).sort());
-    expect(tools.filter(tool => tool.category === "Security")).toEqual([...securityTools]);
+    expect(extendedTools.filter(tool => tool.category === "Security").map(tool => tool.id)).toEqual(["env-audit"]);
+    expect(tools.filter(tool => tool.category === "Security").map(tool => tool.id)).toEqual([...securityTools.map(tool => tool.id), "env-audit"]);
     expect(new Set(tools.map(tool => tool.id)).size).toBe(tools.length);
     expect(new Set(tools.map(tool => tool.slug)).size).toBe(tools.length);
     expect(new Set(securityTools.map(tool => tool.description)).size).toBe(22);
@@ -49,10 +51,17 @@ describe("Security exact registry and route contracts", () => {
     expect(getTool(source)).toBeUndefined();
     expect(await nextConfig.redirects!()).toContainEqual({ source: `/tools/${source}`, destination: `/tools/${destination}`, permanent: true });
   });
-  it("keeps hashes unwrapped and horizontally scrollable with theme/mobile/focus rules", () => {
+  it("uses the shared output, focus and responsive contracts", () => {
     const css = readFileSync("components/SecurityStation.module.css", "utf8");
-    expect(css).toContain("white-space: pre"); expect(css).toMatch(/overflow(?:-x)?: auto/);
-    expect(css).toContain("min-height: 44px"); expect(css).toContain(":focus-visible");
-    expect(css).toContain("var(--surface)"); expect(css).toContain("var(--ink)"); expect(css).toContain("max-width: 760px");
+    const shared = readFileSync("components/ui/ui.module.css", "utf8");
+    const tokens = readFileSync("app/styles/tokens.css", "utf8");
+    expect(css).toContain("var(--space-4)");
+    expect(css).not.toMatch(/#[0-9a-f]{3,8}/i);
+    expect(shared).toContain("white-space: pre-wrap");
+    expect(shared).toMatch(/overflow: auto/);
+    expect(shared).toContain("min-height: var(--control-h-md)");
+    expect(shared).toContain(":focus-visible");
+    expect(tokens).toContain("--surface");
+    expect(tokens).toContain("--ink");
   });
 });

@@ -2,8 +2,9 @@ import Link from "next/link";
 import { tools } from "@/config/tools";
 import DirectoryBrowser from "@/components/DirectoryBrowser";
 import StationGlyph from "@/components/StationGlyph";
+import { metadataForPage } from "@/config/site";
 
-export const metadata = { title: "All developer tools", description: "Browse Code Station's practical browser-first developer utilities." };
+export const metadata = metadataForPage("/tools", "All developer tools", "Browse Code Station's practical browser-first developer utilities.");
 
 export default async function ToolsPage({ searchParams }: { searchParams: Promise<{ category?: string }> }) {
   const { category } = await searchParams;

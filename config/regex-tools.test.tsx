@@ -32,7 +32,10 @@ describe("Regex metadata and contracts", () => {
     for (const link of within(screen.getByRole("navigation", { name: "Related tools" })).getAllByRole("link")) expect(getTool(link.getAttribute("href")!.replace("/tools/", ""))?.category).toBe("Regex");
   });
   it("has responsive, focus, touch, monospace and scrolling CSS safeguards", () => {
-    const css = readFileSync("components/RegexStation.module.css", "utf8");
-    for (const rule of ["minmax(0,1fr)", "min-height:44px", ":focus-visible", "var(--surface)", "var(--ink)", "max-width:640px", "white-space:pre", "overflow:auto", "ui-monospace"]) expect(css).toContain(rule);
+    const layout = readFileSync("components/RegexStation.module.css", "utf8");
+    for (const rule of ["@media", "minmax(0,1fr)", "min-height: 44px", "max-height: 320px", "var(--space-6)"]) expect(layout).toContain(rule);
+    // Focus, touch, monospace and scrolling rules come from the shared UI layer.
+    const shared = readFileSync("components/ui/ui.module.css", "utf8") + readFileSync("app/styles/tokens.css", "utf8");
+    for (const rule of [":focus-visible", "var(--surface)", "var(--ink)", "44px", "monospace", "overflow: auto", "white-space: pre-wrap"]) expect(shared).toContain(rule);
   });
 });

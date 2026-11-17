@@ -2,6 +2,10 @@
 
 import type { LocalField } from "@/config/local-contract";
 import type { SpreadsheetInfo, SpreadsheetValues } from "@/lib/tools/spreadsheet/types";
+import { Button } from "./ui/Button";
+import { Checkbox, Select, Textarea, TextInput } from "./ui/controls";
+import { Field, Hint } from "./ui/Field";
+import ui from "./ui/ui.module.css";
 import styles from "./SpreadsheetStation.module.css";
 
 type Props = {
@@ -18,12 +22,12 @@ function ColumnOrder({ field, headers, order, shared, onChange }: { field: Local
     if (target < 0 || target >= order.length) return;
     const next = [...order]; [next[index], next[target]] = [next[target], next[index]]; onChange(next);
   }
-  return <fieldset {...shared} tabIndex={-1} data-spreadsheet-field={field.name} className={styles.editor}>
-    <legend>{field.label}</legend>
-    <p className={styles.hint}>Use Move up/Move down or the ↑/↓ keys on a column to change its position.</p>
+  return <fieldset id={shared.id} aria-describedby={shared["aria-describedby"]} aria-invalid={shared["aria-invalid"]} tabIndex={-1} data-spreadsheet-field={field.name} className={`${ui.fieldset} ${styles.editor}`}>
+    <legend className={ui.legend}>{field.label}</legend>
+    <Hint>Use Move up/Move down or the ↑/↓ keys on a column to change its position.</Hint>
     <ol className={styles.order}>{order.map((raw, index) => { const column = Number(raw); return <li key={raw}>
-      <span tabIndex={0} className={styles.orderColumn} role="button" aria-label={`Reorder ${columnLabel(headers[column], column)}`} onKeyDown={event => { if (event.key === "ArrowUp" || event.key === "ArrowDown") { event.preventDefault(); move(index, event.key === "ArrowUp" ? -1 : 1); } }}>{columnLabel(headers[column], column)}</span>
-      <div className={styles.actions}><button type="button" className="button" disabled={index === 0} aria-label={`Move ${columnLabel(headers[column], column)} up`} onClick={() => move(index, -1)}>↑ Up</button><button type="button" className="button" disabled={index === order.length - 1} aria-label={`Move ${columnLabel(headers[column], column)} down`} onClick={() => move(index, 1)}>↓ Down</button></div>
+      <span tabIndex={0} className={`${ui.mono} ${styles.orderColumn}`} role="button" aria-label={`Reorder ${columnLabel(headers[column], column)}`} onKeyDown={event => { if (event.key === "ArrowUp" || event.key === "ArrowDown") { event.preventDefault(); move(index, event.key === "ArrowUp" ? -1 : 1); } }}>{columnLabel(headers[column], column)}</span>
+      <div className={ui.actions}><Button size="sm" disabled={index === 0} aria-label={`Move ${columnLabel(headers[column], column)} up`} onClick={() => move(index, -1)}>↑ Up</Button><Button size="sm" disabled={index === order.length - 1} aria-label={`Move ${columnLabel(headers[column], column)} down`} onClick={() => move(index, 1)}>↓ Down</Button></div>
     </li>; })}</ol>
   </fieldset>;
 }
@@ -40,15 +44,19 @@ export default function SpreadsheetControls({ id, fields, values, info, error, o
     if (field.name === "order") return <ColumnOrder key={field.name} field={field} headers={headers} order={Array.isArray(value) ? value.map(String) : headers.map((_, index) => String(index))} shared={shared} onChange={next => onChange(field.name, next)} />;
     if (field.name === "keys") {
       const keys = Array.isArray(value) ? value.map(String) : [];
-      return <fieldset {...shared} tabIndex={-1} data-spreadsheet-field={field.name} key={field.name} className={styles.editor}><legend>{field.label}</legend><p className={styles.hint}>No selected keys compares the whole row.</p>{headers.map((header, index) => <label className={styles.checkbox} key={index} htmlFor={`${shared.id}-${index}`}><input id={`${shared.id}-${index}`} name="keys" type="checkbox" checked={keys.includes(String(index))} aria-describedby={shared["aria-describedby"]} onChange={event => onChange("keys", event.target.checked ? [...keys, String(index)].sort((a, b) => Number(a) - Number(b)) : keys.filter(key => key !== String(index)))} />{columnLabel(header, index)}</label>)}</fieldset>;
+      return <fieldset id={shared.id} aria-describedby={shared["aria-describedby"]} aria-invalid={shared["aria-invalid"]} tabIndex={-1} data-spreadsheet-field={field.name} key={field.name} className={`${ui.fieldset} ${styles.editor}`}>
+        <legend className={ui.legend}>{field.label}</legend>
+        <Hint>No selected keys compares the whole row.</Hint>
+        <div className={styles.keys}>{headers.map((header, index) => <Checkbox key={index} id={`${shared.id}-${index}`} name="keys" label={columnLabel(header, index)} checked={keys.includes(String(index))} aria-describedby={shared["aria-describedby"]} onChange={event => onChange("keys", event.target.checked ? [...keys, String(index)].sort((a, b) => Number(a) - Number(b)) : keys.filter(key => key !== String(index)))} />)}</div>
+      </fieldset>;
     }
-    return <div key={field.name} className={styles.field}><label htmlFor={shared.id}>{field.label}</label>
-      {["file", "files", "textFile"].includes(field.name) || field.control === "file" ? <input {...inputProps} className={styles.input} type="file" accept={field.accept} multiple={field.name === "files"} onChange={event => onFiles(field.name, Array.from(event.target.files ?? []))} />
-        : field.name === "sheet" ? <select {...inputProps} className={styles.input} value={String(value)} onChange={event => onChange("sheet", event.target.value)}>{info?.sheetNames.map(name => <option key={name} value={name}>{name}</option>)}</select>
-          : field.name === "column" ? <select {...inputProps} className={styles.input} value={String(value)} onChange={event => onChange("column", event.target.value)}><option value="">Choose a column</option>{headers.map((header, index) => <option key={index} value={index}>{columnLabel(header, index)}</option>)}</select>
-            : field.control === "select" ? <select {...inputProps} className={styles.input} value={String(value)} onChange={event => onChange(field.name, event.target.value)}>{field.options?.map(option => <option key={option} value={option}>{option}</option>)}</select>
-              : field.control === "textarea" ? <textarea {...inputProps} className={`${styles.input} ${styles.textarea}`} rows={7} value={String(value)} spellCheck={false} autoCapitalize="off" onChange={event => onChange(field.name, event.target.value)} />
-                : <input {...inputProps} className={styles.input} type={field.control === "number" ? "number" : "text"} value={String(value)} min={field.min} max={field.max} onChange={event => onChange(field.name, event.target.value)} />}
-    </div>;
+    return <Field key={field.name} id={shared.id} label={field.label}>
+      {["file", "files", "textFile"].includes(field.name) || field.control === "file" ? <TextInput {...inputProps} type="file" accept={field.accept} multiple={field.name === "files"} onChange={event => onFiles(field.name, Array.from(event.target.files ?? []))} />
+        : field.name === "sheet" ? <Select {...inputProps} value={String(value)} onChange={event => onChange("sheet", event.target.value)}>{info?.sheetNames.map(name => <option key={name} value={name}>{name}</option>)}</Select>
+          : field.name === "column" ? <Select {...inputProps} value={String(value)} onChange={event => onChange("column", event.target.value)}><option value="">Choose a column</option>{headers.map((header, index) => <option key={index} value={index}>{columnLabel(header, index)}</option>)}</Select>
+            : field.control === "select" ? <Select {...inputProps} value={String(value)} onChange={event => onChange(field.name, event.target.value)}>{field.options?.map(option => <option key={option} value={option}>{option}</option>)}</Select>
+              : field.control === "textarea" ? <Textarea {...inputProps} className={ui.mono} rows={7} value={String(value)} spellCheck={false} autoCapitalize="off" onChange={event => onChange(field.name, event.target.value)} />
+                : <TextInput {...inputProps} type={field.control === "number" ? "number" : "text"} value={String(value)} min={field.min} max={field.max} onChange={event => onChange(field.name, event.target.value)} />}
+    </Field>;
   })}</div>;
 }

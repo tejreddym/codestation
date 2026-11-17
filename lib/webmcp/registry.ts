@@ -14,7 +14,7 @@ let initialized = false;
 export const LIST_TOOLS_MCP: WebMcpTool = {
   name: "codestation_list_tools",
   description:
-    "Discover and search available Code Station utilities (395+ tools across 25 developer stations) executable in-browser.",
+    "Discover and search available Code Station utilities (370+ tools across 29 developer stations) executable in-browser.",
   inputSchema: {
     type: "object",
     properties: {

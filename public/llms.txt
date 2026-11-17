@@ -1,0 +1,63 @@
+# Code Station
+
+> Code Station is a free, browser-first developer toolbox: 380 focused utilities across 30 stations for formatting, converting, generating, hashing, and inspecting data. Tools run locally in the browser with zero server uploads and no account required. Supported tools expose the browser-native WebMCP API (document.modelContext) so AI agents can discover and run them in the page.
+
+Canonical site: https://codestation.in
+Tool directory: https://codestation.in/tools
+Documentation: https://codestation.in/docs
+Privacy: https://codestation.in/privacy
+
+## Key stations
+
+- JSON & Data: https://codestation.in/stations/json-data
+- Encoding: https://codestation.in/stations/encoding
+- Security: https://codestation.in/stations/security
+- Text: https://codestation.in/stations/text
+- Date & Time: https://codestation.in/stations/date-time
+- Image: https://codestation.in/stations/image
+- Video: https://codestation.in/stations/video
+- PDF: https://codestation.in/stations/pdf
+- Audio: https://codestation.in/stations/audio
+- API: https://codestation.in/stations/api
+- Git & Version Control: https://codestation.in/stations/git
+- Compression: https://codestation.in/stations/compression
+- Code Generation: https://codestation.in/stations/code-generation
+- WebPKI & Advanced Cryptography: https://codestation.in/stations/crypto-pki
+- AI & Prompt Engineering: https://codestation.in/stations/ai-prompts
+
+## All stations
+
+https://codestation.in/stations/json-data
+https://codestation.in/stations/encoding
+https://codestation.in/stations/security
+https://codestation.in/stations/regex
+https://codestation.in/stations/date-time
+https://codestation.in/stations/text
+https://codestation.in/stations/cron
+https://codestation.in/stations/sql-database
+https://codestation.in/stations/web
+https://codestation.in/stations/api
+https://codestation.in/stations/image
+https://codestation.in/stations/spreadsheet
+https://codestation.in/stations/markdown
+https://codestation.in/stations/color-css
+https://codestation.in/stations/converters
+https://codestation.in/stations/pdf
+https://codestation.in/stations/qr-barcode
+https://codestation.in/stations/audio
+https://codestation.in/stations/video
+https://codestation.in/stations/code-generation
+https://codestation.in/stations/network-devops
+https://codestation.in/stations/frontend-css
+https://codestation.in/stations/developer-math
+https://codestation.in/stations/compression
+https://codestation.in/stations/crypto-pki
+https://codestation.in/stations/ai-prompts
+https://codestation.in/stations/policy-generators
+https://codestation.in/stations/git
+https://codestation.in/stations/finance-calculators
+https://codestation.in/stations/productivity
+
+## Privacy stance
+
+Inputs and outputs stay in the browser. Code Station does not upload files or text, does not proxy tool inputs through a server, and does not require an account. The explicit API Request Tester is a documented opt-in network exception; Markdown previews may load remote images. Code Station Pro is an optional local MCP server for AI agent clients, not a cloud processing service.

@@ -10,20 +10,19 @@ import RangeGenerator from "./RangeGenerator";
 import PasswordStrengthMeter from "./PasswordStrengthMeter";
 import RegexStation from "./RegexStation";
 import TextStation from "./TextStation";
+import { GeneratorShell, ToolWorkbenchShell } from "./ToolWorkbenchShell";
+import { Button } from "./ui/Button";
+import { Checkbox, CodeArea, Select, TextInput } from "./ui/controls";
+import { Field, Hint } from "./ui/Field";
+import { Panel } from "./ui/Panel";
+import { downloadBlob } from "./ui/useDownload";
+import { useCopy } from "./ui/useCopy";
+import ui from "./ui/ui.module.css";
 
 const examples: Partial<Record<ToolId, string>> = { "json-formatter": '{"station":"Code Station","private":true}', "json-validator": '{"valid": true}', "json-minifier": '{\n  "fast": true\n}', "json-to-yaml": '{"name":"Code Station","private":true}', "yaml-to-json": "name: Code Station\nprivate: true", "json-to-csv": '[{"name":"Ada","role":"Engineer"},{"name":"Lin","role":"Designer"}]', "csv-to-json": "name,role\nAda,Engineer\nLin,Designer", "json-diff": '{"version":1}', "json-schema-generator": '{"name":"Code Station","version":1}', "json-schema-validator": '{"name":"Code Station","version":1}', "jsonpath-tester": '{"users":[{"name":"Ada"},{"name":"Lin"}]}', "json-escape": "line 1\nline 2", "json-key-sorter": '{"z":1,"a":{"y":2,"b":3}}', "json-array-to-object": '[{"id":"a","value":1},{"id":"b","value":2}]', "json-object-to-array": '{"a":1,"b":2}', "jsonl-formatter": '{"id":1}\n{"id":2}', "jsonl-validator": '{"id":1}\nnot json', "json-to-jsonl": '[{"id":1},{"id":2}]', "jsonl-to-json": '{"id":1}\n{"id":2}', "json-structure-inspector": '{"user":{"name":"Ada"}}', "json-statistics-analyzer": '{"items":[1,2,3],"active":true}', "csv-formatter": "name,role\nAda,Engineer", "csv-validator": "name,role\nAda,Engineer", "csv-column-analyzer": "name,age\nAda,36\nLin,", "csv-delimiter-detector": "name\trole\nAda\tEngineer", "csv-to-tsv": "name,role\nAda,Engineer", "tsv-to-csv": "name\trole\nAda\tEngineer", "csv-to-markdown": "name,role\nAda,Engineer", "csv-to-html": "name,role\nAda,Engineer", "csv-cleaner": " name , role \n Ada , Engineer ", "csv-column-reorderer": "name,role\nAda,Engineer", "csv-row-filter": "name,role\nAda,Engineer\nLin,Designer", "csv-deduplicator": "name,role\nAda,Engineer\nAda,Engineer", "csv-transposer": "a,b\n1,2", "json-to-xml": '{"user":{"name":"Ada"}}', "xml-to-json": "<user><name>Ada</name></user>", "json-to-toml": '{"title":"Code Station","active":true}', "toml-to-json": "title = \"Code Station\"\nactive = true", "yaml-diff": "name: Code Station", "yaml-formatter": "name: Code Station\nactive: true", "yaml-validator": "name: Code Station\nactive: true", "xml-formatter": "<root><name>Ada</name></root>", "xml-validator": "<root><name>Ada</name></root>", "xml-minifier": "<root>\n  <name>Ada</name>\n</root>", base64: "Code Station", "url-encoder": "https://codestation.in/tools?mode=local", "jwt-decoder": "eyJhbGciOiJub25lIn0.eyJzdWIiOiJkZW1vIn0.signature", "html-encoder": "<section>Code Station</section>", "html-decoder": "&lt;section&gt;Code Station&lt;/section&gt;", "unicode-converter": "Code Station 🚀", "hex-converter": "Code Station", "sha-256": "Code Station", "sha-512": "Code Station", "random-string": "", "regex-tester": "Code Station\nCode Tools", "timestamp-converter": "1710000000", "text-counter": "Paste text here to count it.", "binary-encoder-decoder": "Code Station 🚀", "ascii-converter": "Code Station", "base32-encoder": "Code Station", "base32-decoder": "IJQXGZJTGIQGK3TB", "base58-encoder": "Code Station", "base58-decoder": "2NEpo7TZRRrL", "base64-url-encoder": "Code Station?local=true", "base64-url-decoder": "Q29kZSBTdGF0aW9uP2xvY2FsPXRydWU", "data-uri-encoder": "Code Station", "data-uri-decoder": "data:text/plain;charset=utf-8,Code%20Station", "html-entity-encoder": "<section>Code Station</section>", "html-entity-decoder": "&lt;section&gt;Code Station&lt;/section&gt;", "unicode-escape-encoder": "Code Station 🚀", "unicode-escape-decoder": "Code Station \\ud83d\\ude80", "url-component-encoder": "Code Station?local=true", "url-component-decoder": "Code%20Station%3Flocal%3Dtrue", "punycode-converter": "münich.example", "hexadecimal-encoder": "Code Station", "hexadecimal-decoder": "43 6f 64 65 20 53 74 61 74 69 6f 6e", "octal-converter": "Code Station" };
 const schemaExample = '{"type":"object","required":["name"],"properties":{"name":{"type":"string"}}}';
 
 /* ── Helpers ─────────────────────────────────────────────────── */
-
-function downloadResult(output: string, filename: string) {
-  const link = document.createElement("a");
-  const url = URL.createObjectURL(new Blob([output], { type: "text/plain;charset=utf-8" }));
-  link.href = url;
-  link.download = filename;
-  link.click();
-  URL.revokeObjectURL(url);
-}
 
 function fileExtension(toolId: string): string {
   if (toolId.includes("json") || toolId.includes("jsonl") || toolId === "csv-to-json" || toolId === "xml-to-json" || toolId === "toml-to-json" || toolId === "yaml-to-json") return ".json";
@@ -46,6 +45,7 @@ export default function ToolWorkbench({ toolId }: { toolId: ToolId }) {
   const [metadata, setMetadata] = useState("");
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
+  const { copy } = useCopy();
 
   /* Password Generator options */
   const [passwordLength, setPasswordLength] = useState(16);
@@ -499,10 +499,8 @@ export default function ToolWorkbench({ toolId }: { toolId: ToolId }) {
 
   const copyOutput = async () => {
     if (!output) return;
-    try {
-      await navigator.clipboard?.writeText(output);
-      setNotice("Copied to clipboard");
-    } catch { setNotice("Copy failed — select and copy manually"); }
+    const ok = await copy(output);
+    setNotice(ok ? "Copied to clipboard" : "Copy failed — select and copy manually");
   };
 
   const clear = () => { setInput(""); setOutput(""); setError(""); setMetadata(""); setNotice(""); setPasswordLength(16); setPasswordCount(1); setPasswordOptions({ upper: true, lower: true, numbers: true, symbols: true, excludeAmbiguous: true }); };
@@ -511,64 +509,207 @@ export default function ToolWorkbench({ toolId }: { toolId: ToolId }) {
 
   if (toolId === "password-generator") {
     const alphabetSize = [passwordOptions.upper ? 26 : 0, passwordOptions.lower ? 26 : 0, passwordOptions.numbers ? 10 : 0, passwordOptions.symbols ? 23 : 0].reduce((a, b) => a + b, 0) - (passwordOptions.excludeAmbiguous ? [passwordOptions.upper, passwordOptions.lower, passwordOptions.numbers].filter(Boolean).length * 2 : 0);
-    return <GeneratorLayout title="Password settings" output={output} error={error} metadata={metadata} onCopy={copyOutput} onDownload={() => downloadResult(output, "passwords.txt")} onClear={clear}><div className="option-grid"><label>Length<input type="number" min="4" max="128" value={passwordLength} onChange={(event) => setPasswordLength(Number(event.target.value))} /></label><label>Passwords<input type="number" min="1" max="20" value={passwordCount} onChange={(event) => setPasswordCount(Number(event.target.value))} /></label></div><PasswordStrengthMeter length={passwordLength} alphabetSize={Math.max(0, alphabetSize)} /><fieldset><legend>Include characters</legend><div className="check-grid">{(["upper", "lower", "numbers", "symbols"] as const).map((key) => <label key={key}><input type="checkbox" checked={passwordOptions[key]} onChange={(event) => setPasswordOptions({ ...passwordOptions, [key]: event.target.checked })} /> {key === "upper" ? "Uppercase" : key === "lower" ? "Lowercase" : key === "numbers" ? "Numbers" : "Symbols"}</label>)}<label><input type="checkbox" checked={passwordOptions.excludeAmbiguous} onChange={(event) => setPasswordOptions({ ...passwordOptions, excludeAmbiguous: event.target.checked })} /> Exclude ambiguous characters</label></div></fieldset><button className="button primary" onClick={() => run()}>Generate passwords</button></GeneratorLayout>;
+    return <GeneratorShell title="Password settings" output={output} error={error} metadata={metadata} onCopy={copyOutput} onDownload={() => downloadBlob(output, "passwords.txt")} onClear={clear}>
+      <div className={ui.optionGrid}>
+        <Field id="password-length" label="Length">
+          <TextInput id="password-length" type="number" min="4" max="128" value={passwordLength} onChange={(event) => setPasswordLength(Number(event.target.value))} />
+        </Field>
+        <Field id="password-count" label="Passwords">
+          <TextInput id="password-count" type="number" min="1" max="20" value={passwordCount} onChange={(event) => setPasswordCount(Number(event.target.value))} />
+        </Field>
+      </div>
+      <PasswordStrengthMeter length={passwordLength} alphabetSize={Math.max(0, alphabetSize)} />
+      <fieldset className={ui.fieldset}>
+        <legend className={ui.legend}>Include characters</legend>
+        <div className={ui.checkGrid}>
+          {(["upper", "lower", "numbers", "symbols"] as const).map((key) => (
+            <Checkbox key={key} id={`password-charset-${key}`} label={key === "upper" ? "Uppercase" : key === "lower" ? "Lowercase" : key === "numbers" ? "Numbers" : "Symbols"} checked={passwordOptions[key]} onChange={(event) => setPasswordOptions({ ...passwordOptions, [key]: event.target.checked })} />
+          ))}
+          <Checkbox id="password-exclude-ambiguous" label="Exclude ambiguous characters" checked={passwordOptions.excludeAmbiguous} onChange={(event) => setPasswordOptions({ ...passwordOptions, excludeAmbiguous: event.target.checked })} />
+        </div>
+      </fieldset>
+      <Button variant="primary" onClick={() => run()}>Generate passwords</Button>
+    </GeneratorShell>;
   }
 
   /* ── UUID Generator layout ─────────────────────────────── */
 
-  if (toolId === "uuid-generator") return <GeneratorLayout title="UUID v4 settings" output={output} error={error} metadata={metadata} onCopy={copyOutput} onDownload={() => downloadResult(output, "uuids.txt")} onClear={clear}><label className="single-option">UUIDs to generate<input type="number" min="1" max="50" value={uuidCount} onChange={(event) => setUuidCount(Number(event.target.value))} /></label><p className="muted">Cryptographically secure RFC 4122 version 4 UUIDs. One UUID is generated per line.</p><button className="button primary" onClick={() => run()}>Generate UUIDs</button></GeneratorLayout>;
+  if (toolId === "uuid-generator") return <GeneratorShell title="UUID v4 settings" output={output} error={error} metadata={metadata} onCopy={copyOutput} onDownload={() => downloadBlob(output, "uuids.txt")} onClear={clear}>
+    <Field id="uuid-count" label="UUIDs to generate">
+      <TextInput id="uuid-count" type="number" min="1" max="50" value={uuidCount} onChange={(event) => setUuidCount(Number(event.target.value))} />
+    </Field>
+    <Hint>Cryptographically secure RFC 4122 version 4 UUIDs. One UUID is generated per line.</Hint>
+    <Button variant="primary" onClick={() => run()}>Generate UUIDs</Button>
+  </GeneratorShell>;
 
   /* ── ULID Generator layout ─────────────────────────────── */
 
-  if (toolId === "ulid-generator") return <GeneratorLayout title="ULID settings" output={output} error={error} metadata={metadata} onCopy={copyOutput} onDownload={() => downloadResult(output, "ulids.txt")} onClear={clear}><label className="single-option">ULIDs to generate<input type="number" min="1" max="50" value={ulidCount} onChange={(event) => setUlidCount(Number(event.target.value))} /></label><p className="muted">Sortable ULIDs with secure randomness generated locally.</p><button className="button primary" onClick={() => run()}>Generate ULIDs</button></GeneratorLayout>;
+  if (toolId === "ulid-generator") return <GeneratorShell title="ULID settings" output={output} error={error} metadata={metadata} onCopy={copyOutput} onDownload={() => downloadBlob(output, "ulids.txt")} onClear={clear}>
+    <Field id="ulid-count" label="ULIDs to generate">
+      <TextInput id="ulid-count" type="number" min="1" max="50" value={ulidCount} onChange={(event) => setUlidCount(Number(event.target.value))} />
+    </Field>
+    <Hint>Sortable ULIDs with secure randomness generated locally.</Hint>
+    <Button variant="primary" onClick={() => run()}>Generate ULIDs</Button>
+  </GeneratorShell>;
 
   /* ── NanoID Generator layout ───────────────────────────── */
 
-  if (toolId === "nanoid-generator") return <GeneratorLayout title="NanoID settings" output={output} error={error} metadata={metadata} onCopy={copyOutput} onDownload={() => downloadResult(output, "nanoids.txt")} onClear={clear}><div className="option-grid"><label>Length<input type="number" min="1" max="128" value={nanoidLength} onChange={(event) => setNanoidLength(Number(event.target.value))} /></label><label>Count<input type="number" min="1" max="50" value={nanoidCount} onChange={(event) => setNanoidCount(Number(event.target.value))} /></label></div><p className="muted">Compact secure random identifiers generated locally.</p><button className="button primary" onClick={() => run()}>Generate NanoIDs</button></GeneratorLayout>;
+  if (toolId === "nanoid-generator") return <GeneratorShell title="NanoID settings" output={output} error={error} metadata={metadata} onCopy={copyOutput} onDownload={() => downloadBlob(output, "nanoids.txt")} onClear={clear}>
+    <div className={ui.optionGrid}>
+      <Field id="nanoid-length" label="Length">
+        <TextInput id="nanoid-length" type="number" min="1" max="128" value={nanoidLength} onChange={(event) => setNanoidLength(Number(event.target.value))} />
+      </Field>
+      <Field id="nanoid-count" label="Count">
+        <TextInput id="nanoid-count" type="number" min="1" max="50" value={nanoidCount} onChange={(event) => setNanoidCount(Number(event.target.value))} />
+      </Field>
+    </div>
+    <Hint>Compact secure random identifiers generated locally.</Hint>
+    <Button variant="primary" onClick={() => run()}>Generate NanoIDs</Button>
+  </GeneratorShell>;
 
   /* ── Render per-tool options panel ──────────────────────── */
 
   const renderOptions = () => {
     /* JSON Formatter options */
-    if (toolId === "json-formatter") return <fieldset><legend>Formatting options</legend><div className="option-grid"><label>Indent size<select value={indentSize} onChange={(e) => setIndentSize(Number(e.target.value))}><option value="2">2</option><option value="4">4</option><option value="8">8</option></select></label><label>Indent style<select value={indentStyle} onChange={(e) => setIndentStyle(e.target.value as "spaces" | "tabs")}><option value="spaces">Spaces</option><option value="tabs">Tabs</option></select></label></div><div className="check-grid"><label><input type="checkbox" checked={sortKeys} onChange={(e) => setSortKeys(e.target.checked)} /> Sort keys alphabetically</label></div></fieldset>;
+    if (toolId === "json-formatter") return <fieldset className={ui.fieldset}>
+      <legend className={ui.legend}>Formatting options</legend>
+      <div className={ui.optionGrid}>
+        <Field id="json-indent-size" label="Indent size">
+          <Select id="json-indent-size" value={indentSize} onChange={(e) => setIndentSize(Number(e.target.value))}><option value="2">2</option><option value="4">4</option><option value="8">8</option></Select>
+        </Field>
+        <Field id="json-indent-style" label="Indent style">
+          <Select id="json-indent-style" value={indentStyle} onChange={(e) => setIndentStyle(e.target.value as "spaces" | "tabs")}><option value="spaces">Spaces</option><option value="tabs">Tabs</option></Select>
+        </Field>
+      </div>
+      <div className={ui.checkGrid}>
+        <Checkbox label="Sort keys alphabetically" checked={sortKeys} onChange={(e) => setSortKeys(e.target.checked)} />
+      </div>
+    </fieldset>;
 
     /* JSON Key Sorter */
-    if (toolId === "json-key-sorter") return <fieldset><legend>Sort options</legend><div className="option-grid"><label>Direction<select value={sortDirection} onChange={(e) => setSortDirection(e.target.value as "asc" | "desc")}><option value="asc">Ascending (A→Z)</option><option value="desc">Descending (Z→A)</option></select></label></div></fieldset>;
+    if (toolId === "json-key-sorter") return <fieldset className={ui.fieldset}>
+      <legend className={ui.legend}>Sort options</legend>
+      <div className={ui.optionGrid}>
+        <Field id="json-sort-direction" label="Direction">
+          <Select id="json-sort-direction" value={sortDirection} onChange={(e) => setSortDirection(e.target.value as "asc" | "desc")}><option value="asc">Ascending (A→Z)</option><option value="desc">Descending (Z→A)</option></Select>
+        </Field>
+      </div>
+    </fieldset>;
 
     /* JSON Array to Object */
-    if (toolId === "json-array-to-object") return <fieldset><legend>Key field</legend><div className="option-grid"><label>Object key property<input value={arrayKey} onChange={(e) => setArrayKey(e.target.value)} placeholder="id" /></label></div></fieldset>;
+    if (toolId === "json-array-to-object") return <fieldset className={ui.fieldset}>
+      <legend className={ui.legend}>Key field</legend>
+      <div className={ui.optionGrid}>
+        <Field id="json-array-key" label="Object key property">
+          <TextInput id="json-array-key" value={arrayKey} onChange={(e) => setArrayKey(e.target.value)} placeholder="id" />
+        </Field>
+      </div>
+    </fieldset>;
 
     /* JSON to XML root name */
-    if (toolId === "json-to-xml") return <fieldset><legend>XML options</legend><div className="option-grid"><label>Root element name<input value={xmlRootName} onChange={(e) => setXmlRootName(e.target.value)} placeholder="root" /></label></div></fieldset>;
+    if (toolId === "json-to-xml") return <fieldset className={ui.fieldset}>
+      <legend className={ui.legend}>XML options</legend>
+      <div className={ui.optionGrid}>
+        <Field id="xml-root-name" label="Root element name">
+          <TextInput id="xml-root-name" value={xmlRootName} onChange={(e) => setXmlRootName(e.target.value)} placeholder="root" />
+        </Field>
+      </div>
+    </fieldset>;
 
     /* CSV tools options */
     if (["csv-formatter", "csv-validator", "csv-column-analyzer", "csv-cleaner", "csv-column-reorderer", "csv-deduplicator", "csv-transposer", "csv-to-tsv", "csv-to-markdown", "csv-to-html", "csv-to-json"].includes(toolId)) {
-      return <fieldset><legend>CSV options</legend><div className="option-grid"><label>Delimiter<select value={csvDelimiter} onChange={(e) => setCsvDelimiter(e.target.value)}><option value=",">Comma (,)</option><option value=";">Semicolon (;)</option><option value={"\t"}>Tab</option><option value="|">Pipe (|)</option></select></label></div><div className="check-grid"><label><input type="checkbox" checked={csvHasHeaders} onChange={(e) => setCsvHasHeaders(e.target.checked)} /> First row is header</label><label><input type="checkbox" checked={csvTrim} onChange={(e) => setCsvTrim(e.target.checked)} /> Trim whitespace</label></div></fieldset>;
+      return <fieldset className={ui.fieldset}>
+        <legend className={ui.legend}>CSV options</legend>
+        <div className={ui.optionGrid}>
+          <Field id="csv-delimiter" label="Delimiter">
+            <Select id="csv-delimiter" value={csvDelimiter} onChange={(e) => setCsvDelimiter(e.target.value)}><option value=",">Comma (,)</option><option value=";">Semicolon (;)</option><option value={"\t"}>Tab</option><option value="|">Pipe (|)</option></Select>
+          </Field>
+        </div>
+        <div className={ui.checkGrid}>
+          <Checkbox label="First row is header" checked={csvHasHeaders} onChange={(e) => setCsvHasHeaders(e.target.checked)} />
+          <Checkbox label="Trim whitespace" checked={csvTrim} onChange={(e) => setCsvTrim(e.target.checked)} />
+        </div>
+      </fieldset>;
     }
 
     /* CSV Row Filter */
-    if (toolId === "csv-row-filter") return <fieldset><legend>Filter options</legend><div className="option-grid"><label>Column<input value={filterColumn} onChange={(e) => setFilterColumn(e.target.value)} placeholder="Column name" /></label><label>Operator<select value={filterOperator} onChange={(e) => setFilterOperator(e.target.value as typeof filterOperator)}><option value="equals">Equals</option><option value="contains">Contains</option><option value="starts">Starts with</option><option value="ends">Ends with</option></select></label><label>Value<input value={filterValue} onChange={(e) => setFilterValue(e.target.value)} placeholder="Filter value" /></label></div></fieldset>;
+    if (toolId === "csv-row-filter") return <fieldset className={ui.fieldset}>
+      <legend className={ui.legend}>Filter options</legend>
+      <div className={ui.optionGrid}>
+        <Field id="csv-filter-column" label="Column">
+          <TextInput id="csv-filter-column" value={filterColumn} onChange={(e) => setFilterColumn(e.target.value)} placeholder="Column name" />
+        </Field>
+        <Field id="csv-filter-operator" label="Operator">
+          <Select id="csv-filter-operator" value={filterOperator} onChange={(e) => setFilterOperator(e.target.value as typeof filterOperator)}><option value="equals">Equals</option><option value="contains">Contains</option><option value="starts">Starts with</option><option value="ends">Ends with</option></Select>
+        </Field>
+        <Field id="csv-filter-value" label="Value">
+          <TextInput id="csv-filter-value" value={filterValue} onChange={(e) => setFilterValue(e.target.value)} placeholder="Filter value" />
+        </Field>
+      </div>
+    </fieldset>;
 
     /* JSONPath Tester */
-    if (toolId === "jsonpath-tester") return <div className="option-grid regex-options"><label>JSONPath expression<input value={jsonPath} onChange={(event) => setJsonPath(event.target.value)} placeholder="$.users[*].name" /></label></div>;
+    if (toolId === "jsonpath-tester") return <div className={ui.optionGrid}>
+      <Field id="jsonpath-expression" label="JSONPath expression">
+        <TextInput id="jsonpath-expression" value={jsonPath} onChange={(event) => setJsonPath(event.target.value)} placeholder="$.users[*].name" />
+      </Field>
+    </div>;
 
     /* Checksum Generator algorithm selection */
-    if (toolId === "checksum-generator") return <fieldset><legend>Algorithm</legend><div className="option-grid"><label>Hash algorithm<select value={checksumAlgorithm} onChange={(e) => setChecksumAlgorithm(e.target.value as typeof checksumAlgorithm)}><option value="SHA-256">SHA-256</option><option value="SHA-384">SHA-384</option><option value="SHA-512">SHA-512</option></select></label></div></fieldset>;
+    if (toolId === "checksum-generator") return <fieldset className={ui.fieldset}>
+      <legend className={ui.legend}>Algorithm</legend>
+      <div className={ui.optionGrid}>
+        <Field id="checksum-algorithm" label="Hash algorithm">
+          <Select id="checksum-algorithm" value={checksumAlgorithm} onChange={(e) => setChecksumAlgorithm(e.target.value as typeof checksumAlgorithm)}><option value="SHA-256">SHA-256</option><option value="SHA-384">SHA-384</option><option value="SHA-512">SHA-512</option></Select>
+        </Field>
+      </div>
+    </fieldset>;
 
     /* Secure Token / Hex Random / Secret Key length */
-    if (["secure-token-generator", "hex-random-generator", "secret-key-generator", "random-string"].includes(toolId)) return <fieldset><legend>Options</legend><div className="option-grid"><label>Length<input type="number" min="1" max="512" value={tokenLength} onChange={(e) => setTokenLength(Number(e.target.value))} /></label>{toolId === "secure-token-generator" && <label>Encoding<select value={tokenEncoding} onChange={(e) => setTokenEncoding(e.target.value as typeof tokenEncoding)}><option value="base64url">Base64URL</option><option value="hex">Hexadecimal</option></select></label>}</div></fieldset>;
+    if (["secure-token-generator", "hex-random-generator", "secret-key-generator", "random-string"].includes(toolId)) return <fieldset className={ui.fieldset}>
+      <legend className={ui.legend}>Options</legend>
+      <div className={ui.optionGrid}>
+        <Field id="token-length" label="Length">
+          <TextInput id="token-length" type="number" min="1" max="512" value={tokenLength} onChange={(e) => setTokenLength(Number(e.target.value))} />
+        </Field>
+        {toolId === "secure-token-generator" && <Field id="token-encoding" label="Encoding">
+          <Select id="token-encoding" value={tokenEncoding} onChange={(e) => setTokenEncoding(e.target.value as typeof tokenEncoding)}><option value="base64url">Base64URL</option><option value="hex">Hexadecimal</option></Select>
+        </Field>}
+      </div>
+    </fieldset>;
 
     /* HMAC options */
-    if (toolId === "hmac-generator") return <div className="option-grid regex-options"><label>Secret<input type="password" value={secondaryInput} onChange={(event) => setSecondaryInput(event.target.value)} placeholder="HMAC secret key" /></label><label>Algorithm<select value={algorithm} onChange={(event) => setAlgorithm(event.target.value)}><option>SHA-256</option><option>SHA-384</option><option>SHA-512</option></select></label></div>;
+    if (toolId === "hmac-generator") return <div className={ui.optionGrid}>
+      <Field id="hmac-secret" label="Secret">
+        <TextInput id="hmac-secret" type="password" value={secondaryInput} onChange={(event) => setSecondaryInput(event.target.value)} placeholder="HMAC secret key" />
+      </Field>
+      <Field id="hmac-algorithm" label="Algorithm">
+        <Select id="hmac-algorithm" value={algorithm} onChange={(event) => setAlgorithm(event.target.value)}><option>SHA-256</option><option>SHA-384</option><option>SHA-512</option></Select>
+      </Field>
+    </div>;
 
     /* Hash Compare */
-    if (toolId === "hash-compare") return <div className="option-grid regex-options"><label>Compare hash<input value={secondaryInput} onChange={(event) => setSecondaryInput(event.target.value)} placeholder="Expected hash" /></label></div>;
+    if (toolId === "hash-compare") return <div className={ui.optionGrid}>
+      <Field id="hash-compare-value" label="Compare hash">
+        <TextInput id="hash-compare-value" value={secondaryInput} onChange={(event) => setSecondaryInput(event.target.value)} placeholder="Expected hash" />
+      </Field>
+    </div>;
 
     /* File Hash Generator */
-    if (toolId === "file-hash-generator") return <div className="option-grid regex-options"><label>File<input type="file" onChange={(event) => setSelectedFile(event.target.files?.[0] ?? null)} /></label><label>Algorithm<select value={algorithm} onChange={(event) => setAlgorithm(event.target.value)}><option>SHA-256</option><option>SHA-384</option><option>SHA-512</option></select></label>{selectedFile && <p className="muted">File: {selectedFile.name} · {(selectedFile.size / 1024).toFixed(1)} KB</p>}</div>;
+    if (toolId === "file-hash-generator") return <div className={ui.optionGrid}>
+      <Field id="file-hash-file" label="File">
+        <TextInput id="file-hash-file" type="file" onChange={(event) => setSelectedFile(event.target.files?.[0] ?? null)} />
+      </Field>
+      <Field id="file-hash-algorithm" label="Algorithm">
+        <Select id="file-hash-algorithm" value={algorithm} onChange={(event) => setAlgorithm(event.target.value)}><option>SHA-256</option><option>SHA-384</option><option>SHA-512</option></Select>
+      </Field>
+      {selectedFile && <Hint>File: {selectedFile.name} · {(selectedFile.size / 1024).toFixed(1)} KB</Hint>}
+    </div>;
 
     /* Diff / Schema secondary input */
-    if (["json-diff", "yaml-diff"].includes(toolId) || toolId === "json-schema-validator") return <div className="panel diff-input"><div className="panel-head">{toolId === "json-schema-validator" ? "JSON Schema" : "Compare with"}</div><textarea value={secondaryInput} onChange={(event) => setSecondaryInput(event.target.value)} aria-label={toolId === "json-schema-validator" ? "JSON Schema" : "Comparison input"} /></div>;
+    if (["json-diff", "yaml-diff"].includes(toolId) || toolId === "json-schema-validator") return <Panel title={toolId === "json-schema-validator" ? "JSON Schema" : "Compare with"}>
+      <CodeArea className={ui.codeAreaCompact} value={secondaryInput} onChange={(event) => setSecondaryInput(event.target.value)} aria-label={toolId === "json-schema-validator" ? "JSON Schema" : "Comparison input"} />
+    </Panel>;
 
     return null;
   };
@@ -581,48 +722,34 @@ export default function ToolWorkbench({ toolId }: { toolId: ToolId }) {
 
   /* ── Render ─────────────────────────────────────────────── */
 
-  return <div>
-    {pair && <div className="direction-switch"><span>{toolMeta?.inputFormat} → {toolMeta?.outputFormat}</span><a className="button" href={`/tools/${pair.slug}`}>⇄ Switch to {pair.name}</a></div>}
-    {renderOptions()}
-    <div className="tool-layout">
-      <div className="panel">
-        <div className="panel-head"><span>Input</span><button className="button" onClick={() => setInput(examples[toolId] ?? "")}>Example</button></div>
-        <textarea value={input} onChange={(event) => setInput(event.target.value)} placeholder="Paste input here to begin." aria-label="Tool input" />
-      </div>
-      <div className="panel">
-        <div className="panel-head"><span>Output</span><span><button className="button" onClick={copyOutput} disabled={!output}>Copy</button> <button className="button" onClick={() => downloadResult(output, `${toolId}${fileExtension(toolId)}`)} disabled={!output}>Download</button></span></div>
-        <div className="output" aria-live="polite">{output || "Your result will appear here."}</div>
-      </div>
-    </div>
-    {metadata && <p className="muted" aria-live="polite">{metadata}</p>}
-    <div className="actions">
-      <button className="button primary" onClick={() => run()} disabled={busy}>{busy ? "Processing…" : label}</button>
-      {["base64", "url-encoder", "unicode-converter", "hex-converter", "binary-encoder-decoder", "ascii-converter", "punycode-converter", "octal-converter"].includes(toolId) && <button className="button" onClick={() => run("secondary")} disabled={busy}>Decode</button>}
-      {toolId === "json-escape" && <button className="button" onClick={() => run("secondary")} disabled={busy}>Unescape</button>}
-      <button className="button" onClick={clear}>Clear</button>
-    </div>
-    {error && <div className="error" role="alert">{error}</div>}
-    {notice && <div className="muted" role="status">{notice}</div>}
-    <p className="privacy">↳ Runs locally in your browser. Nothing is sent to Code Station.</p>
-  </div>;
-}
+  const secondaryLabel = ["base64", "url-encoder", "unicode-converter", "hex-converter", "binary-encoder-decoder", "ascii-converter", "punycode-converter", "octal-converter"].includes(toolId)
+    ? "Decode"
+    : toolId === "json-escape"
+      ? "Unescape"
+      : undefined;
 
-/* ── Generator Layout ────────────────────────────────────────── */
-
-function GeneratorLayout({ title, output, error, metadata, onCopy, onDownload, onClear, children }: { title: string; output: string; error: string; metadata?: string; onCopy: () => void; onDownload: () => void; onClear: () => void; children: React.ReactNode }) {
-  return <div className="generator-layout">
-    <div className="panel generator-options">
-      <div className="panel-head"><span>{title}</span><button className="button" onClick={onClear}>Reset</button></div>
-      {children}
-    </div>
-    <div className="panel">
-      <div className="panel-head"><span>Generated output</span><span><button className="button" onClick={onCopy} disabled={!output}>Copy</button> <button className="button" onClick={onDownload} disabled={!output}>Download</button></span></div>
-      <div className="output generator-output" aria-live="polite">{output || "Configure the options and generate a result."}</div>
-    </div>
-    {metadata && <p className="muted" aria-live="polite">{metadata}</p>}
-    {error && <div className="error" role="alert">{error}</div>}
-    <p className="privacy">↳ Generated locally with secure browser randomness. Nothing is sent to Code Station.</p>
-  </div>;
+  return <ToolWorkbenchShell
+    pair={pair ? { slug: pair.slug, name: pair.name } : undefined}
+    direction={pair ? <>{toolMeta?.inputFormat} → {toolMeta?.outputFormat}</> : undefined}
+    options={renderOptions()}
+    input={input}
+    onInputChange={setInput}
+    onLoadExample={() => setInput(examples[toolId] ?? "")}
+    output={output}
+    outputEmpty="Your result will appear here."
+    onCopy={copyOutput}
+    onDownload={() => downloadBlob(output, `${toolId}${fileExtension(toolId)}`)}
+    primaryLabel={label}
+    onPrimary={() => run()}
+    busy={busy}
+    secondaryLabel={secondaryLabel}
+    onSecondary={secondaryLabel ? () => run("secondary") : undefined}
+    onClear={clear}
+    metadata={metadata}
+    error={error}
+    notice={notice}
+    privacy="↳ Runs locally in your browser. Nothing is sent to Code Station."
+  />;
 }
 
 function formatTimestampInput(input: string) {

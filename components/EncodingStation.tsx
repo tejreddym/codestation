@@ -1,10 +1,20 @@
 "use client";
 import { useToolHandoff } from "./WorkbenchProvider";
 
-import Link from "next/link";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { getEncodingDefinition, type EncodingDefinition, type EncodingInputField, type EncodingToolId } from "@/config/encoding-tools";
 import type { EncodingInputs, EncodingResult } from "@/lib/tools/encoding/types";
+import { Button, ButtonLink } from "./ui/Button";
+import { Callout } from "./ui/Callout";
+import { TextInput, Textarea } from "./ui/controls";
+import { EmptyState } from "./ui/EmptyState";
+import { Field } from "./ui/Field";
+import { Panel } from "./ui/Panel";
+import { PrivacyNote } from "./ui/PrivacyNote";
+import { StatusLine } from "./ui/StatusLine";
+import { ToolLayout } from "./ui/ToolLayout";
+import { useCopy } from "./ui/useCopy";
+import ui from "./ui/ui.module.css";
 import styles from "./EncodingStation.module.css";
 
 type InputError = { message: string; fields: string[] };
@@ -19,6 +29,7 @@ function Station({ definition }: { definition: EncodingDefinition }) {
   const [copyError, setCopyError] = useState("");
   const [busy, setBusy] = useState(false);
   const revision = useRef(0);
+  const { copy: copyText } = useCopy();
   const processing = useRef<AbortController | null>(null);
   const paired = definition.pairedTool ? getEncodingDefinition(definition.pairedTool) : undefined;
   const isJwt = definition.slug === "jwt-decoder";
@@ -89,13 +100,10 @@ function Station({ definition }: { definition: EncodingDefinition }) {
     const currentRevision = revision.current;
     setNotice("");
     setCopyError("");
-    try {
-      if (!navigator.clipboard?.writeText) throw new Error("Clipboard unavailable");
-      await navigator.clipboard.writeText(value);
-      if (currentRevision === revision.current) setNotice(`${label} copied.`);
-    } catch {
-      if (currentRevision === revision.current) setCopyError("Could not copy. Select the result and copy it manually.");
-    }
+    const ok = await copyText(value);
+    if (currentRevision !== revision.current) return;
+    if (ok) setNotice(`${label} copied.`);
+    else setCopyError("Could not copy. Select the result and copy it manually.");
   }
 
   function fieldControl(field: EncodingInputField) {
@@ -104,52 +112,66 @@ function Station({ definition }: { definition: EncodingDefinition }) {
     const describedBy = [field.hint ? `${id}-hint` : "", invalid ? `${scope}-error` : ""].filter(Boolean).join(" ") || undefined;
     const common = {
       id, name: field.name, value: inputs[field.name] ?? "", placeholder: field.placeholder,
-      "aria-invalid": invalid, "aria-describedby": describedBy,
+      "aria-invalid": invalid || undefined, "aria-describedby": describedBy,
       onChange: (event: { target: { value: string } }) => edit(field.name, event.target.value),
-      spellCheck: false, autoComplete: "off", autoCapitalize: "off",
+      spellCheck: false, autoComplete: "off", autoCapitalize: "off" as const,
     };
-    return <div className={styles.field} key={field.name}>
-      <label htmlFor={id}>{field.label}</label>
-      {field.control === "textarea" ? <textarea {...common} className={`${styles.control} ${styles.editor}`} />
-        : <input {...common} className={styles.control} type="text" />}
-      {field.hint && <p id={`${id}-hint`} className={styles.hint}>{field.hint}</p>}
-    </div>;
+    return <Field key={field.name} id={id} label={field.label} hint={field.hint}>
+      {field.control === "textarea" ? <Textarea {...common} /> : <TextInput {...common} type="text" />}
+    </Field>;
   }
 
   return <div className={styles.station}>
-    {paired && <nav className={styles.direction} aria-label="Conversion direction">
-      <span><strong>{definition.inputFormat}</strong> <span aria-hidden="true">→</span> <strong>{definition.outputFormat}</strong></span>
-      <Link className={styles.reverseLink} href={`/tools/${paired.slug}`}>Switch to {paired.name} <span aria-hidden="true">↔</span></Link>
+    {paired && <nav className={`${ui.pair} ${styles.direction}`} aria-label="Conversion direction">
+      <span className={ui.pairLabel}><strong>{definition.inputFormat}</strong> <span aria-hidden="true">→</span> <strong>{definition.outputFormat}</strong></span>
+      <ButtonLink href={`/tools/${paired.slug}`} size="sm" variant="ghost" aria-label={`Switch to ${paired.name}`}>Switch to {paired.name} <span aria-hidden="true">↔</span></ButtonLink>
     </nav>}
-    {isJwt && <p className={styles.jwtNote}>{contract.notes[0]}</p>}
-    <div className={styles.layout}>
-      <form className={styles.panel} onSubmit={run} noValidate aria-labelledby={`${scope}-input-heading`}>
-        <div className={styles.panelHead}><h2 id={`${scope}-input-heading`}>Input</h2><span className={styles.format}>Accepts {contract.acceptedFormat}</span></div>
-        <div className={styles.fields}>{contract.fields.map(fieldControl)}</div>
-        {error && <p className={styles.error} id={`${scope}-error`} role="alert">{error.message}</p>}
-        <div className={styles.actions}>
-          <button className={`${styles.button} ${styles.primary}`} type="submit" disabled={busy} aria-busy={busy}>{busy ? "Processing…" : contract.action}</button>
-          <button className={styles.button} type="button" onClick={example}>Load example</button>
-          <button className={styles.button} type="button" onClick={clear}>Clear</button>
-        </div>
-      </form>
-      <section className={styles.panel} aria-labelledby={`${scope}-output-heading`} aria-busy={busy}>
-        <div className={styles.panelHead}>
-          <h2 id={`${scope}-output-heading`}>{contract.outputLabel}</h2>
-          {result && !result.parts && <button className={styles.button} type="button" onClick={() => copy(result.text, "Result")}>Copy</button>}
-        </div>
+    {isJwt && <Callout kind="warning">{contract.notes[0]}</Callout>}
+    <ToolLayout kind="form" className={styles.layout}>
+      <Panel
+        title="Input"
+        headingId={`${scope}-input-heading`}
+        actions={<span className={styles.format}>Accepts {contract.acceptedFormat}</span>}
+        padded
+      >
+        <form onSubmit={run} noValidate aria-labelledby={`${scope}-input-heading`}>
+          <div className={styles.fields}>{contract.fields.map(fieldControl)}</div>
+          {error && <Callout kind="error" id={`${scope}-error`} className={styles.alert}>{error.message}</Callout>}
+          <div className={ui.actions}>
+            <Button type="submit" variant="primary" disabled={busy} aria-busy={busy}>{busy ? "Processing…" : contract.action}</Button>
+            <Button onClick={example}>Load example</Button>
+            <Button onClick={clear}>Clear</Button>
+          </div>
+        </form>
+      </Panel>
+      <Panel
+        title={contract.outputLabel}
+        headingId={`${scope}-output-heading`}
+        aria-busy={busy || undefined}
+        actions={result && !result.parts
+          ? <Button size="sm" onClick={() => copy(result.text, "Result")}>Copy</Button>
+          : undefined}
+        padded
+      >
         {result ? <div className={styles.result}>
-          {result.parts ? result.parts.map((part, index) => <section className={styles.part} key={part.label} aria-labelledby={`${scope}-part-${index}`}>
-            <div className={styles.partHead}><h3 id={`${scope}-part-${index}`}>{part.label}</h3><button className={styles.button} type="button" onClick={() => copy(part.value, part.label)}>Copy {part.label}</button></div>
-            <pre className={`${styles.output} ${styles.partOutput}`} tabIndex={0} aria-label={part.label}>{part.value}</pre>
-          </section>) : <pre className={styles.output} tabIndex={0} aria-label={contract.outputLabel}>{result.text}</pre>}
-        </div> : <p className={styles.empty}>{busy ? "Processing your input locally…" : `Choose “${contract.action}” to see the result here.`}</p>}
-        {copyError && <p className={styles.error} role="alert">{copyError}</p>}
-      </section>
-    </div>
-    <p className={styles.notice} role="status" aria-live="polite">{notice}</p>
-    <p className={styles.privacy}>{contract.privacyMessage}</p>
-    {contract.notes.length > 0 && <ul className={styles.notes}>{contract.notes.slice(isJwt ? 1 : 0).map((note) => <li key={note}>{note}</li>)}</ul>}
+          {result.parts
+            ? result.parts.map((part, index) => <Panel
+                key={part.label}
+                level={3}
+                title={part.label}
+                headingId={`${scope}-part-${index}`}
+                actions={<Button size="sm" onClick={() => copy(part.value, part.label)}>Copy {part.label}</Button>}
+              >
+                <pre className={ui.output} tabIndex={0} aria-label={part.label}>{part.value}</pre>
+              </Panel>)
+            : <pre className={ui.output} tabIndex={0} aria-label={contract.outputLabel}>{result.text}</pre>}
+        </div> : <EmptyState>{busy ? "Processing your input locally…" : `Choose “${contract.action}” to see the result here.`}</EmptyState>}
+        {copyError && <Callout kind="error" className={styles.alert}>{copyError}</Callout>}
+      </Panel>
+    </ToolLayout>
+    <StatusLine>{notice}</StatusLine>
+    <PrivacyNote>{contract.privacyMessage}</PrivacyNote>
+    {contract.notes.length > 0 && <ul className={styles.notes}>{contract.notes.slice(isJwt ? 1 : 0).map((note) => <li key={note} className={ui.hint}>{note}</li>)}</ul>}
   </div>;
 }
 

@@ -1,0 +1,23 @@
+/* Layout only. Visuals come from components/ui and tokens. */
+.reorderContainer { max-width: 1180px; margin-inline: auto; }
+.reorderDropTitle { color: var(--ink); font-size: var(--text-sm); font-weight: 700; }
+.reorderDropSub { color: var(--secondary); font-size: var(--text-xs); }
+.reorderCount { color: var(--secondary); font-family: var(--font-mono); font-size: var(--text-xs); }
+.reorderGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--space-4); width: 100%; min-width: 0; margin: 0; padding: 0; list-style: none; }
+.reorderCard { display: grid; gap: var(--space-2); min-width: 0; padding: var(--space-3); border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface); box-shadow: var(--shadow-sm); cursor: grab; }
+.reorderCard:active { cursor: grabbing; }
+.reorderCard:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }
+.reorderDropTarget { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
+.reorderCardHeader { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-2); }
+.reorderPosition { color: var(--ink); font-family: var(--font-mono); font-size: var(--text-sm); font-weight: 700; }
+.reorderOriginal { color: var(--secondary); font-size: var(--text-xs); overflow-wrap: anywhere; text-align: right; }
+.reorderCanvas { display: block; width: 100%; height: auto; min-height: 90px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface-alt); }
+.reorderCardActions { display: grid; gap: var(--space-1); }
+.reorderCardActions > * { width: 100%; }
+@media (max-width: 900px) {
+  .reorderGrid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+}
+@media (max-width: 720px) {
+  .reorderGrid { grid-template-columns: minmax(0, 1fr); }
+  .reorderCanvas { max-height: 220px; object-fit: contain; }
+}

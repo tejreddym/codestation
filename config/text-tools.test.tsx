@@ -32,7 +32,9 @@ describe("Text public registry and metadata", () => {
     for (const id of ["lorem-ipsum-generator", "random-text-generator"]) expect(getTool(id)?.textContract?.fields.every(field => !["textarea", "text"].includes(field.control))).toBe(true);
   });
   it("has theme-token, keyboard, touch, monospace and mobile layout safeguards", () => {
-    const css = readFileSync("components/TextWorkspace.module.css", "utf8");
-    for (const text of ["var(--surface)", "var(--ink)", ":focus-visible", "44px", "@media", "minmax(0,", "overflow", "monospace"]) expect(css).toContain(text);
+    const layout = readFileSync("components/TextWorkspace.module.css", "utf8");
+    for (const text of ["@media", "minmax(0,", "overflow", "var(--space-6)"]) expect(layout).toContain(text);
+    const shared = readFileSync("components/ui/ui.module.css", "utf8") + readFileSync("app/styles/tokens.css", "utf8");
+    for (const text of ["var(--surface)", "var(--ink)", ":focus-visible", "44px", "@media", "minmax(0,", "overflow", "monospace"]) expect(shared).toContain(text);
   });
 });

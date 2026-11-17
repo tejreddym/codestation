@@ -5,6 +5,7 @@ import type { ToolDefinition } from "@/config/tools";
 import { searchTools } from "@/lib/tool-search";
 import ToolCard from "./ToolCard";
 import BannerAd from "./BannerAd";
+import ui from "./ui/ui.module.css";
 
 export type ToolCategoryFilter = { id: string; name: string; toolIds: readonly string[] };
 
@@ -43,9 +44,9 @@ export default function ToolCatalog({ name, heading, searchName, tools, descript
     </div></div>
     <div className="catalog-toolbar">
       <label className="search" htmlFor={searchId}><span aria-hidden="true">⌕</span><span>Search</span><input id={searchId} aria-label={`Search ${visibleName} tools`} placeholder={`Search ${visibleName} tools`} value={query} autoComplete="off" onChange={event => setQuery(event.target.value)} /></label>
-      <button type="button" className="button secondary" onClick={() => setQuery("")} disabled={!query}>Clear search</button>
+      <button type="button" className={ui.button} onClick={() => setQuery("")} disabled={!query}>Clear search</button>
       {categoryFilters && <label className="station-category-filter" htmlFor={`${searchId}-category`}>Category<select id={`${searchId}-category`} aria-label="Category" value={category} onChange={event => setCategory(event.target.value)}><option value="all">All categories</option>{categoryFilters.map(filter => <option value={filter.id} key={filter.id}>{filter.name}</option>)}</select></label>}
-      {categoryFilters && <button type="button" className="button secondary" onClick={resetFilters} disabled={!hasFilters}>Reset filters</button>}
+      {categoryFilters && <button type="button" className={ui.button} onClick={resetFilters} disabled={!hasFilters}>Reset filters</button>}
     </div>
     <p className="muted" role="status" aria-live="off">{filtered.length} of {tools.length} tools</p>
     {filtered.length ? <div className="tool-grid">{filtered.map((tool, i) => {
@@ -56,6 +57,6 @@ export default function ToolCatalog({ name, heading, searchName, tools, descript
           <ToolCard tool={tool} category={categoryLabels?.[String(tool.id)]} />
         </Fragment>
       );
-    })}</div> : <div className="empty-state"><p className="muted">{emptyMessage ?? `No ${name} tools match that search.`}</p>{hasFilters && <button type="button" className="button secondary" onClick={resetFilters}>Reset filters</button>}</div>}
+    })}</div> : <div className="empty-state"><p className="muted">{emptyMessage ?? `No ${name} tools match that search.`}</p>{hasFilters && <button type="button" className={ui.button} onClick={resetFilters}>Reset filters</button>}</div>}
   </section>;
 }

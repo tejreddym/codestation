@@ -22,6 +22,10 @@ import {
 import { useWorkbench } from './WorkbenchProvider';
 import { useSafeRouter } from './useSafeNavigation';
 import BannerAd from './BannerAd';
+import { useCopy } from './ui/useCopy';
+import { downloadBlob } from './ui/useDownload';
+import { cx } from './ui/cx';
+import ui from './ui/ui.module.css';
 import styles from './WorkflowBuilder.module.css';
 
 type StepExecutionState = {
@@ -66,6 +70,7 @@ export default function WorkflowBuilder() {
 
   const runController = useRef<AbortController | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const { copy } = useCopy();
   const { queueInput } = useWorkbench();
   const router = useSafeRouter();
 
@@ -296,14 +301,8 @@ export default function WorkflowBuilder() {
   function handleExportJson() {
     try {
       const jsonStr = exportRecipeAsJson({ ...recipe, name: recipeName });
-      const blob = new Blob([jsonStr], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
       const safeFilename = (recipeName || 'recipe').toLowerCase().replace(/[^a-z0-9_-]/g, '-');
-      link.download = `${safeFilename}.json`;
-      link.click();
-      URL.revokeObjectURL(url);
+      downloadBlob(jsonStr, `${safeFilename}.json`, 'application/json');
       setMessage('Recipe exported as JSON file.');
     } catch (err) {
       setMessage(`Export failed: ${err instanceof Error ? err.message : 'Invalid recipe.'}`);
@@ -346,8 +345,12 @@ export default function WorkflowBuilder() {
       const cleanRecipe = parseRecipe(JSON.stringify({ ...recipe, name: recipeName }));
       const encoded = encodeURIComponent(JSON.stringify(cleanRecipe));
       const url = `${window.location.origin}/workflows#recipe=${encoded}`;
-      await navigator.clipboard.writeText(url);
-      setMessage('Privacy-safe recipe link copied. Input data is never included.');
+      const ok = await copy(url);
+      setMessage(
+        ok
+          ? 'Privacy-safe recipe link copied. Input data is never included.'
+          : 'Could not copy automatically. You can copy the recipe JSON below.'
+      );
     } catch {
       setMessage('Could not copy automatically. You can copy the recipe JSON below.');
     }
@@ -356,9 +359,9 @@ export default function WorkflowBuilder() {
   return (
     <div className={styles.studio}>
       {/* ---------------- 1. Pipeline Definition Panel ---------------- */}
-      <section className={styles.panel} aria-labelledby="pipeline-builder-heading">
-        <div className={styles.panelHeader}>
-          <h2 id="pipeline-builder-heading" className={styles.panelTitle}>
+      <section className={cx(ui.panel, styles.workspace)} aria-labelledby="pipeline-builder-heading">
+        <div className={ui.panelHeader}>
+          <h2 id="pipeline-builder-heading" className={ui.panelTitle}>
             1 / Studio Pipeline Architecture
           </h2>
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -399,7 +402,7 @@ export default function WorkflowBuilder() {
             <label htmlFor="workflow-source">Starting Format</label>
             <select
               id="workflow-source"
-              className={styles.selectInput}
+              className={ui.control}
               value={recipe.source}
               onChange={e => {
                 changeRecipe({
@@ -423,7 +426,7 @@ export default function WorkflowBuilder() {
             <input
               id="pipeline-name"
               type="text"
-              className={styles.selectInput}
+              className={ui.control}
               style={{ width: '100%' }}
               value={recipeName}
               onChange={e => setRecipeName(e.target.value)}
@@ -468,7 +471,7 @@ export default function WorkflowBuilder() {
                   <div className={styles.stepControls}>
                     <button
                       type="button"
-                      className={styles.iconButton}
+                      className={`${ui.button} ${ui.iconButton}`}
                       disabled={index === 0}
                       onClick={() => moveStep(index, 'up')}
                       aria-label={`Move step ${index + 1} up`}
@@ -478,7 +481,7 @@ export default function WorkflowBuilder() {
                     </button>
                     <button
                       type="button"
-                      className={styles.iconButton}
+                      className={`${ui.button} ${ui.iconButton}`}
                       disabled={index === recipe.steps.length - 1}
                       onClick={() => moveStep(index, 'down')}
                       aria-label={`Move step ${index + 1} down`}
@@ -488,7 +491,7 @@ export default function WorkflowBuilder() {
                     </button>
                     <button
                       type="button"
-                      className={`${styles.iconButton} ${styles.btnDanger}`}
+                      className={`${ui.button} ${ui.iconButton} ${ui.danger}`}
                       onClick={() => removeStep(index)}
                       aria-label={`Remove step ${index + 1}`}
                       title="Remove step"
@@ -516,7 +519,7 @@ export default function WorkflowBuilder() {
 
                 {/* Live Intermediate Step Preview */}
                 {executionState && executionState.status !== 'idle' && (
-                  <div className={styles.previewPanel}>
+                  <div className={styles.outputPreview}>
                     <div className={styles.previewHeader}>
                       <div className={styles.previewStatus}>
                         <span
@@ -539,14 +542,14 @@ export default function WorkflowBuilder() {
                       {executionState.status === 'success' && (
                         <button
                           type="button"
-                          className={`${styles.btn} ${styles.btnSmall}`}
+                          className={`${ui.button} ${ui.small}`}
                           onClick={async () => {
-                            try {
-                              await navigator.clipboard.writeText(executionState.output);
-                              setMessage(`Step #${index + 1} output copied.`);
-                            } catch {
-                              setMessage('Could not copy to clipboard.');
-                            }
+                            const ok = await copy(executionState.output);
+                            setMessage(
+                              ok
+                                ? `Step #${index + 1} output copied.`
+                                : 'Could not copy to clipboard.'
+                            );
                           }}
                         >
                           Copy Output
@@ -579,14 +582,14 @@ export default function WorkflowBuilder() {
         {recipe.steps.length < 12 && (
           <div className={styles.addStepRow}>
             <div style={{ width: '100%' }}>
-              <div className={styles.tabGroup} role="tablist" aria-label="Tool station filter">
+              <div className={ui.tabList} role="tablist" aria-label="Tool station filter">
                 {CATEGORIES.map(cat => (
                   <button
                     key={cat}
                     type="button"
                     role="tab"
                     aria-selected={selectedCategory === cat}
-                    className={`${styles.tabButton} ${selectedCategory === cat ? styles.tabButtonActive : ''}`}
+                    className={ui.tab}
                     onClick={() => setSelectedCategory(cat)}
                   >
                     {cat}
@@ -600,7 +603,7 @@ export default function WorkflowBuilder() {
                 </label>
                 <select
                   id="add-step-tool-select"
-                  className={styles.selectInput}
+                  className={ui.control}
                   style={{ flex: 1, minWidth: '220px' }}
                   value={selectedNextTool}
                   onChange={e => setSelectedNextTool(e.target.value)}
@@ -619,7 +622,7 @@ export default function WorkflowBuilder() {
 
                 <button
                   type="button"
-                  className={`${styles.btn} ${styles.btnPrimary}`}
+                  className={`${ui.button} ${ui.primary}`}
                   disabled={!selectedNextTool}
                   onClick={() => {
                     if (selectedNextTool) {
@@ -642,9 +645,9 @@ export default function WorkflowBuilder() {
       </section>
 
       {/* ---------------- 2. Pipeline Execution Panel ---------------- */}
-      <section className={styles.panel} aria-labelledby="pipeline-execution-heading">
-        <div className={styles.panelHeader}>
-          <h2 id="pipeline-execution-heading" className={styles.panelTitle}>
+      <section className={cx(ui.panel, styles.workspace)} aria-labelledby="pipeline-execution-heading">
+        <div className={ui.panelHeader}>
+          <h2 id="pipeline-execution-heading" className={ui.panelTitle}>
             2 / Supply Input and Run Pipeline
           </h2>
           <span className={styles.badge}>
@@ -657,7 +660,7 @@ export default function WorkflowBuilder() {
         </label>
         <textarea
           id="pipeline-input"
-          className={styles.textarea}
+          className={ui.codeArea}
           value={input}
           maxLength={1000000}
           onChange={e => {
@@ -670,7 +673,7 @@ export default function WorkflowBuilder() {
         <div className={styles.runToolbar}>
           <button
             type="button"
-            className={`${styles.btn} ${styles.btnPrimary}`}
+            className={`${ui.button} ${ui.primary}`}
             disabled={busy || !recipe.steps.length || !input.trim()}
             onClick={() => void runPipeline()}
           >
@@ -680,7 +683,7 @@ export default function WorkflowBuilder() {
           {busy && (
             <button
               type="button"
-              className={`${styles.btn} ${styles.btnDanger}`}
+              className={`${ui.button} ${ui.danger}`}
               onClick={() => {
                 invalidateExecution();
                 setMessage('Pipeline run was cancelled.');
@@ -692,7 +695,7 @@ export default function WorkflowBuilder() {
 
           <button
             type="button"
-            className={styles.btn}
+            className={ui.button}
             onClick={() => {
               const preset = studioPresets.find(p => p.recipe.source === recipe.source);
               if (preset) {
@@ -707,7 +710,7 @@ export default function WorkflowBuilder() {
 
           <button
             type="button"
-            className={styles.btn}
+            className={ui.button}
             onClick={() => {
               invalidateExecution();
               setInput('');
@@ -726,8 +729,8 @@ export default function WorkflowBuilder() {
         {/* Final Pipeline Output */}
         {finalOutput && !busy && (
           <div style={{ marginTop: '20px' }}>
-            <div className={styles.panelHeader}>
-              <h3 className={styles.panelTitle} style={{ fontSize: '15px' }}>
+            <div className={styles.resultHeader}>
+              <h3 className={ui.panelTitle} style={{ fontSize: '15px' }}>
                 Pipeline Final Result ({currentOutputFormat})
               </h3>
               {totalDuration !== null && (
@@ -738,7 +741,7 @@ export default function WorkflowBuilder() {
             </div>
 
             <textarea
-              className={styles.textarea}
+              className={ui.codeArea}
               readOnly
               value={finalOutput}
               style={{ minHeight: '180px' }}
@@ -748,14 +751,10 @@ export default function WorkflowBuilder() {
             <div className={styles.runToolbar}>
               <button
                 type="button"
-                className={`${styles.btn} ${styles.btnPrimary}`}
+                className={`${ui.button} ${ui.primary}`}
                 onClick={async () => {
-                  try {
-                    await navigator.clipboard.writeText(finalOutput);
-                    setMessage('Final result copied to clipboard.');
-                  } catch {
-                    setMessage('Could not copy result.');
-                  }
+                  const ok = await copy(finalOutput);
+                  setMessage(ok ? 'Final result copied to clipboard.' : 'Could not copy result.');
                 }}
               >
                 Copy Final Result
@@ -764,7 +763,7 @@ export default function WorkflowBuilder() {
               {currentOutputFormat.startsWith('json') && (
                 <button
                   type="button"
-                  className={styles.btn}
+                  className={ui.button}
                   onClick={() => {
                     queueInput('json-formatter', finalOutput);
                     router.push('/tools/json-formatter');
@@ -777,7 +776,7 @@ export default function WorkflowBuilder() {
               {currentOutputFormat === 'markdown' && (
                 <button
                   type="button"
-                  className={styles.btn}
+                  className={ui.button}
                   onClick={() => {
                     queueInput('markdown-formatter', finalOutput);
                     router.push('/tools/markdown-formatter');
@@ -796,9 +795,9 @@ export default function WorkflowBuilder() {
       </div>
 
       {/* ---------------- 3. Recipe Management & Portability Panel ---------------- */}
-      <section className={styles.panel} aria-labelledby="recipe-mgmt-heading">
-        <div className={styles.panelHeader}>
-          <h2 id="recipe-mgmt-heading" className={styles.panelTitle}>
+      <section className={cx(ui.panel, styles.workspace)} aria-labelledby="recipe-mgmt-heading">
+        <div className={ui.panelHeader}>
+          <h2 id="recipe-mgmt-heading" className={ui.panelTitle}>
             3 / Recipe Management & Portability
           </h2>
           <span className={styles.badge}>Zero-Input Privacy Guaranteed</span>
@@ -811,13 +810,13 @@ export default function WorkflowBuilder() {
 
         {/* Action Buttons: Save, Export, Import File, Copy Link */}
         <div className={styles.runToolbar} style={{ marginTop: '0', marginBottom: '18px' }}>
-          <button type="button" className={`${styles.btn} ${styles.btnPrimary}`} onClick={handleSaveRecipe}>
+          <button type="button" className={`${ui.button} ${ui.primary}`} onClick={handleSaveRecipe}>
             💾 Save to Local Storage
           </button>
 
           <button
             type="button"
-            className={styles.btn}
+            className={ui.button}
             disabled={!recipe.steps.length}
             onClick={handleExportJson}
           >
@@ -826,7 +825,7 @@ export default function WorkflowBuilder() {
 
           <button
             type="button"
-            className={styles.btn}
+            className={ui.button}
             onClick={() => fileInputRef.current?.click()}
           >
             ⬆ Import JSON File
@@ -842,7 +841,7 @@ export default function WorkflowBuilder() {
 
           <button
             type="button"
-            className={styles.btn}
+            className={ui.button}
             disabled={!recipe.steps.length}
             onClick={() => void handleCopyShareLink()}
           >
@@ -869,14 +868,14 @@ export default function WorkflowBuilder() {
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <button
                       type="button"
-                      className={`${styles.btn} ${styles.btnSmall}`}
+                      className={`${ui.button} ${ui.small}`}
                       onClick={() => handleLoadRecipe(saved)}
                     >
                       Load
                     </button>
                     <button
                       type="button"
-                      className={`${styles.btn} ${styles.btnSmall} ${styles.btnDanger}`}
+                      className={`${ui.button} ${ui.small} ${ui.danger}`}
                       onClick={() => handleDeleteRecipe(saved.id)}
                     >
                       Delete
@@ -899,7 +898,7 @@ export default function WorkflowBuilder() {
             </label>
             <textarea
               id="recipe-import-text"
-              className={styles.textarea}
+              className={ui.codeArea}
               style={{ minHeight: '120px' }}
               value={importText}
               onChange={e => setImportText(e.target.value)}
@@ -908,7 +907,7 @@ export default function WorkflowBuilder() {
             <div className={styles.runToolbar}>
               <button
                 type="button"
-                className={`${styles.btn} ${styles.btnPrimary}`}
+                className={`${ui.button} ${ui.primary}`}
                 disabled={!importText.trim()}
                 onClick={handlePasteImport}
               >

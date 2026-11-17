@@ -1,5 +1,56 @@
 # Changelog
 
+## Homepage Search Placement, Station Corrections & SEO/AEO/GEO — 2026-11-16
+
+- **Homepage search bug fixed**: results no longer inherit the Quick-access fallback or render below favorites/recent. While a trimmed query is active, PersonalTools and Quick access are not rendered, the listbox sits directly under the input with its own scroll, the stage stays hidden, and the detection triage panel follows the results. Added full ARIA combobox/listbox semantics, `aria-activedescendant`, wrap-around Arrow keys, Enter-to-open, Escape-to-clear with focus retention, hover selection, and in-panel no-result + Clear.
+- **Station corrections**: `curl-to-any-language` → API (17), `env-audit` → Security (23), `mock-data` → JSON & Data (47), `conflict-parse` → Git & Version Control (7 owned / 8 listed with gitignore-generator); removed the empty Developer Tools category. Extracted `video-thumbnail-generator` unchanged into the new Video station (30th station, Image now 28 listed / 27 owned). Tool pages fall back to `/tools`, not Image; Image/PDF/signature-pad claims were narrowed to actual behaviour.
+- **Homepage SEO/AEO/GEO**: explicit branded title and 153-character description, origin-guarded root canonical, Open Graph/Twitter using the existing brand card, WebSite + WebApplication + FAQPage JSON-LD matching a visible Common questions section, one h1, 370+/377 copy, and `public/llms.txt`. Removed the global layout canonical and gave `/tools` its own.
+- **Registry**: 377 tools / 30 categories / 30 stations. Live marketing copy stays “370+”; directory counts state 377.
+- **Verification**: `npx tsc --noEmit` clean; `npm run audit:ui` 0 errors / 24 unchanged warnings; `npm run lint` 0 errors / 16 warnings; `npm test` 6,691 passed / 183 files. Headless Chrome on a separate CDP port against the running dev server passed 55/55 checks at 1440/390 in light and dark with zero console errors. No commit, push, publish, production build, or new dependency.
+
+## Video Thumbnails, Pomodoro Timer & Count Fixes — 2026-11-16
+
+- **New tool — `video-thumbnail-generator` (Image station)**:
+  - Local video validation and metadata (duration, dimensions, size), playhead capture and 1–12 evenly spaced frames, PNG/JPEG with quality, Original/1920/1280/640 max width with no upscaling and a 4096 px clamp.
+  - Sequential frame capture with a progress bar and working Cancel, per-frame downloads, and a ZIP archive via fflate store mode for multiple frames. Video and image object URLs are revoked on replace, clear and unmount. Nothing is uploaded or saved.
+  - Codec coverage follows the browser; audio is never analysed and audio-only files are rejected.
+- **New Productivity station — `/stations/productivity`**:
+  - Added `pomodoro-timer` with focus/short/long durations (1–120 minutes), 2–8 sessions before a long break, optional auto-start and opt-in Web Audio beep.
+  - Countdown derives from absolute timestamps on a ~250 ms interval, resyncs on visibility change, and supports Start/Pause/Resume/Reset/Skip with phase and completed-session display. No storage writes, notification permission or title changes.
+- **Batch 1 defects fixed**:
+  - FIN-D1: removed the manual `| Code Station` suffix from four finance SEO titles.
+  - FIN-D2: live copy now reads 377 tools / 30 stations and “370+” tools; historical changelog counts are unchanged.
+  - FIN-D3: oversized finance inputs now fail normal field validation with a visible message, `aria-invalid` and `aria-describedby`; the catch-all alert remains a last resort.
+- **Registry consistency**: 377 tools across 30 categories and 30 implemented stations; Image owns 28 still-image tools after the Video extraction, Video is the 30th station, and Productivity remains a separate station. WebMCP adds `manual-file-required` for video thumbnails and `manual-ui-required` for Pomodoro.
+- **Verification**: `npx tsc --noEmit` clean; `npm run audit:ui` 0 errors with the same 24 pre-existing warnings; `npm run lint` exit 0 with no new warnings; `npm test` 6,675 passed / 6,677 with only the two known date-dependent DEFECT-M1-04 policy-generator failures. Headless-Chrome checks used H.264 MP4, 1280×720 MP4, VP9/WebM, audio-only and corrupt fixtures for metadata, frame timing, PNG/JPEG/ZIP output, downscaling, Cancel, error paths, object-URL revocation and keyboard capture; Pomodoro was exercised through pause/resume/reset/skip, four focus sessions to a long break and auto-start with no storage, notification or title side effects. Both tools were checked at 1440/390 in light and dark with zero overflow, plus regression routes and live copy. A layout defect found during these checks (the privacy note squeezing the Pomodoro settings panel) was fixed and re-verified. No commit, push, publish, or production build.
+
+## PDF Text, Images & Reorder Tools — 2026-11-16
+
+- **Three tools added to the existing PDF station**:
+  - `pdf-to-text`: page-by-page extraction with page-range selection, case-insensitive search and match counts, copy, TXT download with `--- Page N ---` markers, and warnings for pages with little or no embedded text. Scanned pages are flagged; OCR is explicitly not performed.
+  - `pdf-to-images`: page ranges, 72/150/300 DPI (scale = DPI ÷ 72), PNG/JPEG with quality, sequential rendering with a progress bar and a Cancel that aborts the render and destroys the document, per-page downloads, dimension reporting, and a ZIP built with fflate. Object URLs are revoked on preview change, clear and unmount.
+  - `pdf-reorder-pages`: thumbnails, drag reordering plus keyboard Move up/down with focus preserved, remove/reset, a `#1 → original page 3` mapping summary, and export through a new pdf-lib document with a reopen check.
+- **PDF.js integration**: `pdfjs-dist@6.5.438` pinned exactly and loaded lazily from `lib/tools/pdf/pdfjs.ts`; worker, cmaps and standard fonts self-hosted in `public/pdfjs/` by an idempotent script wired to `postinstall` and `build`. No CDN.
+- **Shared UI**: new `ProgressBar` primitive honoring `role="progressbar"`, `aria-valuenow/min/max`; only new classes were appended to `components/ui/ui.module.css`.
+- **Registry consistency**: registry now contains 375 tools across 29 tool categories and 28 implemented stations; the PDF station owns 12 contracts and its description covers the new workflows.
+- **Verification**:
+  - `npx tsc --noEmit` clean; `npm run audit:ui` 0 errors; `npm run lint` exit 0; `npm test` 6,646 passed with only the two known date-dependent policy-generator failures.
+  - Headless-Chrome checks covered extraction and errors, image dimensions and ZIP contents, cancel/object-URL lifecycle, drag and keyboard reorder, exported PDF page order, and 1440/390 light/dark layouts.
+  - No commit, push, publish, or production build; the OpenNext build of the new static assets remains unverified.
+
+## Finance & Calculators Station — 2026-11-15
+
+- **New station (`/stations/finance-calculators`)**:
+  - Added `emi-calculator`, `loan-prepayment-calculator`, `gst-calculator`, and `sip-calculator` as browser-local tools with reducing-balance EMI and amortization, prepayment strategy comparison, inclusive/exclusive CGST/SGST/IGST, and step-up/inflation-adjusted SIP projection.
+  - Added pure engines under `lib/tools/finance/` with typed results, paise rounding, bounded inputs, and explicit validation errors; no new dependencies or network calls.
+  - Added `components/FinanceStation.tsx` and layout-only CSS with defaults, validation, empty states, CSV downloads, copyable summaries, and dated estimate disclaimers.
+  - Registered the category, station, mark, landing notice, and workspace guard; added explicit WebMCP dispatcher cases for all four ids.
+- **Registry consistency**:
+  - Registry now contains 372 tools across 29 tool categories and 28 implemented stations; live copy reads 370+ tools / 28 stations.
+- **Verification**:
+  - `npx tsc --noEmit` clean; `npm run audit:ui` 0 errors; `npm run lint`; focused engine/registry/WebMCP suites and the full test suite.
+  - No commit, push, publish, new dependency, or production build.
+
 ## Ad Placements Expansion — 2026-11-11
 
 - **Strategic Monetization Expansion Across High-Traffic Views**:

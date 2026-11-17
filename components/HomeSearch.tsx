@@ -24,6 +24,7 @@ interface HomeSearchProps {
 
 export default function HomeSearch({ tools, children }: HomeSearchProps) {
   const [query, setQuery] = useState("");
+  const [activeIndex, setActiveIndex] = useState(-1);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const router = useSafeRouter();
   const { queueInput } = useWorkbench();
@@ -91,9 +92,10 @@ export default function HomeSearch({ tools, children }: HomeSearchProps) {
     [tools]
   );
 
-  const matches = useMemo(() => {
+  const searchActive = Boolean(query.trim());
+  const searchResults = useMemo(() => {
     const trimmed = query.trim();
-    if (!trimmed) return quickAccess;
+    if (!trimmed) return [];
     const directMatches = searchTools(tools, trimmed);
     if (directMatches.length > 0) return directMatches;
     if (detectionResult?.matches?.length) {
@@ -103,7 +105,43 @@ export default function HomeSearch({ tools, children }: HomeSearchProps) {
       if (detected.length > 0) return detected;
     }
     return directMatches;
-  }, [query, detectionResult, quickAccess, tools]);
+  }, [query, detectionResult, tools]);
+
+  const resultsId = "home-search-results";
+  const optionId = (index: number) => `home-search-option-${index}`;
+  const selectedIndex = activeIndex >= 0 && activeIndex < searchResults.length ? activeIndex : -1;
+
+  useEffect(() => {
+    if (selectedIndex < 0) return;
+    const option = document.getElementById(`home-search-option-${selectedIndex}`);
+    option?.scrollIntoView?.({ block: "nearest" });
+  }, [selectedIndex]);
+
+  const clearSearch = useCallback(() => {
+    setQuery("");
+    setActiveIndex(-1);
+    searchInputRef.current?.focus();
+  }, []);
+
+  function handleSearchKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
+    if (!searchActive) return;
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      setActiveIndex(current => searchResults.length ? (current + 1) % searchResults.length : -1);
+    } else if (event.key === "ArrowUp") {
+      event.preventDefault();
+      setActiveIndex(current => searchResults.length ? (current <= 0 ? searchResults.length - 1 : current - 1) : -1);
+    } else if (event.key === "Enter") {
+      const target = searchResults[selectedIndex] ?? searchResults[0];
+      if (target) {
+        event.preventDefault();
+        router.push(`/tools/${target.slug}`);
+      }
+    } else if (event.key === "Escape") {
+      event.preventDefault();
+      clearSearch();
+    }
+  }
 
   const getToolName = useCallback((slug: string) => {
     return tools.find(t => t.slug === slug)?.name ?? slug;
@@ -112,11 +150,10 @@ export default function HomeSearch({ tools, children }: HomeSearchProps) {
   return (
     <>
       <section className={styles.hero} data-searching={Boolean(query.trim())} aria-labelledby="home-title">
-        <div className={styles.eyebrow}><span aria-hidden="true">[</span> 400+ PRIVATE TOOLS · WEBMCP BROWSER AI PROTOCOL · 26 STATIONS <span aria-hidden="true">]</span></div>
+        <div className={styles.eyebrow}><span aria-hidden="true">[</span> 370+ PRIVATE TOOLS · WEBMCP BROWSER AI PROTOCOL · 30 STATIONS <span aria-hidden="true">]</span></div>
         <h1 id="home-title">Less friction.<br /><span>More building.</span></h1>
         <p className={styles.intro}>
-          Format, convert, generate, and inspect across 400+ private developer utilities across 26 stations.
-          Featuring native <strong>WebMCP (<code>document.modelContext</code>)</strong> for in-page AI agent execution with 100% client-side privacy.
+          Code Station is a free browser-based toolbox for developers, designers, and technical teams: 380 focused utilities across 30 stations for formatting, converting, generating, and inspecting data. Native <strong>WebMCP (<code>document.modelContext</code>)</strong> lets AI agents run supported tools in the page, and everything stays client-side with zero server uploads.
         </p>
         <label className={styles.search} htmlFor="global-tool-search">
           <Search size={21} aria-hidden="true" />
@@ -125,14 +162,58 @@ export default function HomeSearch({ tools, children }: HomeSearchProps) {
             id="global-tool-search"
             ref={searchInputRef}
             value={query}
-            onChange={event => setQuery(event.target.value)}
+            onChange={event => { setQuery(event.target.value); setActiveIndex(-1); }}
+            onKeyDown={handleSearchKeyDown}
             placeholder="Search tools, formats, and tasks…"
             aria-label="Search all tools"
+            role="combobox"
+            aria-expanded={searchActive}
+            aria-controls={searchActive ? resultsId : undefined}
+            aria-autocomplete="list"
+            aria-activedescendant={searchActive && selectedIndex >= 0 ? optionId(selectedIndex) : undefined}
             autoComplete="off"
           />
         </label>
+        {searchActive ? (
+          <div className={styles.searchResults} id={resultsId} role="listbox" aria-label="Matching tools">
+            <div className={styles.searchResultsHeader}>
+              <p className={styles.searchHint} role="status" aria-live="polite">
+                {searchResults.length} matching {searchResults.length === 1 ? "tool" : "tools"}
+              </p>
+              <button type="button" className={styles.searchClear} onClick={clearSearch}>Clear search</button>
+            </div>
+            {searchResults.length ? (
+              <div className={styles.searchResultsList}>
+                {searchResults.map((tool, index) => (
+                  <Link
+                    key={tool.id}
+                    id={optionId(index)}
+                    role="option"
+                    aria-selected={selectedIndex === index}
+                    tabIndex={-1}
+                    className={styles.searchResult}
+                    href={`/tools/${tool.slug}`}
+                    prefetch={false}
+                    onMouseEnter={() => setActiveIndex(index)}
+                  >
+                    <StationMark large label={tool.category} />
+                    <span className={styles.searchResultBody}>
+                      <h3>{tool.name}</h3>
+                      <p>{tool.description}</p>
+                    </span>
+                    <ArrowUpRight size={16} aria-hidden="true" />
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <p className={styles.searchResultsEmpty}>No available tools match that search.</p>
+            )}
+          </div>
+        ) : (
+          <p className={styles.searchHint}>Search the registry or browse a station below.</p>
+        )}
         {detectionResult && detectionResult.topMatch && (
-          <div className={styles.searchTriage} role="status" aria-live="polite">
+          <div className={styles.searchTriage}>
             <div className={styles.searchTriageHeader}>
               <span className={styles.searchTriageFormat}>
                 <Sparkles size={14} aria-hidden="true" />
@@ -168,20 +249,20 @@ export default function HomeSearch({ tools, children }: HomeSearchProps) {
             </div>
           </div>
         )}
-        <p className={styles.searchHint}>{query.trim() ? `${matches.length} matching tools` : "Search the registry or browse a station below."}</p>
         <p className={styles.searchDetectHint}>Paste anything to detect format</p>
         <div className={styles.stage}><StationAssembly /><div className={styles.stageCaption} aria-hidden="true"><span>DIFFERENT PARTS. ONE WORKSPACE.</span><span>ASSEMBLED FOR THE EVERYDAY.</span></div></div>
       </section>
 
-      {children}
+      {!searchActive && children}
 
+      {!searchActive && (
       <section className={styles.quick} aria-labelledby="quick-access-title">
         <div className={styles.quickHeading}>
-          <h2 id="quick-access-title">{query.trim() ? "Matching tools" : "Quick access"}</h2>
+          <h2 id="quick-access-title">Quick access</h2>
           <Link href="/tools">Browse all tools <ArrowUpRight size={16} aria-hidden="true" /></Link>
         </div>
         <div className={styles.quickList}>
-          {matches.map(tool => (
+          {quickAccess.map(tool => (
             <Link className={styles.quickLink} href={`/tools/${tool.slug}`} key={tool.id} prefetch={false}>
               <StationMark large label={tool.category} />
               <span>
@@ -192,13 +273,8 @@ export default function HomeSearch({ tools, children }: HomeSearchProps) {
             </Link>
           ))}
         </div>
-        {!matches.length && (
-          <div className={styles.empty}>
-            <p>No available tools match that search.</p>
-            <button type="button" onClick={() => setQuery("")}>Clear search</button>
-          </div>
-        )}
       </section>
+      )}
     </>
   );
 }

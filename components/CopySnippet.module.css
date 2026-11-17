@@ -12,7 +12,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 8px 14px;
-  background: var(--surface-sunken);
+  background: var(--surface-alt);
   border-bottom: 1px solid var(--line);
   font-family: var(--font-mono, monospace);
   font-size: 12px;
@@ -44,12 +44,12 @@
 }
 
 .copyBtn:hover {
-  background: var(--surface-hover);
-  border-color: var(--border-strong, var(--ink));
+  background: var(--surface-alt);
+  border-color: var(--line-strong);
 }
 
 .copyBtn[data-copied="true"] {
-  background: var(--accent-light, #ecfccb);
+  background: var(--accent-soft);
   border-color: var(--accent, #65a30d);
   color: #1a2e05;
 }

@@ -13,6 +13,8 @@ import {
   svgToJsx,
 } from "@/lib/tools/code-gen/engine";
 import styles from "./CodeGenStation.module.css";
+import { downloadBlob } from "./ui/useDownload";
+import { useCopy } from "./ui/useCopy";
 
 interface CodeGenStationProps {
   toolId: CodeToolId;
@@ -31,6 +33,7 @@ export default function CodeGenStation({ toolId }: CodeGenStationProps) {
   const [output, setOutput] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const { copy } = useCopy();
   const [isPending, startTransition] = useTransition();
 
   function generateCode(source: string, name: string) {
@@ -97,9 +100,9 @@ export default function CodeGenStation({ toolId }: CodeGenStationProps) {
     });
   }
 
-  function handleCopy() {
+  async function handleCopy() {
     if (!output) return;
-    navigator.clipboard.writeText(output);
+    if (!(await copy(output))) return;
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }
@@ -118,15 +121,7 @@ export default function CodeGenStation({ toolId }: CodeGenStationProps) {
     };
 
     const filename = extensions[toolId] || "code.txt";
-    const blob = new Blob([output], { type: "text/plain;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    downloadBlob(output, filename);
   }
 
   function handleReset() {
@@ -182,7 +177,7 @@ export default function CodeGenStation({ toolId }: CodeGenStationProps) {
           <div className={styles.buttonBar}>
             <button
               type="button"
-              className={styles.primaryButton}
+              className={styles.runGeneration}
               onClick={() => generateCode(input, customName)}
             >
               Generate Code

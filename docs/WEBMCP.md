@@ -2,7 +2,7 @@
 
 **WebMCP** is an emerging browser-native W3C and Chromium specification that allows web applications to expose structured tools directly to in-browser AI agents, extensions, and web assistants via `document.modelContext` (with `navigator.modelContext` fallback).
 
-Code Station provides first-class WebMCP integration across all 380+ developer tools and 22 stations. All executions run **100% inside your browser** using native Web APIs, Web Crypto, Canvas, and client-side AST parsers—with **zero server uploads, zero network roundtrips, and zero telemetry**.
+Code Station provides first-class WebMCP integration across all 370+ developer tools and 30 stations. All executions run **100% inside your browser** using native Web APIs, Web Crypto, Canvas, and client-side AST parsers—with **zero server uploads, zero network roundtrips, and zero telemetry**.
 
 ---
 
@@ -62,7 +62,7 @@ Enables an AI agent to search, inspect, and filter the catalog of 380+ browser u
 ```
 
 ### 2. `codestation_execute_tool`
-Allows an AI agent to execute any tool across all 22 stations with structured inputs and options.
+Allows an AI agent to execute any tool across all 30 stations with structured inputs and options.
 
 ```json
 {
@@ -124,6 +124,9 @@ When navigating away from the tool page, the dedicated tool is automatically cle
 8. **Developer Math**: Multi-radix bitwise arithmetic, IEEE-754 floating-point breakdown, Two's complement calculator, arbitrary-precision BigInt algebra, and fraction conversion.
 9. **Frontend & Visual CSS**: Responsive CSS Grid generators, Flexbox layout generators, and Glassmorphism generators.
 10. **Developer Power Utilities**: cURL command translation, `.env` secret leak auditing, Git merge conflict resolution, and deterministic mock data generation.
+11. **Audio**: Waveform trimming, offline compression with measured peak/RMS and gain reduction, ordered multi-file merging with optional gaps and a 30-minute cap, 16-bit PCM WAV export, and explicit WebM/Opus conversion with Cancel. MP3 encoding is not available.
+
+All four audio tools require local file selection. `codestation_execute_tool` returns `manual-file-required` for `audio-trimmer`, `audio-compressor`, `audio-merger` and `audio-converter`, because WebMCP cannot read an audio file from disk, decode it, or run a real-time MediaRecorder. Open the tool and select the audio in the browser UI; decoding and rendering stay local.
 
 ---
 

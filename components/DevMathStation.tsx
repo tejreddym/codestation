@@ -19,6 +19,7 @@ import {
   type TwosComplementResult,
 } from "@/lib/tools/dev-math/engine";
 import styles from "./DevMathStation.module.css";
+import { useCopy } from "./ui/useCopy";
 
 interface DevMathStationProps {
   toolId: DevMathToolId;
@@ -28,9 +29,10 @@ export default function DevMathStation({ toolId }: { toolId: DevMathToolId }) {
   const definition = getDevMathDefinition(toolId)!;
   const [copied, setCopied] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const { copy } = useCopy();
 
-  function copyText(text: string, id: string) {
-    navigator.clipboard.writeText(text);
+  async function copyText(text: string, id: string) {
+    if (!(await copy(text))) return;
     setCopied(id);
     setTimeout(() => setCopied(null), 2000);
   }
@@ -82,8 +84,8 @@ export default function DevMathStation({ toolId }: { toolId: DevMathToolId }) {
     <div className={styles.container}>
       {/* 1. Bitwise Calculator */}
       {toolId === "bitwise-calculator" && (
-        <div className={styles.panel}>
-          <div className={styles.panelTitle}>Bitwise Operator Playground</div>
+        <div className={styles.card}>
+          <div className={styles.cardTitle}>Bitwise Operator Playground</div>
 
           <div className={styles.formGrid}>
             <div className={styles.field}>
@@ -138,7 +140,7 @@ export default function DevMathStation({ toolId }: { toolId: DevMathToolId }) {
                       <span>{name}</span>
                       <button
                         type="button"
-                        className={styles.actionButton}
+                        className={styles.miniAction}
                         onClick={() => copyText(String(val.dec), name)}
                       >
                         {copied === name ? "✓" : "Copy"}
@@ -159,8 +161,8 @@ export default function DevMathStation({ toolId }: { toolId: DevMathToolId }) {
 
       {/* 2. IEEE-754 Inspector */}
       {toolId === "ieee754-converter" && (
-        <div className={styles.panel}>
-          <div className={styles.panelTitle}>IEEE-754 Floating-Point Inspector</div>
+        <div className={styles.card}>
+          <div className={styles.cardTitle}>IEEE-754 Floating-Point Inspector</div>
 
           <div className={styles.formGrid}>
             <div className={styles.field}>
@@ -263,8 +265,8 @@ export default function DevMathStation({ toolId }: { toolId: DevMathToolId }) {
 
       {/* 3. Two's Complement */}
       {toolId === "twos-complement" && (
-        <div className={styles.panel}>
-          <div className={styles.panelTitle}>Two&apos;s Complement Calculator</div>
+        <div className={styles.card}>
+          <div className={styles.cardTitle}>Two&apos;s Complement Calculator</div>
 
           <div className={styles.formGrid}>
             <div className={styles.field}>
@@ -329,8 +331,8 @@ export default function DevMathStation({ toolId }: { toolId: DevMathToolId }) {
 
       {/* 4. BigInt Calculator */}
       {toolId === "bigint-calculator" && (
-        <div className={styles.panel}>
-          <div className={styles.panelTitle}>BigInt Arbitrary Precision Calculator</div>
+        <div className={styles.card}>
+          <div className={styles.cardTitle}>BigInt Arbitrary Precision Calculator</div>
 
           <div className={styles.formGrid}>
             <div className={styles.field}>
@@ -391,7 +393,7 @@ export default function DevMathStation({ toolId }: { toolId: DevMathToolId }) {
                       <span>Result</span>
                       <button
                         type="button"
-                        className={styles.actionButton}
+                        className={styles.miniAction}
                         onClick={() => copyText(res.result, "bigint")}
                       >
                         {copied === "bigint" ? "✓ Copied" : "Copy Result"}
@@ -415,8 +417,8 @@ export default function DevMathStation({ toolId }: { toolId: DevMathToolId }) {
 
       {/* 5. Matrix Operations */}
       {toolId === "matrix-calculator" && (
-        <div className={styles.panel}>
-          <div className={styles.panelTitle}>Matrix Operations Calculator</div>
+        <div className={styles.card}>
+          <div className={styles.cardTitle}>Matrix Operations Calculator</div>
 
           <div className={styles.formGrid}>
             <div className={styles.field}>
@@ -482,7 +484,7 @@ export default function DevMathStation({ toolId }: { toolId: DevMathToolId }) {
                     <span>Matrix Output</span>
                     <button
                       type="button"
-                      className={styles.actionButton}
+                      className={styles.miniAction}
                       onClick={() => copyText(resultStr, "matrix")}
                     >
                       {copied === "matrix" ? "✓ Copied" : "Copy Output"}
@@ -500,8 +502,8 @@ export default function DevMathStation({ toolId }: { toolId: DevMathToolId }) {
 
       {/* 6. GCD / LCM & Prime Factorization */}
       {toolId === "gcd-lcm-calculator" && (
-        <div className={styles.panel}>
-          <div className={styles.panelTitle}>Prime Factorization &amp; GCD / LCM</div>
+        <div className={styles.card}>
+          <div className={styles.cardTitle}>Prime Factorization &amp; GCD / LCM</div>
 
           <div className={styles.formGrid}>
             <div className={styles.field}>
@@ -555,8 +557,8 @@ export default function DevMathStation({ toolId }: { toolId: DevMathToolId }) {
 
       {/* 7. Fraction ⇄ Decimal Converter */}
       {toolId === "fraction-converter" && (
-        <div className={styles.panel}>
-          <div className={styles.panelTitle}>Fraction ⇄ Decimal Converter</div>
+        <div className={styles.card}>
+          <div className={styles.cardTitle}>Fraction ⇄ Decimal Converter</div>
 
           <div className={styles.field}>
             <label>Input Decimal or Fraction (e.g. 0.75 or 7/4)</label>

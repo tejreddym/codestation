@@ -6,6 +6,8 @@ import { getWebDefinition, type WebToolId } from "@/config/web-tools";
 import { WebError, type WebResult, type WebValues } from "@/lib/tools/web/types";
 import WebStructuredFields, { webFieldMatches, type WebStructuredKind } from "./WebStructuredFields";
 import styles from "./WebStation.module.css";
+import ui from "./ui/ui.module.css";
+import { useCopy } from "./ui/useCopy";
 
 type Definition = NonNullable<ReturnType<typeof getWebDefinition>>;
 type ImageResult = { blob: Blob; width: number; height: number; url: string };
@@ -51,6 +53,7 @@ function Station({ definition }: { definition: Definition }) {
   const [error, setError] = useState<{ text: string; field?: string } | null>(null);
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
+  const { copy: copyText } = useCopy();
   const revision = useRef(0);
   const mounted = useRef(false);
   const form = useRef<HTMLFormElement>(null);
@@ -162,13 +165,9 @@ function Station({ definition }: { definition: Definition }) {
   async function copy() {
     if (!result) return;
     const currentRevision = revision.current;
-    try {
-      if (!navigator.clipboard?.writeText) throw new Error("Clipboard unavailable");
-      await navigator.clipboard.writeText(result.copyText ?? result.text);
-      if (mounted.current && revision.current === currentRevision) setNotice("Result copied.");
-    } catch {
-      if (mounted.current && revision.current === currentRevision) setNotice("Could not copy. Select the result and copy it manually.");
-    }
+    const ok = await copyText(result.copyText ?? result.text);
+    if (!mounted.current || revision.current !== currentRevision) return;
+    setNotice(ok ? "Result copied." : "Could not copy. Select the result and copy it manually.");
   }
 
   function download() {
@@ -200,8 +199,8 @@ function Station({ definition }: { definition: Definition }) {
 
   return <div className={styles.station}>
     <div className={styles.layout}>
-      <form ref={form} className={styles.panel} onSubmit={event => void submit(event)} noValidate autoComplete="off" aria-labelledby={`${id}-input-heading`}>
-        <div className={styles.panelHead}><h2 id={`${id}-input-heading`}>{definition.name} input</h2><button type="button" className="button" onClick={() => load(contract.example)}>Load example</button></div>
+      <form ref={form} className={ui.panel} onSubmit={event => void submit(event)} noValidate autoComplete="off" aria-labelledby={`${id}-input-heading`}>
+        <div className={ui.panelHeader}><h2 id={`${id}-input-heading`} className={ui.panelTitle}>{definition.name} input</h2><button type="button" className={ui.button} onClick={() => load(contract.example)}>Load example</button></div>
         <div className={styles.fields}>{contract.fields.map(field => {
           const fieldId = `${id}-${field.name}`;
           const invalid = webFieldMatches(error?.field, field.name);
@@ -227,12 +226,12 @@ function Station({ definition }: { definition: Definition }) {
             {field.hint && <p id={`${fieldId}-hint`} className={styles.hint}>{field.hint}</p>}
           </div>;
         })}{contract.notices.map(text => <p className={styles.note} key={text}>{text}</p>)}</div>
-        <div className={styles.actions}><button type="submit" className="button primary" disabled={busy}>{busy ? "Processing…" : contract.action}</button><button type="button" className="button" onClick={() => load(contract.defaults)}>Clear</button></div>
+        <div className={styles.actions}><button type="submit" className={`${ui.button} ${ui.primary}`} disabled={busy}>{busy ? "Processing…" : contract.action}</button><button type="button" className={ui.button} onClick={() => load(contract.defaults)}>Clear</button></div>
       </form>
-      <section className={styles.panel} aria-labelledby={`${id}-result`} aria-busy={busy}>
-        <div className={styles.panelHead}><h2 id={`${id}-result`}>{outputLabel}</h2>{(result || image) && <div className={styles.resultActions}>
-          {contract.copy && result && <button type="button" className="button" aria-label={`Copy ${outputLabel}`} onClick={() => void copy()}>Copy</button>}
-          {contract.downloadExtension && <button type="button" className="button" onClick={download}>Download {contract.downloadExtension.toUpperCase()}</button>}
+      <section className={ui.panel} aria-labelledby={`${id}-result`} aria-busy={busy}>
+        <div className={ui.panelHeader}><h2 id={`${id}-result`} className={ui.panelTitle}>{outputLabel}</h2>{(result || image) && <div className={styles.resultActions}>
+          {contract.copy && result && <button type="button" className={ui.button} aria-label={`Copy ${outputLabel}`} onClick={() => void copy()}>Copy</button>}
+          {contract.downloadExtension && <button type="button" className={ui.button} onClick={download}>Download {contract.downloadExtension.toUpperCase()}</button>}
         </div>}</div>
         {result || image ? <div className={styles.result}>
           {!!result?.warnings?.length && <div className={styles.warning} role="alert"><strong>Review before use</strong>{result.warnings.map((warning, index) => <p key={index}>{warning}</p>)}</div>}

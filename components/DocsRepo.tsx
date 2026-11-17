@@ -6,6 +6,7 @@ import { CopySnippet } from "@/components/CopySnippet";
 import NativeAd from "@/components/NativeAd";
 import BannerAd from "@/components/BannerAd";
 import styles from "./DocsRepo.module.css";
+import ui from "./ui/ui.module.css";
 
 interface DocTopic {
   id: string;
@@ -210,7 +211,7 @@ const TOPICS: DocTopic[] = [
   {
     id: "web-stations",
     category: "web",
-    title: "Web Application & 26 Stations Directory",
+    title: "Web Application & 30 Stations Directory",
     keywords: [
       "web",
       "stations",
@@ -342,7 +343,7 @@ export function DocsRepo() {
             <p>
               Authoritative developer reference manual for the Code Station
               Local Model Context Protocol (MCP) server, dual-purpose terminal
-              CLI, 338+ client-side web tools, AI coding agent workflows, and
+              CLI, 370+ client-side web tools, AI coding agent workflows, and
               licensing policies.
             </p>
           </div>
@@ -371,7 +372,7 @@ export function DocsRepo() {
             <button
               type="button"
               onClick={() => setQuery("")}
-              className="button"
+              className={ui.button}
               style={{ padding: "3px 8px", fontSize: "12px", border: "none" }}
             >
               Clear
@@ -440,7 +441,7 @@ export function DocsRepo() {
               <li>
                 <Link href="/tools" className={styles.sidebarLink}>
                   <span>Web Tools Directory</span>
-                  <span className={styles.sidebarCount}>338</span>
+                  <span className={styles.sidebarCount}>380</span>
                 </Link>
               </li>
               <li>
@@ -479,7 +480,7 @@ export function DocsRepo() {
               <p className={styles.leadText}>
                 Code Station gives you deterministic developer tools across
                 three interfaces: a <strong>100% Free Web Application</strong>{" "}
-                with 338+ client-side tools, a <strong>Local MCP Server</strong>{" "}
+                with 370+ client-side tools, a <strong>Local MCP Server</strong>{" "}
                 for AI coding agents (Cursor, Claude Desktop, Windsurf), and a{" "}
                 <strong>Dual-Purpose Terminal CLI</strong>.
               </p>
@@ -1278,7 +1279,7 @@ EOF`}
                   <li>
                     <strong>Universal Discovery:</strong> The{" "}
                     <code>codestation_list_tools</code> tool enables agents to
-                    query 400+ tools across 26 stations.
+                    query 370+ tools across 30 stations.
                   </li>
                   <li>
                     <strong>Universal Execution:</strong> The{" "}
@@ -1769,11 +1770,11 @@ Always prioritize calling these local, deterministic tools instead of calculatin
           {activeIds.has("web-stations") && (
             <section id="web-stations" className={styles.docSection}>
               <div className={styles.sectionHeader}>
-                <h2>17. Web Application &amp; 25 Stations Directory</h2>
+                <h2>17. Web Application &amp; 29 Stations Directory</h2>
                 <span className={styles.sectionTag}>Web Application</span>
               </div>
               <p className={styles.leadText}>
-                Every single one of the <strong>395+ developer tools</strong> on
+                Every single one of the <strong>370+ developer tools</strong> on
                 the Code Station web application (<code>codestation.in</code>)
                 is <strong>100% free, unlimited, and runs client-side</strong>.
               </p>
@@ -2053,8 +2054,9 @@ Always prioritize calling these local, deterministic tools instead of calculatin
                 <div className={styles.cardItem}>
                   <h4>17. Audio Station</h4>
                   <p>
-                    Web Audio API waveform trimming, cut ranges, loop playback,
-                    and 16-bit PCM WAV export.
+                    Web Audio API waveform trimming, offline compression with measured levels,
+                    ordered multi-file merging with optional gaps, WAV export and explicit
+                    WebM/Opus conversion with Cancel.
                   </p>
                   <Link
                     href="/stations/audio"
@@ -2477,7 +2479,7 @@ Always prioritize calling these local, deterministic tools instead of calculatin
               <div className={styles.subSection}>
                 <h3>Q: Are web tools really 100% free forever?</h3>
                 <p>
-                  Yes. All 338+ developer tools accessible on{" "}
+                  Yes. All 370+ developer tools accessible on{" "}
                   <code>codestation.in</code> are completely free, unrestricted,
                   and have zero paywalls. Pro licensing is exclusively required
                   for local AI agents via the MCP stdio protocol and advanced

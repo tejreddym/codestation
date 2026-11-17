@@ -3,6 +3,18 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { getRegexDefinition, type RegexToolDefinition } from "@/config/regex-tools";
 import type { RegexDefinition, RegexGroup, RegexMatch, RegexResult, RegexValues } from "@/lib/tools/regex/types";
+import { Button } from "./ui/Button";
+import { Callout } from "./ui/Callout";
+import { CheckboxGroup, Select, Textarea } from "./ui/controls";
+import { EmptyState } from "./ui/EmptyState";
+import { Field, Hint } from "./ui/Field";
+import { OutputText } from "./ui/OutputPanel";
+import { Panel } from "./ui/Panel";
+import { PrivacyNote } from "./ui/PrivacyNote";
+import { StatusLine } from "./ui/StatusLine";
+import { ToolLayout } from "./ui/ToolLayout";
+import { useCopy } from "./ui/useCopy";
+import ui from "./ui/ui.module.css";
 import styles from "./RegexStation.module.css";
 
 type CopyValue = (value: string, label: string) => Promise<void>;
@@ -13,10 +25,10 @@ const flagNames: Record<string, string> = { g: "Global", i: "Case-insensitive", 
 function Value({ label, value, copy }: { label: string; value: string | null; copy: CopyValue }) {
   const visible = value === null ? "null" : value;
   return <div className={styles.value}>
-    <div className={styles.valueHead}><span>{label}</span><button type="button" className={styles.button} aria-label={`Copy ${label}`} onClick={() => void copy(visible, label)}>Copy</button></div>
-    <pre className={styles.output} tabIndex={0} aria-label={`${label} value`}>{visible}</pre>
-    {value === "" && <p className={styles.hint}>Empty string — Copy copies exactly zero characters.</p>}
-    {value === null && <p className={styles.hint}>Unmatched capture (null), not an empty string.</p>}
+    <div className={styles.valueHead}><span>{label}</span><Button size="sm" aria-label={`Copy ${label}`} onClick={() => void copy(visible, label)}>Copy</Button></div>
+    <OutputText label={label} value={visible} className={styles.valueOutput} />
+    {value === "" && <Hint>Empty string — Copy copies exactly zero characters.</Hint>}
+    {value === null && <Hint>Unmatched capture (null), not an empty string.</Hint>}
   </div>;
 }
 
@@ -28,9 +40,9 @@ function Pages<T>({ items, label, render }: { items: readonly T[]; label: string
   return <div className={styles.list}>
     {items.length > PAGE_SIZE && <div className={styles.pagination}>
       <p role="status">{items.length} {label} total · Showing {start + 1}–{Math.min(start + PAGE_SIZE, items.length)}</p>
-      <div className={styles.actions}>
-        <button type="button" className={styles.button} aria-label={`Previous ${label}`} disabled={current === 0} onClick={() => setPage(current - 1)}>Previous</button>
-        <button type="button" className={styles.button} aria-label={`Next ${label}`} disabled={current === lastPage} onClick={() => setPage(current + 1)}>Next</button>
+      <div className={`${ui.actions} ${styles.pageActions}`}>
+        <Button size="sm" aria-label={`Previous ${label}`} disabled={current === 0} onClick={() => setPage(current - 1)}>Previous</Button>
+        <Button size="sm" aria-label={`Next ${label}`} disabled={current === lastPage} onClick={() => setPage(current + 1)}>Next</Button>
       </div>
     </div>}
     {items.slice(start, start + PAGE_SIZE).map((item, index) => render(item, start + index))}
@@ -39,16 +51,15 @@ function Pages<T>({ items, label, render }: { items: readonly T[]; label: string
 
 function Groups({ groups, matchNumber, copy }: { groups: readonly RegexGroup[]; matchNumber: number; copy: CopyValue }) {
   return <div className={styles.list}>
-    {groups.length === 0 ? <p className={styles.hint}>No capture groups.</p> : <Pages items={groups} label={`groups for match ${matchNumber}`} render={group => <div key={group.number}>
+    {groups.length === 0 ? <Hint>No capture groups.</Hint> : <Pages items={groups} label={`groups for match ${matchNumber}`} render={group => <div key={group.number}>
       <Value label={`Match ${matchNumber} · Group ${group.number}${group.name !== undefined ? ` (${group.name})` : ""}`} value={group.value} copy={copy} />
-      {group.indices !== undefined && <p className={styles.hint}>Capture indices (d): {group.indices === null ? "unmatched" : `[${group.indices[0]}, ${group.indices[1]})`}</p>}
+      {group.indices !== undefined && <Hint>Capture indices (d): {group.indices === null ? "unmatched" : `[${group.indices[0]}, ${group.indices[1]})`}</Hint>}
     </div>} />}
   </div>;
 }
 
-function MatchCard({ match, kind, copy }: { match: RegexMatch; kind: RegexResult["kind"]; copy: CopyValue }) {
-  return <article className={styles.card} aria-label={`Match ${match.number}`}>
-    <h3>Match {match.number}</h3>
+function MatchCard({ match, kind, copy, headingId }: { match: RegexMatch; kind: RegexResult["kind"]; copy: CopyValue; headingId: string }) {
+  return <Panel level={3} title={`Match ${match.number}`} headingId={headingId} className={styles.card} padded>
     {kind !== "groups" && <Value label={`Match ${match.number} · Full match`} value={match.value} copy={copy} />}
     {(kind === "test" || kind === "inspect") && <div className={styles.metrics}>
       <Value label={`Match ${match.number} · Start`} value={String(match.start)} copy={copy} />
@@ -56,7 +67,7 @@ function MatchCard({ match, kind, copy }: { match: RegexMatch; kind: RegexResult
       {kind === "inspect" && <Value label={`Match ${match.number} · Length`} value={String(match.length)} copy={copy} />}
     </div>}
     <Groups groups={match.groups} matchNumber={match.number} copy={copy} />
-  </article>;
+  </Panel>;
 }
 
 const definitionKinds: ReadonlyArray<{ kind: RegexDefinition["kind"]; label: string }> = [
@@ -69,18 +80,17 @@ const definitionKinds: ReadonlyArray<{ kind: RegexDefinition["kind"]; label: str
 
 function Definitions({ definitions, copy }: { definitions: readonly RegexDefinition[]; copy: CopyValue }) {
   return <section className={styles.list} aria-label="Group definitions">
-    <h3>Group definitions</h3>
+    <h3 className={styles.sectionTitle}>Group definitions</h3>
     {definitionKinds.map(({ kind, label }) => {
       const entries = definitions.filter(definition => definition.kind === kind);
-      return <section className={styles.card} key={kind} aria-label={label}>
-        <h4>{label}</h4>
-        {entries.length === 0 ? <p className={styles.hint}>None.</p> : <Pages items={entries} label={label.toLowerCase()} render={(definition, index) => <Value key={`${definition.start}-${index}`} label={definition.number !== undefined ? `Group ${definition.number}${definition.name !== undefined ? ` (${definition.name})` : ""} definition` : `${label} ${index + 1}`} value={definition.source} copy={copy} />} />}
-      </section>;
+      return <Panel className={styles.card} key={kind} level={4} title={label} padded>
+        {entries.length === 0 ? <Hint>None.</Hint> : <Pages items={entries} label={label.toLowerCase()} render={(definition, index) => <Value key={`${definition.start}-${index}`} label={definition.number !== undefined ? `Group ${definition.number}${definition.name !== undefined ? ` (${definition.name})` : ""} definition` : `${label} ${index + 1}`} value={definition.source} copy={copy} />} />}
+      </Panel>;
     })}
   </section>;
 }
 
-function Result({ result, copy }: { result: RegexResult; copy: CopyValue }) {
+function Result({ result, copy, prefix }: { result: RegexResult; copy: CopyValue; prefix: string }) {
   if (result.kind === "escape" || result.kind === "builder") return <Value label={result.kind === "escape" ? "Escaped text" : "Generated pattern"} value={result.text ?? ""} copy={copy} />;
   if (result.kind === "replace") return <div className={styles.list}>
     <Value label="Replaced text" value={result.text ?? ""} copy={copy} />
@@ -91,18 +101,17 @@ function Result({ result, copy }: { result: RegexResult; copy: CopyValue }) {
     <Pages items={result.parts ?? []} label="parts" render={(part, index) => <Value key={index} label={`Part ${index + 1}`} value={part} copy={copy} />} />
   </div>;
   if (result.kind === "flags") return <div className={styles.list}>
-    {(result.rows ?? []).map(row => {
+    {(result.rows ?? []).map((row, index) => {
       const label = row.flags || "No flags";
-      return <article className={styles.card} key={label} aria-label={label}>
-        <h3>{label}</h3>
+      return <Panel level={3} key={label} title={label} headingId={`${prefix}-flag-${index}`} className={styles.card} padded>
         <div className={styles.metrics}>
           <Value label={`${label} · Validity`} value={row.valid ? "Valid" : "Invalid"} copy={copy} />
           <Value label={`${label} · Match status`} value={row.matched === null ? "Not evaluated" : row.matched ? "Matched" : "No match"} copy={copy} />
           <Value label={`${label} · Match count`} value={row.count === null ? "Not evaluated" : String(row.count)} copy={copy} />
         </div>
-        {row.first === null ? <p className={styles.hint}>{row.valid ? "No first match." : "First match not evaluated."}</p> : <Value label={`${label} · First match`} value={row.first} copy={copy} />}
+        {row.first === null ? <Hint>{row.valid ? "No first match." : "First match not evaluated."}</Hint> : <Value label={`${label} · First match`} value={row.first} copy={copy} />}
         {row.error !== undefined && <Value label={`${label} · Error`} value={row.error} copy={copy} />}
-      </article>;
+      </Panel>;
     })}
   </div>;
   return <div className={styles.list}>
@@ -111,7 +120,7 @@ function Result({ result, copy }: { result: RegexResult; copy: CopyValue }) {
       <Value label="Match status" value={result.matched ? "Matched" : "No match"} copy={copy} />
     </div>}
     {result.kind === "capture" && <Definitions definitions={result.definitions ?? []} copy={copy} />}
-    {result.matches?.length ? <Pages items={result.matches} label="matches" render={match => <MatchCard key={match.number} match={match} kind={result.kind} copy={copy} />} /> : <p className={styles.hint}>No matches.</p>}
+    {result.matches?.length ? <Pages items={result.matches} label="matches" render={match => <MatchCard key={match.number} match={match} kind={result.kind} copy={copy} headingId={`${prefix}-match-${match.number}`} />} /> : <Hint>No matches.</Hint>}
   </div>;
 }
 
@@ -126,6 +135,7 @@ function Workspace({ definition }: { definition: RegexToolDefinition }) {
   const revision = useRef(0);
   const controller = useRef<AbortController | null>(null);
   const mounted = useRef(true);
+  const { copy: copyText } = useCopy();
 
   useEffect(() => {
     mounted.current = true;
@@ -180,55 +190,68 @@ function Workspace({ definition }: { definition: RegexToolDefinition }) {
   const copy: CopyValue = async (value, label) => {
     const ownRevision = revision.current;
     setNotice("");
-    try {
-      if (!navigator.clipboard?.writeText) throw new Error("Clipboard unavailable");
-      await navigator.clipboard.writeText(value);
-      if (mounted.current && ownRevision === revision.current) setNotice(`Copied ${label}.`);
-    } catch {
-      if (mounted.current && ownRevision === revision.current) setNotice("Could not copy. Allow clipboard access or select and copy the result manually.");
-    }
+    const ok = await copyText(value);
+    if (!mounted.current || ownRevision !== revision.current) return;
+    setNotice(
+      ok
+        ? `Copied ${label}.`
+        : "Could not copy. Allow clipboard access or select and copy the result manually."
+    );
   };
 
   return <div className={styles.station}>
-    <form onSubmit={execute} className={styles.form} aria-label={`${definition.name} inputs`}>
-      <div className={styles.fields}>
-        {contract.fields.map(field => {
-          const id = `${prefix}-${field.name}`;
-          const describedBy = [field.hint ? `${id}-hint` : "", error ? `${prefix}-error` : ""].filter(Boolean).join(" ") || undefined;
-          if (field.control === "checkbox-group") return <fieldset key={field.name} id={id} className={styles.flagField} aria-describedby={describedBy} aria-invalid={!!error}>
-            <legend>{field.label}</legend>
-            <div className={styles.flags}>{field.options?.map(flag => <label key={flag} htmlFor={`${id}-${flag}`} className={styles.flag}>
-              <input id={`${id}-${flag}`} type="checkbox" checked={(values[field.name] ?? "").includes(flag)} aria-describedby={describedBy} aria-invalid={!!error} onChange={event => {
-                const selected = values[field.name] ?? "";
-                edit(field.name, (field.options ?? []).filter(option => option === flag ? event.target.checked : selected.includes(option)).join(""));
-              }} />
-              <span><strong>{flag}</strong> · {flagNames[flag]}</span>
-            </label>)}</div>
-            {field.hint && <p className={styles.hint} id={`${id}-hint`}>{field.hint}</p>}
-          </fieldset>;
-          return <div className={styles.field} key={field.name}>
-            <label htmlFor={id}>{field.label}</label>
-            {field.control === "select" ? <select id={id} value={values[field.name] ?? ""} onChange={event => edit(field.name, event.target.value)} aria-describedby={describedBy} aria-invalid={!!error}>
-              {field.options?.map(option => <option key={option} value={option}>{option}</option>)}
-            </select> : <textarea id={id} value={values[field.name] ?? ""} onChange={event => edit(field.name, event.target.value)} rows={field.name === "text" || field.name === "literal" ? 7 : 3} spellCheck={false} autoComplete="off" autoCapitalize="off" aria-describedby={describedBy} aria-invalid={!!error} />}
-            {field.hint && <p className={styles.hint} id={`${id}-hint`}>{field.hint}</p>}
-          </div>;
-        })}
-      </div>
-      {definition.id === "regex-pattern-builder" && values.caseSensitivity === "Case insensitive" && <p className={styles.hint}>Use the i flag with this generated pattern for case-insensitive matching.</p>}
-      <div className={styles.actions}>
-        <button type="submit" className={`${styles.button} ${styles.primary}`} disabled={busy}>{busy ? "Running…" : contract.action}</button>
-        <button type="button" className={styles.button} onClick={() => reset(true)}>Load example</button>
-        <button type="button" className={styles.button} onClick={() => reset()}>Clear</button>
-      </div>
-      {error && <p id={`${prefix}-error`} className={styles.error} role="alert">{error}</p>}
-    </form>
-    <p className={styles.hint} role="status" aria-live="polite">{busy ? "Processing locally…" : notice || (result ? "Result ready." : "")}</p>
-    <section className={styles.results} aria-labelledby={`${prefix}-result-heading`} aria-busy={busy}>
-      <h2 id={`${prefix}-result-heading`}>{contract.outputLabel}</h2>
-      {result ? <Result result={result} copy={copy} /> : <p className={styles.hint}>Your result will appear here.</p>}
-    </section>
-    <div className={styles.notes}>{contract.notices.map(note => <p key={note}>{note}</p>)}<p>{contract.privacyMessage}</p></div>
+    <ToolLayout kind="form" className={styles.layout}>
+      <Panel title="Input" headingId={`${prefix}-input-heading`} padded>
+        <form onSubmit={execute} noValidate aria-labelledby={`${prefix}-input-heading`}>
+          <div className={styles.fields}>
+            {contract.fields.map(field => {
+              const id = `${prefix}-${field.name}`;
+              const describedBy = [field.hint ? `${id}-hint` : "", error ? `${prefix}-error` : ""].filter(Boolean).join(" ") || undefined;
+              if (field.control === "checkbox-group") return <div className={styles.full} key={field.name}>
+                <CheckboxGroup
+                  id={id}
+                  name={field.name}
+                  legend={field.label}
+                  options={(field.options ?? []).map(flag => ({
+                    value: flag,
+                    label: <><strong>{flag}</strong> · {flagNames[flag]}</>,
+                    checked: (values[field.name] ?? "").includes(flag),
+                  }))}
+                  describedBy={describedBy}
+                  invalid={Boolean(error)}
+                  hint={field.hint}
+                  hintId={`${id}-hint`}
+                  onChange={event => {
+                    const selected = values[field.name] ?? "";
+                    edit(field.name, (field.options ?? []).filter(option => option === event.target.value ? event.target.checked : selected.includes(option)).join(""));
+                  }}
+                />
+              </div>;
+              return <Field key={field.name} id={id} label={field.label} hint={field.hint} hintId={`${id}-hint`}>
+                {field.control === "select"
+                  ? <Select id={id} name={field.name} value={values[field.name] ?? ""} onChange={event => edit(field.name, event.target.value)} aria-describedby={describedBy} aria-invalid={error ? true : undefined}>
+                    {field.options?.map(option => <option key={option} value={option}>{option}</option>)}
+                  </Select>
+                  : <Textarea id={id} name={field.name} value={values[field.name] ?? ""} onChange={event => edit(field.name, event.target.value)} rows={field.name === "text" || field.name === "literal" ? 7 : 3} spellCheck={false} autoComplete="off" autoCapitalize="off" aria-describedby={describedBy} aria-invalid={error ? true : undefined} />}
+              </Field>;
+            })}
+          </div>
+          {definition.id === "regex-pattern-builder" && values.caseSensitivity === "Case insensitive" && <Hint>Use the i flag with this generated pattern for case-insensitive matching.</Hint>}
+          <div className={ui.actions}>
+            <Button type="submit" variant="primary" disabled={busy}>{busy ? "Running…" : contract.action}</Button>
+            <Button onClick={() => reset(true)}>Load example</Button>
+            <Button onClick={() => reset()}>Clear</Button>
+          </div>
+          {error && <Callout kind="error" id={`${prefix}-error`} className={styles.alert}>{error}</Callout>}
+        </form>
+      </Panel>
+      <Panel title={contract.outputLabel} headingId={`${prefix}-result-heading`} aria-busy={busy || undefined} padded>
+        {result ? <Result result={result} copy={copy} prefix={prefix} /> : <EmptyState>{busy ? "Processing locally…" : "Your result will appear here."}</EmptyState>}
+      </Panel>
+    </ToolLayout>
+    <StatusLine>{busy ? "Processing locally…" : notice || (result ? "Result ready." : "")}</StatusLine>
+    <PrivacyNote>{contract.privacyMessage}</PrivacyNote>
+    <ul className={styles.notes}>{contract.notices.map(note => <li key={note} className={ui.hint}>{note}</li>)}</ul>
   </div>;
 }
 

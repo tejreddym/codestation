@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowDown, ArrowUpRight } from "lucide-react";
 import { stations } from "@/config/stations";
@@ -10,6 +11,7 @@ import { DataPreview, ImagePreview, ColorPreview } from "@/components/HomeGraphi
 import HomeSearch, { type ToolCardMetadata } from "@/components/HomeSearch";
 import { JsonLd } from "@/components/StructuredData";
 import { siteConfig } from "@/config/site";
+import { buildHomeMetadata, homeDescription, homeFaqs } from "./home-metadata";
 import styles from "./Home.module.css";
 
 const lightweightTools: ToolCardMetadata[] = tools.map(tool => ({
@@ -22,6 +24,8 @@ const lightweightTools: ToolCardMetadata[] = tools.map(tool => ({
   featured: tool.featured,
 }));
 
+export const metadata: Metadata = buildHomeMetadata();
+
 const showcases = [
   { slug: "json-formatter", title: "A little order. A lot of clarity.", description: "Give structured data room to make sense.", label: "01 / STRUCTURED DATA", Graphic: DataPreview },
   { slug: "png-to-webp", title: "Same image. New format.", description: "Move from PNG to WebP, right in your browser.", label: "02 / IMAGE CONVERSION", Graphic: ImagePreview },
@@ -31,13 +35,35 @@ const showcases = [
 export default function HomePage() {
   return (
     <main className={styles.page}>
-      <JsonLd schema={{
-        "@context": "https://schema.org",
-        "@type": "WebSite",
-        name: siteConfig.name,
-        description: siteConfig.description,
-        ...(siteConfig.origin ? { url: siteConfig.origin } : {})
-      } as any} />
+      <JsonLd schema={[
+        {
+          "@context": "https://schema.org",
+          "@type": "WebSite",
+          name: siteConfig.name,
+          description: siteConfig.description,
+          ...(siteConfig.origin ? { url: siteConfig.origin } : {})
+        },
+        {
+          "@context": "https://schema.org",
+          "@type": "WebApplication",
+          name: siteConfig.name,
+          url: siteConfig.origin,
+          applicationCategory: "DeveloperApplication",
+          operatingSystem: "All (Web Browser)",
+          browserRequirements: "Requires JavaScript. 100% in-browser. Zero server uploads.",
+          description: homeDescription,
+          offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+        },
+        {
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          mainEntity: homeFaqs.map(item => ({
+            "@type": "Question",
+            name: item.question,
+            acceptedAnswer: { "@type": "Answer", text: item.answer },
+          })),
+        },
+      ] as any} />
       <div className={`shell ${styles.container}`}>
         <HomeSearch tools={lightweightTools}>
           <PersonalTools />
@@ -104,7 +130,7 @@ export default function HomePage() {
             <span className={styles.kicker}>LEVEL UP YOUR WORKFLOW</span>
             <h2 id="pro-title">Code Station Pro: Local MCP for AI Agents</h2>
             <p>
-              All 300+ browser developer tools are 100% free, private, and unlimited. Upgrade to Code Station Pro to supercharge Cursor, Claude Desktop, Windsurf, and AI coding agents with our local Model Context Protocol server.
+              All 370+ browser developer tools are 100% free, private, and unlimited. Upgrade to Code Station Pro to supercharge Cursor, Claude Desktop, Windsurf, and AI coding agents with our local Model Context Protocol server.
             </p>
           </div>
           <div className={styles.proActions}>
@@ -125,6 +151,19 @@ export default function HomePage() {
         <div style={{ display: "flex", justifyContent: "center", margin: "48px 0 24px", width: "100%" }}>
           <BannerAd size="leaderboard" />
         </div>
+
+        <section className={styles.faq} aria-labelledby="faq-title">
+          <span className={styles.kicker}>COMMON QUESTIONS</span>
+          <h2 id="faq-title">Common questions</h2>
+          <dl className={styles.faqList}>
+            {homeFaqs.map(item => (
+              <div className={styles.faqItem} key={item.question}>
+                <dt>{item.question}</dt>
+                <dd>{item.answer}</dd>
+              </div>
+            ))}
+          </dl>
+        </section>
 
         <section className={styles.principles} aria-labelledby="principles-title">
           <div className={styles.principleMark} aria-hidden="true">[<span>↗</span>]</div>

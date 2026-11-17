@@ -29,6 +29,8 @@ import type {
   PolicyDocument,
 } from "@/lib/tools/policy-generators/types";
 import { useToolHandoff } from "./WorkbenchProvider";
+import { downloadBlob } from "./ui/useDownload";
+import { useCopy } from "./ui/useCopy";
 import styles from "./PolicyGeneratorsStation.module.css";
 
 interface PolicyGeneratorsStationProps {
@@ -49,6 +51,7 @@ export default function PolicyGeneratorsStation({ toolId }: PolicyGeneratorsStat
 
   // Copy feedback state
   const [copied, setCopied] = useState(false);
+  const { copy } = useCopy();
 
   // Initial options loaded from default preset
   const initialOptions = useMemo(() => {
@@ -143,23 +146,10 @@ export default function PolicyGeneratorsStation({ toolId }: PolicyGeneratorsStat
   const handleCopy = useCallback(async () => {
     const textToCopy =
       activeFormat === "preview" ? serializedMarkdown : activeContent;
-    try {
-      if (navigator?.clipboard?.writeText) {
-        await navigator.clipboard.writeText(textToCopy);
-      } else {
-        const textarea = document.createElement("textarea");
-        textarea.value = textToCopy;
-        document.body.appendChild(textarea);
-        textarea.select();
-        document.execCommand("copy");
-        document.body.removeChild(textarea);
-      }
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      // Fallback
-    }
-  }, [activeFormat, serializedMarkdown, activeContent]);
+    const ok = await copy(textToCopy);
+    setCopied(ok);
+    if (ok) setTimeout(() => setCopied(false), 2000);
+  }, [activeFormat, serializedMarkdown, activeContent, copy]);
 
   // File Download
   const handleDownload = useCallback(() => {
@@ -183,15 +173,7 @@ export default function PolicyGeneratorsStation({ toolId }: PolicyGeneratorsStat
 
     const dateStr = new Date().toISOString().split("T")[0];
     const filename = `${toolId}-${dateStr}.${extension}`;
-    const blob = new Blob([content], { type: mimeType });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    downloadBlob(content, filename, mimeType);
   }, [activeFormat, serializedMarkdown, serializedHtmlStandalone, serializedPlainText, serializedJson, toolId]);
 
   // Print / Save to PDF

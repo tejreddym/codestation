@@ -1,0 +1,19 @@
+/* Layout only. Colors and type come from the shared UI layer and tokens. */
+.textContainer { max-width: 1080px; margin-inline: auto; }
+.textControls { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-4); }
+.textDropTitle { color: var(--ink); font-size: var(--text-sm); font-weight: 700; }
+.textDropSub { color: var(--secondary); font-size: var(--text-xs); }
+.textPages { display: grid; gap: var(--space-4); max-height: 760px; overflow: auto; padding-right: var(--space-1); }
+.textPage { display: grid; gap: var(--space-2); min-width: 0; }
+.textPageHeader { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: var(--space-1) var(--space-3); }
+.textPageTitle { margin: 0; font-size: var(--text-md); }
+.textPageMeta { color: var(--secondary); font-family: var(--font-mono); font-size: var(--text-xs); }
+.textPageText { min-height: 0; max-height: 320px; }
+.textMatch { background: var(--yellow); color: inherit; }
+@media (max-width: 900px) {
+  .textControls { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 720px) {
+  .textPages { max-height: none; }
+  .textPageText { max-height: 260px; }
+}

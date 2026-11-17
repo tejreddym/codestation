@@ -1,6 +1,10 @@
 "use client";
 
 import { useRef, type ChangeEvent } from "react";
+import { Button } from "./ui/Button";
+import { Field, Hint } from "./ui/Field";
+import { Select, TextInput } from "./ui/controls";
+import ui from "./ui/ui.module.css";
 import styles from "./ApiStructuredFields.module.css";
 
 export type ApiStructuredKind = "entries" | "headers" | "parameters" | "fields" | "arguments" | "selectedFields";
@@ -41,25 +45,27 @@ export default function ApiStructuredFields({ kind, name, id, label, value, onCh
 
   function input(path: string, fieldLabel: string, current: unknown, change: (next: string) => void, options?: readonly string[], disabled = false, secret = false) {
     const fieldId = `${id}-${path.replace(/\./g, "-")}`;
-    const props = {
-      id: fieldId, name: path, "data-api-field": path, className: styles.input, disabled,
-      value: typeof current === "string" ? current : "", onChange: (event: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => change(event.target.value),
+    const common = {
+      id: fieldId, name: path, "data-api-field": path, disabled,
+      value: typeof current === "string" ? current : "",
+      onChange: (event: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => change(event.target.value),
       "aria-describedby": describedBy, "aria-invalid": apiFieldMatches(errorField, path) || undefined,
     };
-    return <div className={styles.field} key={path}><label htmlFor={fieldId}>{fieldLabel}</label>
-      {options ? <select {...props}>{options.map(option => <option key={option} value={option}>{option}</option>)}</select>
-        : <input {...props} type={secret ? "password" : "text"} autoComplete="off" autoCapitalize="off" spellCheck={false} />}
-    </div>;
+    return <Field key={path} id={fieldId} label={fieldLabel}>
+      {options
+        ? <Select {...common}>{options.map(option => <option key={option} value={option}>{option}</option>)}</Select>
+        : <TextInput {...common} type={secret ? "password" : "text"} autoComplete="off" autoCapitalize="off" spellCheck={false} />}
+    </Field>;
   }
 
-  return <fieldset ref={root} className={styles.editor} aria-describedby={describedBy} aria-invalid={apiFieldMatches(errorField, name) || undefined}>
-    <legend>{label}</legend>
-    {records.length === 0 && <p className={styles.hint}>No {noun}s added.</p>}
+  return <fieldset ref={root} className={`${ui.fieldset} ${styles.editor}`} aria-describedby={describedBy} aria-invalid={apiFieldMatches(errorField, name) || undefined}>
+    <legend className={ui.legend}>{label}</legend>
+    {records.length === 0 && <Hint>No {noun}s added.</Hint>}
     <div className={styles.records}>{records.map((raw, index) => {
       const row: Row = raw && typeof raw === "object" ? raw : {};
       const prefix = `${title} ${index + 1}`;
       return <div className={styles.record} key={index}>
-        <div className={styles.recordHead}><strong>{prefix}</strong><button type="button" className={styles.button} data-remove={name} aria-label={`Remove ${noun} ${index + 1}`} onClick={event => {
+        <div className={styles.recordHead}><strong>{prefix}</strong><Button size="sm" data-remove={name} aria-label={`Remove ${noun} ${index + 1}`} onClick={event => {
           const source = event.currentTarget;
           onChange(records.filter((_, position) => position !== index));
           focusAfterChange(source, () => {
@@ -67,7 +73,7 @@ export default function ApiStructuredFields({ kind, name, id, label, value, onCh
             if (buttons?.length) buttons[Math.min(index, buttons.length - 1)].focus();
             else root.current?.querySelector<HTMLButtonElement>(`button[data-add="${name}"]`)?.focus();
           });
-        }}>Remove</button></div>
+        }}>Remove</Button></div>
         <div className={styles.cells}>{kind === "selectedFields"
           ? input(`${name}.${index}`, prefix, typeof raw === "object" ? row.name : raw, next => onChange(records.map((item, position) => position === index ? typeof item === "object" ? { ...item, name: next } : next : item)))
           : Object.keys(templates[kind]).map(key => input(
@@ -78,11 +84,11 @@ export default function ApiStructuredFields({ kind, name, id, label, value, onCh
           ))}</div>
       </div>;
     })}</div>
-    <button type="button" className={styles.button} data-add={name} data-api-field={name} aria-describedby={describedBy} disabled={records.length >= LIMIT} onClick={event => {
+    <Button size="sm" data-add={name} data-api-field={name} aria-describedby={describedBy} disabled={records.length >= LIMIT} onClick={event => {
       const source = event.currentTarget;
       onChange([...records, kind === "selectedFields" ? "" : { ...templates[kind] }]);
       const path = `${name}.${records.length}${kind === "selectedFields" ? "" : `.${Object.keys(templates[kind])[0]}`}`;
       focusAfterChange(source, () => root.current?.querySelector<HTMLElement>(`[data-api-field="${path}"]`)?.focus());
-    }}>Add {noun}</button>
+    }}>Add {noun}</Button>
   </fieldset>;
 }

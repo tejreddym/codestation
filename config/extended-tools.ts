@@ -16,7 +16,7 @@ export const extendedTools: readonly LocalDefinition<ExtendedToolId>[] = [
   localDefinition(
     "curl-to-any-language",
     "cURL to Any Language Generator",
-    "Developer Tools",
+    "API",
     [
       { name: "curl", label: "cURL command", control: "textarea" },
       {
@@ -41,7 +41,7 @@ export const extendedTools: readonly LocalDefinition<ExtendedToolId>[] = [
   localDefinition(
     "env-audit",
     "Environment & Secret Leak Scanner",
-    "Developer Tools",
+    "Security",
     [
       { name: "env", label: ".env content", control: "textarea" },
       { name: "example", label: ".env.example content", control: "textarea", optional: true },
@@ -61,7 +61,7 @@ export const extendedTools: readonly LocalDefinition<ExtendedToolId>[] = [
   localDefinition(
     "mock-data",
     "Realistic Mock Data & SQL Seeder",
-    "Developer Tools",
+    "JSON & Data",
     [
       {
         name: "template",
@@ -94,7 +94,7 @@ export const extendedTools: readonly LocalDefinition<ExtendedToolId>[] = [
   localDefinition(
     "conflict-parse",
     "Git Merge Conflict Resolver",
-    "Developer Tools",
+    "Git & Version Control",
     [
       { name: "content", label: "File with merge conflict markers", control: "textarea" },
       {

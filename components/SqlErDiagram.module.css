@@ -26,5 +26,8 @@
 .structure > .note { padding: 12px; }
 .zoom input:focus-visible, .viewport:focus-visible, .structure summary:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }
 
-.diagram { --surface:#ffffff; --line-strong:#b9c7d6; --ink:#142033; --secondary:#526277; --accent:#0f766e; }
+/* Diagram-specific technical palette. It intentionally differs from the editorial
+   tokens and is mapped onto shared primitives in W3; only the identical surface
+   token is shared today so the diagram colors do not shift in W0. */
+.diagram { --line-strong:#b9c7d6; --ink:#142033; --secondary:#526277; --accent:#0f766e; }
 :global([data-theme="dark"]) .diagram { --surface:#121a24; --line-strong:#3a4a60; --ink:#f3f7fc; --secondary:#a6b3c2; --accent:#5eead4; }

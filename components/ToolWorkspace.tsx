@@ -12,6 +12,7 @@ import { isSqlToolId } from "@/config/sql-tools";
 import { isWebToolId } from "@/config/web-tools";
 import { isApiToolId } from "@/config/api-tools";
 import { isImageToolId } from "@/config/image-tools";
+import { isVideoToolId } from "@/config/video-tools";
 import { isSpreadsheetToolId } from "@/config/spreadsheet-tools";
 import { isMarkdownToolId } from "@/config/markdown-tools";
 import { isColorToolId } from "@/config/color-tools";
@@ -28,7 +29,26 @@ import { isCompressionToolId } from "@/config/compression-tools";
 import { isCryptoPkiToolId } from "@/config/crypto-pki-tools";
 import { isAiPromptsToolId } from "@/config/ai-prompts-tools";
 import { isPolicyToolId } from "@/config/policy-tools";
+import { isGitToolId } from "@/config/git-tools";
+import { isFinanceToolId } from "@/config/finance-tools";
+import { isProductivityToolId } from "@/config/productivity-tools";
 import type { RegisteredToolId } from "@/config/tools";
+
+const FinanceStation = dynamic(() => import("./FinanceStation"), {
+  loading: () => <p role="status">Loading Finance &amp; Calculators controls…</p>,
+});
+
+const PomodoroTimer = dynamic(() => import("./PomodoroTimer"), {
+  loading: () => <p role="status">Loading Pomodoro Timer controls…</p>,
+});
+
+const GitStation = dynamic(() => import("./GitStation"), {
+  loading: () => <p role="status">Loading Git &amp; Version Control controls…</p>,
+});
+
+const VideoStation = dynamic(() => import("./VideoStation"), {
+  loading: () => <p role="status">Loading Video controls…</p>,
+});
 
 const PolicyGeneratorsStation = dynamic(() => import("./PolicyGeneratorsStation"), {
   loading: () => <p role="status">Loading Policy Generator controls…</p>,
@@ -119,6 +139,10 @@ const NumericStation = dynamic(() => import("./NumericStation"), {
 import WebMcpBridge from "./WebMcpBridge";
 
 function renderStation(toolId: RegisteredToolId) {
+  if (isProductivityToolId(toolId)) return <PomodoroTimer key={toolId} />;
+  if (isFinanceToolId(toolId)) return <FinanceStation key={toolId} toolId={toolId} />;
+  if (isGitToolId(toolId)) return <GitStation key={toolId} toolId={toolId} />;
+  if (isVideoToolId(toolId)) return <VideoStation key={toolId} toolId={toolId} />;
   if (isPolicyToolId(toolId)) return <PolicyGeneratorsStation key={toolId} toolId={toolId} />;
   if (isCryptoPkiToolId(toolId)) return <CryptoPkiStation key={toolId} toolId={toolId} />;
   if (isAiPromptsToolId(toolId)) return <AiPromptsStation key={toolId} toolId={toolId} />;

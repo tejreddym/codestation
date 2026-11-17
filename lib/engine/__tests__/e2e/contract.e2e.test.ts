@@ -1389,7 +1389,7 @@ describe("E2E Contract: Feature 17 - adaptToolToEngine Legacy Adapter", () => {
   });
 });
 
-describe("E2E Contract: Feature 18 - Full 362 Tool Registry Unification", () => {
+describe("E2E Contract: Feature 18 - Full 380 Tool Registry Unification", () => {
   beforeEach(() => {
     setupTestEnvironment();
   });
@@ -1400,15 +1400,15 @@ describe("E2E Contract: Feature 18 - Full 362 Tool Registry Unification", () => 
 
   // --- Tier 1: Feature Coverage (Happy Path) ---
 
-  it("TIER1-F18-01: verifies exactly 362 registered tools in authoritative catalog", () => {
+  it("TIER1-F18-01: verifies exactly 380 registered tools in authoritative catalog", () => {
     expect(tools).toBeDefined();
     expect(Array.isArray(tools)).toBe(true);
-    expect(tools.length).toBe(362);
+    expect(tools.length).toBe(380);
   });
 
-  it("TIER1-F18-02: verifies exactly 27 unique station categories", () => {
+  it("TIER1-F18-02: verifies exactly 30 unique tool categories", () => {
     const categories = new Set(tools.map((t) => t.category));
-    expect(categories.size).toBe(27);
+    expect(categories.size).toBe(30);
   });
 
   it("TIER1-F18-03: verifies 100% of registered tools have unique id", () => {
@@ -1423,17 +1423,17 @@ describe("E2E Contract: Feature 18 - Full 362 Tool Registry Unification", () => 
     }
 
     expect(duplicates).toEqual([]);
-    expect(ids.size).toBe(362);
+    expect(ids.size).toBe(380);
   });
 
-  it("TIER1-F18-04: verifies 361 local tools and exactly 1 network-opt-in tool (api-request-tester)", () => {
+  it("TIER1-F18-04: verifies local tools and exactly 1 network-opt-in tool (api-request-tester)", () => {
     const networkOptInTools = tools.filter((t) => t.id === "api-request-tester");
     expect(networkOptInTools).toHaveLength(1);
     expect(networkOptInTools[0].id).toBe("api-request-tester");
   });
 
-  it("TIER1-F18-05: verifies category distribution and station route mapping across all 362 registered tools", () => {
-    expect(tools.length).toBe(362);
+  it("TIER1-F18-05: verifies category distribution and station route mapping across all 380 registered tools", () => {
+    expect(tools.length).toBe(380);
 
     for (const tool of tools) {
       expect(tool.id).toBeDefined();
@@ -1445,7 +1445,7 @@ describe("E2E Contract: Feature 18 - Full 362 Tool Registry Unification", () => 
     }
 
     const categories = new Set(tools.map((t) => t.category));
-    expect(categories.size).toBe(27);
+    expect(categories.size).toBe(30);
     expect(categories).toContain("JSON & Data");
     expect(categories).toContain("Security");
     expect(categories).toContain("Encoding");
@@ -1453,6 +1453,11 @@ describe("E2E Contract: Feature 18 - Full 362 Tool Registry Unification", () => 
     expect(categories).toContain("Text");
     expect(categories).toContain("Cron");
     expect(categories).toContain("SQL & Database");
+    expect(categories).toContain("Git & Version Control");
+    expect(categories).toContain("Video");
+    expect(categories).not.toContain("Developer Tools");
+    expect(categories).toContain("Finance & Calculators");
+    expect(categories).toContain("Productivity");
   });
 
   // --- Tier 2: Boundary & Corner Cases ---
@@ -1512,7 +1517,7 @@ describe("E2E Contract: Feature 18 - Full 362 Tool Registry Unification", () => 
     }
   });
 
-  it("TIER2-F18-05: verifies all 362 tools have non-empty description and valid keywords array", () => {
+  it("TIER2-F18-05: verifies all 380 tools have non-empty description and valid keywords array", () => {
     for (const tool of tools) {
       expect(tool.description.trim().length).toBeGreaterThan(0);
       expect(Array.isArray(tool.keywords)).toBe(true);

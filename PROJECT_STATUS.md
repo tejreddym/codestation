@@ -1,5 +1,63 @@
 # Project Status
 
+## Batch 4 — Homepage Search Placement, Station Corrections & SEO/AEO/GEO — 2026-11-16
+
+- **Homepage search placement**: `components/HomeSearch.tsx` now keeps an independent `searchResults` value, conditionally replaces PersonalTools and Quick access while a trimmed query is active, renders the result panel directly below the input with an internal `min(50vh, 360px)` scroll, and places the format-triage panel after the result list. The input is an ARIA combobox (`aria-expanded`, `aria-controls`, `aria-autocomplete`, `aria-activedescendant`); options are listbox options with wrap-around Arrow navigation, Enter opens the active (or first) result, Escape clears and restores focus, hover sets the active option, and the polite count is the only live status. No-result copy and Clear live inside the panel.
+- **Station corrections**: `curl-to-any-language` → API, `env-audit` → Security, `mock-data` → JSON & Data, `conflict-parse` → Git & Version Control; the empty Developer Tools category was removed. `video-thumbnail-generator` moved unchanged into the new Video station (`config/video-tools.ts`, `components/VideoStation.tsx`, lazy guard) with Image reduced to 28 still-image tools. `app/tools/[slug]` now falls back to `/tools` instead of hardcoding Image, and a registry test proves every category resolves to an implemented station. Image/PDF/signature-pad copy no longer overstates video or PDF signing support.
+- **Homepage SEO/AEO/GEO**: explicit metadata in `app/home-metadata.ts` (branded title with one suffix, 153-character description, origin-guarded canonical/OG/Twitter, existing 1200×630 brand card), the global layout canonical removed and every public route audited for its own metadata, visible “Common questions” FAQ matching FAQPage JSON-LD, WebSite + WebApplication schema, and `public/llms.txt`. Live marketing copy stays 370+; directory counts are 377 tools / 30 categories / 30 stations.
+- **Verification**: `npx tsc --noEmit` clean; `npm run audit:ui` 0 errors / 24 pre-existing warnings, no allowlist changes; `npm run lint` exit 0 / 0 errors / 16 warnings; `npm test` 6,691 passed across 183 files. Headless Chrome on a separate CDP port against the untouched dev server passed 55/55 checks (search DOM order/geometry/ARIA/keyboard/clear, 390 zero overflow, light/dark, seven stations, four recategorised tools, Video tool page, five regression routes, clean console). Screenshots: `/tmp/codestation-b4-shots`.
+- **Not verified**: production build (dev server owns `.next`), live JSON-LD on this dev server because `SITE_INDEXING` is not `index` (rendered and parsed in a jsdom test with a verified origin), and real WebMCP host execution. No commit, push, publish, or new dependency.
+
+## Batch 3 — Video Thumbnails, Pomodoro & Count Fixes — 2026-11-16
+
+- **New Image tool**: `video-thumbnail-generator` in `config/video-tools.ts` (the new Video station owns it; Image owns 28 still-image tools) with hand-written description, keywords, related tools and SEO metadata. `components/VideoThumbnailTool.tsx` validates the file type, reads duration/dimensions/size, captures the playhead frame or 1–12 evenly spaced frames, supports PNG/JPEG with quality, Original/1920/1280/640 max width (never upscales, hard 4096 px clamp), sequential capture with `ProgressBar` and a working Cancel, per-frame downloads, and a store-mode fflate ZIP for multiple frames. Object URLs are revoked on replace, clear and unmount; no upload or persistence.
+- **New Productivity station**: `/stations/productivity` with `pomodoro-timer`, a `Timer` mark, a local-only landing notice and related Date & Time, Text and Finance & Calculators stations. Focus/short/long durations of 1–120 minutes, 2–8 sessions before a long break, optional auto-start, opt-in Web Audio beep, absolute-time countdown from `endAt` on a ~250 ms interval with `visibilitychange` resync, Start/Pause/Resume/Reset/Skip, phase and completed-session display, and phase-only polite announcements. No localStorage/IndexedDB, notification permission or document-title changes.
+- **Batch 1 defects fixed**: FIN-D1 removed the manual `| Code Station` suffix from four finance SEO titles (rendered titles now carry exactly one template suffix); FIN-D2 refreshed live copy to 377 tools / 30 stations and “370+” tools while leaving changelog history intact; FIN-D3 routes oversized finance values through per-field validation (`aria-invalid`, `aria-describedby`, visible message) instead of the catch-all alert, with the catch retained as last resort.
+- **Registry**: 377 tools across 30 categories and 30 implemented stations; live copy reads 370+ tools / 30 stations. Image owns 28 tools after the Video extraction; API, Security, JSON & Data and Git each gained one recategorised tool.
+- **WebMCP**: `video-thumbnail-generator` returns `manual-file-required`; `pomodoro-timer` returns `manual-ui-required`; both are covered by dispatcher tests.
+- **Verification**: `npx tsc --noEmit` clean; `npm run audit:ui` 0 errors and the same 24 pre-existing warnings with no new allowlist entries; `npm run lint` exit 0 with no new warnings; `npm test` 6,675 passed / 6,677 with only the two known date-dependent DEFECT-M1-04 policy-generator failures (`terms-and-conditions` and `refund-policy`) across 177 of 178 files. Headless Chrome against the untouched dev server ran 59 main checks plus 4 fresh-page replacement/keyboard checks over ffmpeg fixtures (3 s 640×360 H.264 MP4, 3 s 1280×720 MP4, 3 s VP9/WebM, audio-only MP4/M4A and a corrupt MP4): metadata, playhead and 3-frame capture timestamps, PNG/JPEG downloads at 640×360, 1280→640 downscaling, 3-entry store-mode ZIP, Cancel, corrupt/audio/non-video errors, object-URL revocation on clear and replace, keyboard capture, 1440/390 light/dark with zero overflow, Pomodoro countdown/pause/resume/reset/skip through four focus sessions to a long break, auto-start, beep toggle, no storage/IndexedDB/notification/title writes, aria-live, clean console, and regression routes `/tools/image-compressor`, `/tools/pdf-to-text`, `/tools/emi-calculator`, `/`, `/tools`, `/docs`. Fixtures: `/tmp/codestation-video-fixtures`; screenshots: `/tmp/codestation-b3-shots`.
+- **Defect found and fixed during verification**: the Pomodoro privacy note was a direct child of `ToolLayout kind="form"`, so it took the second grid column and squeezed the Session settings panel to ~215 px at 1440 px, wrapping labels one word per line and clipping the clock. The note now sits outside the form grid, with the two panels as the only grid children; the final 1440/390 screenshots confirm the fix.
+- **Not verified**: production build, Safari/Firefox codec behavior, and actual WebMCP host execution. No commit, push, publish, or production build.
+
+## Batch 2 — PDF Tools — 2026-11-16
+
+- **Three new tools in the existing PDF station** (no new station): `pdf-to-text` (per-page extraction, page selection and search with match counts, copy, TXT download, no-text/scan warnings with an explicit “no OCR” notice), `pdf-to-images` (72/150/300 DPI, PNG/JPEG, sequential render with a working Cancel, per-page downloads, ZIP via fflate, object-URL revocation on clear and unmount), and `pdf-reorder-pages` (thumbnails, drag plus keyboard Move up/down with focus retention, remove/reset, export via pdf-lib and reopen verification). `pdf-text-extractor` metadata behaviour is unchanged.
+- **Dependency and assets**: exact runtime pin `pdfjs-dist@6.5.438`; lazy browser-only loader in `lib/tools/pdf/pdfjs.ts`; worker, cmaps and standard fonts self-hosted under gitignored `public/pdfjs/` by `scripts/copy-pdfjs-assets.mjs` (wired to `postinstall` and the start of `build`). No CDN and no top-level pdf.js import; server modules never load it.
+- **Shared pieces**: `components/ui/ProgressBar.tsx` with `role="progressbar"` and aria value attributes; pure helpers for page ranges, text assembly, filenames and reorder mapping in `lib/tools/pdf/`, covered by unit tests.
+- **Registry**: 375 tools across 29 categories and 28 implemented stations; PDF station owns 12 contracts; live copy still reads 370+ tools / 28 stations.
+- **Verification**: `npx tsc --noEmit` clean; `npm run audit:ui` 0 errors (24 pre-existing warnings, no new allowlist entries); `npm run lint` exit 0; `npm test` 6,646 passed with only the two known date-dependent policy-generator failures. Headless-Chrome checks against the dev server covered extraction/selection/search/TXT/errors, image dimensions and ZIP contents, cancel and object-URL lifecycle, drag/keyboard reorder and exported page order, plus all three tools at 1440/390 in light and dark with no overflow or console errors.
+- **Not verified**: the OpenNext production build for the new `public/pdfjs/` static assets and the lazily loaded pdf.js chunk. No commit, push, publish, or production build.
+
+## Batch 1 — Finance & Calculators Station — 2026-11-15
+
+- **New station**: `/stations/finance-calculators` with `Landmark` mark, a local-only notice, and related Developer Math, Text, and Spreadsheet stations.
+- **Four browser-local calculators**: `emi-calculator`, `loan-prepayment-calculator`, `gst-calculator`, `sip-calculator`, backed by pure engines in `lib/tools/finance/` and hand-written descriptions, keywords, related tools, and SEO metadata.
+- **UI**: `components/FinanceStation.tsx` + layout-only CSS built from the shared primitives; per-tool validation, empty states, CSV downloads, copyable summaries, and dated assumption disclaimers.
+- **WebMCP**: explicit dispatcher cases for all four ids (including `codestation_`-prefixed names) with the same JSON shapes as the engines.
+- **Registry**: 372 tools across 29 categories and 28 implemented stations; live copy now reads 370+ tools / 28 stations.
+- **Verification**: `npx tsc --noEmit`, `npm run audit:ui`, `npm run lint`, focused engine/registry/WebMCP suites, and browser checks at 1440/390 in light and dark. No commit, push, publish, new dependency, or production build.
+
+## Feature Wave 1 — Command Palette & Git Station — 2026-11-11
+
+- **Global command palette**:
+  - Added a header trigger and Cmd/Ctrl+K shortcut in `components/CommandPalette.tsx`; the dialog is loaded with `next/dynamic` only on first open.
+  - `components/CommandPaletteDialog.tsx` provides grouped Tools/Stations/Actions results, reuse of `searchTools`, an empty featured state, combobox/listbox ARIA with `aria-activedescendant`, Arrow/Home/End/Enter/Escape handling, focus restoration, body scroll lock, and backdrop close.
+  - `lib/command-palette/catalog.ts` is imported only by the lazy dialog chunk. The built palette chunk is 25,011 bytes raw / 6,933 bytes gzip.
+  - `components/CommandPalette.test.tsx` covers lazy loading, keyboard toggling, filtering, navigation, focus restoration, close paths, and absence of network/storage writes.
+  - `components/ToolLauncher.tsx` no longer claims Cmd/Ctrl+K when the palette shell is mounted, avoiding a double dialog while preserving standalone launcher behavior.
+- **Git & Version Control station (Station 27)**:
+  - Added six local tools — `conventional-commit-builder`, `conventional-commit-validator`, `git-command-explainer`, `changelog-generator`, `gitattributes-generator`, `git-hooks-generator` — and shared `gitignore-generator` without changing its route or owning station.
+  - Added `lib/tools/git/*` pure bounded engines, `config/git-tools.ts`, `components/GitStation.tsx` / `.module.css`, WebMCP dispatch for all six tools, the `GitBranch` mark, and `/stations/git` through the generic station route.
+  - Inputs are capped at 200 KB; nothing reads a repository, executes Git, writes hooks, or leaves the browser.
+- **Registry consistency**:
+  - Registry now contains 372 tools across 29 tool categories and 28 implemented stations.
+  - Updated live count copy to 370+ tools / 28 stations and refreshed stale count assertions, adding unique-slug, Finance-station, and Git-station contract coverage.
+- **Verification**:
+  - `npm run typecheck` passed.
+  - `npm test` passed: 163 files, 6,585 tests.
+  - `npm run build` passed: 420 static pages, including 368 tool routes.
+  - No commit, push, deployment, or dev server was used.
+
 ## Strategic Ad Placements Expansion — 2026-11-11
 
 - **Ad Units Expanded Across High-Traffic Views**:

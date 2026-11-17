@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useCopy } from "./ui/useCopy";
 import styles from "./CopySnippet.module.css";
 
 interface CopySnippetProps {
@@ -11,24 +12,12 @@ interface CopySnippetProps {
 
 export function CopySnippet({ code, title, language = "json" }: CopySnippetProps) {
   const [copied, setCopied] = useState(false);
+  const { copy } = useCopy();
 
   async function handleCopy() {
-    try {
-      if (typeof navigator !== "undefined" && navigator.clipboard) {
-        await navigator.clipboard.writeText(code);
-      } else {
-        const textarea = document.createElement("textarea");
-        textarea.value = code;
-        document.body.appendChild(textarea);
-        textarea.select();
-        document.execCommand("copy");
-        document.body.removeChild(textarea);
-      }
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2200);
-    } catch {
-      // Failed to copy
-    }
+    if (!(await copy(code))) return;
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2200);
   }
 
   return (

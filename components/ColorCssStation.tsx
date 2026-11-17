@@ -9,6 +9,9 @@ import { ColorError, type ColorResult } from "@/lib/tools/color/types";
 import { useConverterSession } from "./ConverterSession";
 import { useSafePathname, useSafeRouter } from "./useSafeNavigation";
 import styles from "./ColorCssStation.module.css";
+import ui from "./ui/ui.module.css";
+import { downloadBlob } from "./ui/useDownload";
+import { useCopy } from "./ui/useCopy";
 
 type Definition = NonNullable<ReturnType<typeof getColorDefinition>>;
 
@@ -61,6 +64,7 @@ function Station({ definition }: { definition: Definition }) {
   const [busy, setBusy] = useState(false);
   const mounted = useRef(false);
   const revision = useRef(0);
+  const { copy: copyText } = useCopy();
   const form = useRef<HTMLFormElement>(null);
   const errorRef = useRef<HTMLParagraphElement>(null);
   const pathname = useSafePathname();
@@ -150,12 +154,8 @@ function Station({ definition }: { definition: Definition }) {
   }
 
   async function copy(text: string) {
-    try {
-      await navigator.clipboard.writeText(text);
-      setNotice("Copied.");
-    } catch {
-      setNotice("Could not copy. Select the result and copy it manually.");
-    }
+    const ok = await copyText(text);
+    setNotice(ok ? "Copied." : "Could not copy. Select the result and copy it manually.");
   }
 
   function updatePalette(index: number, value: string) {
@@ -173,14 +173,7 @@ function Station({ definition }: { definition: Definition }) {
 
   function download(text: string, filename: string, type = "text/plain") {
     try {
-      const url = URL.createObjectURL(new Blob([text], { type }));
-      const anchor = document.createElement("a");
-      anchor.href = url;
-      anchor.download = filename;
-      document.body.appendChild(anchor);
-      anchor.click();
-      anchor.remove();
-      URL.revokeObjectURL(url);
+      downloadBlob(text, filename, type);
       setNotice("Download started.");
     } catch {
       setNotice("Could not download. Copy the visible result instead.");
@@ -207,15 +200,15 @@ function Station({ definition }: { definition: Definition }) {
       <div className={styles.layout}>
         <form
           ref={form}
-          className={styles.panel}
+          className={ui.panel}
           onSubmit={submit}
           noValidate
           aria-labelledby={`${id}-input`}
           aria-describedby={`${id}-status`}
           aria-busy={busy}
         >
-          <div className={styles.head}>
-            <h2 id={`${id}-input`}>{definition.name} input</h2>
+          <div className={ui.panelHeader}>
+            <h2 id={`${id}-input`} className={ui.panelTitle}>{definition.name} input</h2>
           </div>
           <div className={styles.fields}>
             {contract.fields.map(field => {
@@ -272,8 +265,8 @@ function Station({ definition }: { definition: Definition }) {
                       aria-describedby={describedBy}
                       onChange={event => change(field.name, event.target.value)}
                     />
-                    {definition.id === "css-gradient-generator" && <div className={styles.actions}><button className="button" type="button" onClick={() => change("stops", `${String(values.stops ?? "")}\n#FFFFFF 100%`)}>Add stop</button><button className="button" type="button" onClick={() => { const lines = String(values.stops ?? "").split(/\r?\n/).filter(Boolean); if (lines.length > 2) change("stops", lines.slice(0, -1).join("\n")); }}>Remove stop</button></div>}
-                    {definition.id === "box-shadow-generator" && <div className={styles.actions}><button className="button" type="button" onClick={() => change("layers", `${String(values.layers ?? "")}\n0 0 4px 0 #000000`)}>Add layer</button><button className="button" type="button" onClick={() => { const lines = String(values.layers ?? "").split(/\r?\n/).filter(Boolean); if (lines.length > 1) change("layers", lines.slice(0, -1).join("\n")); }}>Remove layer</button></div>}
+                    {definition.id === "css-gradient-generator" && <div className={styles.actions}><button className={ui.button} type="button" onClick={() => change("stops", `${String(values.stops ?? "")}\n#FFFFFF 100%`)}>Add stop</button><button className={ui.button} type="button" onClick={() => { const lines = String(values.stops ?? "").split(/\r?\n/).filter(Boolean); if (lines.length > 2) change("stops", lines.slice(0, -1).join("\n")); }}>Remove stop</button></div>}
+                    {definition.id === "box-shadow-generator" && <div className={styles.actions}><button className={ui.button} type="button" onClick={() => change("layers", `${String(values.layers ?? "")}\n0 0 4px 0 #000000`)}>Add layer</button><button className={ui.button} type="button" onClick={() => { const lines = String(values.layers ?? "").split(/\r?\n/).filter(Boolean); if (lines.length > 1) change("layers", lines.slice(0, -1).join("\n")); }}>Remove layer</button></div>}
                     </>
                   ) : (
                     <input
@@ -294,15 +287,15 @@ function Station({ definition }: { definition: Definition }) {
             {contract.notices.map(noticeText => <p className={styles.note} key={noticeText}>{noticeText}</p>)}
           </div>
           <div className={`${styles.actions} ${styles.formActions}`}>
-            <button className="button primary" type="submit" disabled={busy}>{busy ? "Processing…" : contract.action}</button>
-            <button className="button" type="button" onClick={clear}>Clear</button>
+            <button className={`${ui.button} ${ui.primary}`} type="submit" disabled={busy}>{busy ? "Processing…" : contract.action}</button>
+            <button className={ui.button} type="button" onClick={clear}>Clear</button>
           </div>
         </form>
 
-        <section className={styles.panel} aria-labelledby={`${id}-output`}>
-          <div className={styles.head}>
-            <h2 id={`${id}-output`}>{contract.outputs.join(" · ")}</h2>
-            {result && <div className={styles.actions}><button className="button" type="button" onClick={() => void copy(definition.id === "palette-generator" ? palette.map(item => item.hex).join("\n") : result.text ?? JSON.stringify(result.data, null, 2))}>Copy</button>{definition.id === "palette-generator" && <button className="button" type="button" onClick={() => download(JSON.stringify(palette, null, 2), "palette.json", "application/json")}>Download JSON</button>}</div>}
+        <section className={ui.panel} aria-labelledby={`${id}-output`}>
+          <div className={ui.panelHeader}>
+            <h2 id={`${id}-output`} className={ui.panelTitle}>{contract.outputs.join(" · ")}</h2>
+            {result && <div className={styles.actions}><button className={ui.button} type="button" onClick={() => void copy(definition.id === "palette-generator" ? palette.map(item => item.hex).join("\n") : result.text ?? JSON.stringify(result.data, null, 2))}>Copy</button>{definition.id === "palette-generator" && <button className={ui.button} type="button" onClick={() => download(JSON.stringify(palette, null, 2), "palette.json", "application/json")}>Download JSON</button>}</div>}
           </div>
           {result ? (
             <div className={styles.result}>
@@ -315,14 +308,14 @@ function Station({ definition }: { definition: Definition }) {
                   <i style={{ backgroundColor: previewColor }} role="img" aria-label={`Color preview ${previewColor}`} />
                 </div>
               )}
-              {definition.id === "palette-generator" && palette.length > 0 && <div className={styles.paletteGrid} aria-label="Editable palette">{palette.map((item, index) => <div className={styles.paletteItem} key={item.name}><div className={styles.paletteSwatch} style={{ backgroundColor: item.hex }} aria-label={`${item.name} ${item.hex}`} /><label htmlFor={`${id}-palette-${index}`}>{item.name}<input className={styles.input} id={`${id}-palette-${index}`} type="text" value={item.hex} onChange={event => updatePalette(index, event.target.value)} /><button className="button" type="button" onClick={() => void copy(item.hex)}>Copy color</button></label></div>)}</div>}
+              {definition.id === "palette-generator" && palette.length > 0 && <div className={styles.paletteGrid} aria-label="Editable palette">{palette.map((item, index) => <div className={styles.paletteItem} key={item.name}><div className={styles.paletteSwatch} style={{ backgroundColor: item.hex }} aria-label={`${item.name} ${item.hex}`} /><label htmlFor={`${id}-palette-${index}`}>{item.name}<input className={styles.input} id={`${id}-palette-${index}`} type="text" value={item.hex} onChange={event => updatePalette(index, event.target.value)} /><button className={ui.button} type="button" onClick={() => void copy(item.hex)}>Copy color</button></label></div>)}</div>}
               <pre className={styles.output} tabIndex={0}>{result.text ?? JSON.stringify(result.data, null, 2)}</pre>
               {Object.keys(result.data).length > 0 && (
                 <dl className={styles.dataList}>
                   {Object.entries(result.data).map(([key, value]) => {
                     if (definition.id === "palette-generator" && ["palette", "json"].includes(key)) return null;
                     const text = displayValue(value);
-                    return <div key={key}><dt>{key}</dt><dd><button className="button" type="button" onClick={() => void copy(text)}>{text}</button></dd></div>;
+                    return <div key={key}><dt>{key}</dt><dd><button className={ui.button} type="button" onClick={() => void copy(text)}>{text}</button></dd></div>;
                   })}
                 </dl>
               )}

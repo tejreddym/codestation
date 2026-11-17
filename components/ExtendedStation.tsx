@@ -7,15 +7,12 @@ import { auditEnv, formatEnvAuditReport, type EnvAuditResult } from "@/lib/tools
 import { generateMockDataset, type MockDataOptions, type MockDatasetResult } from "@/lib/tools/mock-data";
 import { parseAndResolveGitConflicts, formatConflictReport, type ConflictStrategy, type ConflictResolutionResult } from "@/lib/tools/git-conflict";
 import styles from "./ExtendedStation.module.css";
+import ui from "./ui/ui.module.css";
+import { downloadBlob } from "./ui/useDownload";
+import { useCopy } from "./ui/useCopy";
 
 function downloadFile(content: string, filename: string, mime = "text/plain") {
-  const blob = new Blob([content], { type: `${mime};charset=utf-8` });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
+  downloadBlob(content, filename, `${mime};charset=utf-8`);
 }
 
 export default function ExtendedStation({ toolId }: { toolId: ExtendedToolId }) {
@@ -48,18 +45,11 @@ export default function ExtendedStation({ toolId }: { toolId: ExtendedToolId }) 
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
+  const { copy } = useCopy();
 
   async function handleCopy(text: string, label = "Result") {
-    try {
-      if (navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(text);
-        setNotice(`${label} copied to clipboard.`);
-      } else {
-        setNotice("Clipboard API unavailable.");
-      }
-    } catch {
-      setNotice("Failed to copy. Please select and copy manually.");
-    }
+    const ok = await copy(text);
+    setNotice(ok ? `${label} copied to clipboard.` : "Failed to copy. Please select and copy manually.");
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -241,7 +231,7 @@ export default function ExtendedStation({ toolId }: { toolId: ExtendedToolId }) 
         )}
 
         <div className={styles.actions}>
-          <button type="submit" className="button" disabled={busy}>
+          <button type="submit" className={ui.button} disabled={busy}>
             {definition.localContract.action}
           </button>
         </div>
@@ -270,14 +260,14 @@ export default function ExtendedStation({ toolId }: { toolId: ExtendedToolId }) 
           <div className={styles.actions}>
             <button
               type="button"
-              className="button secondary"
+              className={ui.button}
               onClick={() => handleCopy(curlOutput.code, "Generated code")}
             >
               Copy Code
             </button>
             <button
               type="button"
-              className="button secondary"
+              className={ui.button}
               onClick={() => {
                 const ext = curlTarget === "python" ? "py" : curlTarget === "go" ? "go" : "ts";
                 downloadFile(curlOutput.code, `api-request.${ext}`);
@@ -329,14 +319,14 @@ export default function ExtendedStation({ toolId }: { toolId: ExtendedToolId }) 
           <div className={styles.actions}>
             <button
               type="button"
-              className="button secondary"
+              className={ui.button}
               onClick={() => handleCopy(formatEnvAuditReport(envResult), "Audit report")}
             >
               Copy Audit Report
             </button>
             <button
               type="button"
-              className="button secondary"
+              className={ui.button}
               onClick={() => downloadFile(formatEnvAuditReport(envResult), "env-audit-report.txt")}
             >
               Download Report
@@ -361,7 +351,7 @@ export default function ExtendedStation({ toolId }: { toolId: ExtendedToolId }) 
           <div className={styles.actions}>
             <button
               type="button"
-              className="button secondary"
+              className={ui.button}
               onClick={() => {
                 const text = mockFormat === "sql" && mockResult.sql ? mockResult.sql : mockFormat === "csv" && mockResult.csv ? mockResult.csv : mockResult.json;
                 handleCopy(text, "Dataset");
@@ -371,7 +361,7 @@ export default function ExtendedStation({ toolId }: { toolId: ExtendedToolId }) 
             </button>
             <button
               type="button"
-              className="button secondary"
+              className={ui.button}
               onClick={() => {
                 const text = mockFormat === "sql" && mockResult.sql ? mockResult.sql : mockFormat === "csv" && mockResult.csv ? mockResult.csv : mockResult.json;
                 const ext = mockFormat === "sql" ? "sql" : mockFormat === "csv" ? "csv" : "json";
@@ -401,7 +391,7 @@ export default function ExtendedStation({ toolId }: { toolId: ExtendedToolId }) 
           <div className={styles.actions}>
             <button
               type="button"
-              className="button secondary"
+              className={ui.button}
               onClick={() => {
                 const text = conflictStrategy === "analyze" ? formatConflictReport(conflictResult) : (conflictResult.resolvedContent || "");
                 handleCopy(text, "Conflict content");
@@ -411,7 +401,7 @@ export default function ExtendedStation({ toolId }: { toolId: ExtendedToolId }) 
             </button>
             <button
               type="button"
-              className="button secondary"
+              className={ui.button}
               onClick={() => {
                 const text = conflictStrategy === "analyze" ? formatConflictReport(conflictResult) : (conflictResult.resolvedContent || "");
                 downloadFile(text, conflictStrategy === "analyze" ? "conflict-report.txt" : "resolved-file.txt");

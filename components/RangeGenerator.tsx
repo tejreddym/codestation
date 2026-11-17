@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import ui from "./ui/ui.module.css";
+import { useCopy } from "./ui/useCopy";
 
 const MAX_INTEGER_SPAN = 1_000_000_000;
 
@@ -19,6 +21,7 @@ export default function RangeGenerator() {
   const [integer, setInteger] = useState(true);
   const [output, setOutput] = useState("");
   const [error, setError] = useState("");
+  const { copy } = useCopy();
   const generate = () => {
     setError("");
     try {
@@ -36,10 +39,10 @@ export default function RangeGenerator() {
     } catch (cause) { setOutput(""); setError(cause instanceof Error ? cause.message : "Could not generate a number."); }
   };
   const clear = () => { setStart(""); setEnd(""); setInteger(true); setOutput(""); setError(""); };
-  return <div className="generator-layout"><div className="panel generator-options"><div className="panel-head"><span>Range settings</span><button className="button" onClick={clear}>Reset</button></div>
+  return <div className="generator-layout"><div className={`${ui.panel} generator-options`}><div className={ui.panelHeader}><span className={ui.panelTitle}>Range settings</span><button className={ui.button} onClick={clear}>Reset</button></div>
     <div className="option-grid"><label>Start (optional)<input type="number" value={start} onChange={(e) => setStart(e.target.value)} placeholder="0" /></label><label>End (required)<input type="number" value={end} onChange={(e) => setEnd(e.target.value)} /></label></div>
     <label><input type="checkbox" checked={integer} onChange={(e) => setInteger(e.target.checked)} /> Integer mode (inclusive)</label>
     <p className="muted">Integer mode includes both bounds and uses unbiased rejection sampling. Decimal mode returns a value from start (inclusive) to end (exclusive).</p>
-    <button className="button primary" onClick={generate}>Generate number</button></div>
-    <div className="panel"><div className="panel-head"><span>Generated output</span><button className="button" onClick={() => navigator.clipboard?.writeText(output)} disabled={!output}>Copy</button></div><div className="output" aria-live="polite">{output || "Configure the range and generate a result."}</div></div>{error && <div className="error" role="alert">{error}</div>}<p className="privacy">↳ Runs locally in your browser. Nothing is sent to Code Station.</p></div>;
+    <button className={`${ui.button} ${ui.primary}`} onClick={generate}>Generate number</button></div>
+    <div className={ui.panel}><div className={ui.panelHeader}><span className={ui.panelTitle}>Generated output</span><button className={ui.button} onClick={() => void copy(output)} disabled={!output}>Copy</button></div><div className={ui.output} aria-live="polite">{output || "Configure the range and generate a result."}</div></div>{error && <div className="error" role="alert">{error}</div>}<p className="privacy">↳ Runs locally in your browser. Nothing is sent to Code Station.</p></div>;
 }

@@ -268,7 +268,7 @@ describe("Tier 1: Feature Coverage", () => {
   // Feature R2: Homepage Visual Polish & Copy Consistency
   // --------------------------------------------------------------------------
   describe("R2: Homepage Visual Polish & Copy Consistency", () => {
-    it("1.2.1 preserves station cards grid structure across all 25 registered stations", () => {
+    it("1.2.1 preserves station cards grid structure across all 30 registered stations", () => {
       render(el(HomePage));
       const directory = within(screen.getByRole("region", { name: "Choose a station" }));
       const stationLinks = directory.getAllByRole("link");
@@ -303,10 +303,10 @@ describe("Tier 1: Feature Coverage", () => {
     it("1.2.4 highlights browser developer tools consistently in hero copy and eyebrow", () => {
       render(el(HomePage));
       // Eyebrow and intro declare tools count and stations
-      const eyebrowText = screen.getByText(/PRIVATE TOOLS · WEBMCP BROWSER AI PROTOCOL · 26 STATIONS/i);
+      const eyebrowText = screen.getByText(/PRIVATE TOOLS · WEBMCP BROWSER AI PROTOCOL · 30 STATIONS/i);
       expect(eyebrowText).toBeDefined();
 
-      const introText = screen.getByText(/developer utilities across 26 stations/i);
+      const introText = screen.getByText(/380 focused utilities across 30 stations/i);
       expect(introText).toBeDefined();
     });
 
@@ -609,7 +609,7 @@ describe("Tier 2: Boundary & Corner Cases", () => {
 
     it("2.2.2 whitespace-only search query normalizes cleanly and defaults to featured tools", () => {
       render(el(HomePage));
-      const input = screen.getByRole("textbox", { name: "Search all tools" });
+      const input = screen.getByRole("combobox", { name: "Search all tools" });
 
       fireEvent.change(input, { target: { value: "     " } });
       expect(screen.getByRole("region", { name: "Quick access" })).toBeDefined();
@@ -617,7 +617,7 @@ describe("Tier 2: Boundary & Corner Cases", () => {
 
     it("2.2.3 unmatched query string renders empty state message and functional 'Clear search' button", () => {
       render(el(HomePage));
-      const input = screen.getByRole("textbox", { name: "Search all tools" });
+      const input = screen.getByRole("combobox", { name: "Search all tools" });
 
       fireEvent.change(input, { target: { value: "unmatched-tool-query-xyz999" } });
       expect(screen.getByText("No available tools match that search.")).toBeDefined();
@@ -629,21 +629,28 @@ describe("Tier 2: Boundary & Corner Cases", () => {
       expect(screen.getByRole("region", { name: "Quick access" })).toBeDefined();
     });
 
-    it("2.2.4 dark theme tokens are defined in Home.module.css for all key variables", () => {
-      const cssPath = path.resolve(process.cwd(), "app/Home.module.css");
-      const css = fs.readFileSync(cssPath, "utf-8");
+    it("2.2.4 homepage dark theme variables come from the central token layer", () => {
+      const homeCss = fs.readFileSync(path.resolve(process.cwd(), "app/Home.module.css"), "utf-8");
+      const tokensCss = fs.readFileSync(
+        path.resolve(process.cwd(), "app/styles/tokens.css"),
+        "utf-8",
+      );
 
-      expect(css).toContain('[data-theme="dark"]');
-      expect(css).toContain("--home-bg:");
-      expect(css).toContain("--home-ink:");
-      expect(css).toContain("--home-line:");
-      expect(css).toContain("--home-surface:");
-      expect(css).toContain("--home-lime:");
+      // W5 removed the temporary --home-* alias layer; the homepage consumes the
+      // shared tokens directly, so light/dark stay defined in one place.
+      expect(fs.existsSync(path.resolve(process.cwd(), "app/styles/tokens.compat.css"))).toBe(false);
+      expect(homeCss).toContain("var(--canvas)");
+      expect(homeCss).toContain("var(--ink)");
+      expect(homeCss).toContain("var(--surface)");
+      expect(homeCss).toContain("var(--action-bg)");
+      expect(homeCss).not.toContain("--home-");
+      expect(tokensCss).toContain("--canvas:");
+      expect(tokensCss).toContain('[data-theme="dark"]');
     });
 
     it("2.2.5 keyboard shortcut Cmd/Ctrl + Shift + V focuses search on both Mac and Windows modifiers", () => {
       render(el(HomePage));
-      const input = screen.getByRole("textbox", { name: "Search all tools" });
+      const input = screen.getByRole("combobox", { name: "Search all tools" });
 
       // 1. MetaKey (Mac)
       input.blur();
@@ -665,7 +672,7 @@ describe("Tier 2: Boundary & Corner Cases", () => {
 
     it("2.2.6 format triage banner renders deep link button when input is detected format", () => {
       render(el(HomePage));
-      const input = screen.getByRole("textbox", { name: "Search all tools" });
+      const input = screen.getByRole("combobox", { name: "Search all tools" });
 
       fireEvent.change(input, { target: { value: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.e30.t-IDcSemACt8x4iTMCda8Yhe3iZaWbvV5XKSTbuAn0M" } });
       expect(screen.getByText(/Detected: JWT/i)).toBeDefined();
@@ -780,8 +787,10 @@ describe("Tier 3: Cross-Feature Combinations", () => {
     const toggle = favSection.getByRole("button", { name: "Show more" });
     expect(toggle).toBeDefined();
 
-    // Quick access section follows immediately
-    expect(screen.getByRole("region", { name: "Quick access" })).toBeDefined();
+    // Quick access follows PersonalTools in real DOM order
+    const quickRegion = screen.getByRole("region", { name: "Quick access" });
+    expect(personalRegion.compareDocumentPosition(quickRegion) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.getByRole("region", { name: "Choose a station" })).toBeDefined();
   });
 
   it("3.2 PersonalTools integrates inside Workbench (always=true) with empty guidance copy", async () => {
@@ -794,7 +803,7 @@ describe("Tier 3: Cross-Feature Combinations", () => {
     ).toBeDefined();
   });
 
-  it("3.3 Search format detection triage operates concurrently with populated PersonalTools", async () => {
+  it("3.3 Search replaces PersonalTools with a listbox and places triage below it", async () => {
     localStorage.setItem(
       preferenceKey,
       JSON.stringify({
@@ -806,16 +815,19 @@ describe("Tier 3: Cross-Feature Combinations", () => {
     render(el(WorkbenchProvider, null, el(HomePage)));
 
     await screen.findByRole("region", { name: "Your tools" });
-
-    // Type JSON in search
-    const input = screen.getByRole("textbox", { name: "Search all tools" });
+    const input = screen.getByRole("combobox", { name: "Search all tools" });
     fireEvent.change(input, { target: { value: '{"type":"test"}' } });
 
-    // Format detection displays
-    expect(screen.getByText(/Detected: JSON/i)).toBeDefined();
+    const listbox = screen.getByRole("listbox", { name: "Matching tools" });
+    const detected = screen.getByText(/Detected: JSON/i);
+    const detectedChip = detected.closest("[class*='searchTriage']") ?? detected;
+    expect(listbox.compareDocumentPosition(detectedChip) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.queryByRole("region", { name: "Your tools" })).toBeNull();
+    expect(screen.queryByRole("region", { name: "Quick access" })).toBeNull();
 
-    // Personal tools remain rendered
+    fireEvent.click(screen.getByRole("button", { name: "Clear search" }));
     expect(screen.getByRole("region", { name: "Your tools" })).toBeDefined();
+    expect(screen.getByRole("region", { name: "Quick access" })).toBeDefined();
   });
 
   it("3.4 Secondary tool cards and station directory links render co-located valid paths", () => {
@@ -928,7 +940,7 @@ describe("Tier 4: Real-World Application Scenarios", () => {
     // Scenario: Developer hits Cmd+Shift+V, pastes JWT, inspects detection, and clicks deep link
     render(el(WorkbenchProvider, null, el(HomePage)));
 
-    const input = screen.getByRole("textbox", { name: "Search all tools" });
+    const input = screen.getByRole("combobox", { name: "Search all tools" });
 
     // Step 1: Global shortcut triggers focus
     input.blur();
@@ -1011,9 +1023,11 @@ describe("Tier 4: Real-World Application Scenarios", () => {
 
   it("4.4 Comprehensive Performance, Metadata, and Station Directory Audit Journey", async () => {
     // Scenario: Full audit of discovery contracts, routes, and WebMCP protocol
-    // 1. Verify 26 stations exist in authoritative registry
-    expect(stations).toHaveLength(26);
+    // 1. Verify 30 stations exist in authoritative registry
+    expect(stations).toHaveLength(30);
     const stationSlugs = stations.map((s) => s.id);
+    expect(stationSlugs).toContain("git");
+    expect(stationSlugs).toContain("finance-calculators");
     expect(stationSlugs).toContain("policy-generators");
     expect(stationSlugs).toContain("ai-prompts");
     expect(stationSlugs).toContain("crypto-pki");

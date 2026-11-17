@@ -16,6 +16,7 @@ dist/
 
 # Generated build metadata
 public/offline-assets.json
+public/pdfjs/
 cloudflare-env.d.ts
 tsconfig.tsbuildinfo
 

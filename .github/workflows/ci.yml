@@ -36,6 +36,9 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: UI token audit
+        run: npm run audit:ui
+
       - name: Typecheck
         run: npm run typecheck
 

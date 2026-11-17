@@ -1,11 +1,15 @@
 "use client";
 import { useEffect, useState } from "react";
 import { getTool } from "@/config/tools";
+import ui from "./ui/ui.module.css";
+import { useCopy } from "./ui/useCopy";
+import { downloadBlob } from "./ui/useDownload";
 export default function FeedbackForm() {
   const [kind, setKind] = useState("Report a problem");
   const [tool, setTool] = useState("");
   const [body, setBody] = useState("");
   const [status, setStatus] = useState("");
+  const { copy } = useCopy();
   useEffect(() => {
     const slug = new URL(window.location.href).searchParams.get("tool");
     if (slug && getTool(slug)) setTool(slug);
@@ -39,39 +43,30 @@ export default function FeedbackForm() {
         No tool input or device details are attached automatically. Review the
         text before sharing.
       </p>
-      <div className="actions">
+      <div className={ui.actions}>
         <a
-          className="button primary"
+          className={`${ui.button} ${ui.primary}`}
           href={`mailto:hello@codestation.in?subject=${encodeURIComponent(`Code Station: ${kind}${tool ? ` (${tool})` : ""}`)}&body=${encodeURIComponent(body)}`}
         >
           Open email draft
         </a>
         <button
-          className="button"
+          className={ui.button}
           onClick={async () => {
-            try {
-              await navigator.clipboard.writeText(report);
-              setStatus("Report copied. Paste it into your email when ready.");
-            } catch {
-              setStatus(
-                "Copy was unavailable. Select your text or download the report.",
-              );
-            }
+            const ok = await copy(report);
+            setStatus(
+              ok
+                ? "Report copied. Paste it into your email when ready."
+                : "Copy was unavailable. Select your text or download the report.",
+            );
           }}
         >
           Copy report
         </button>
         <button
-          className="button"
+          className={ui.button}
           onClick={() => {
-            const url = URL.createObjectURL(
-              new Blob([report], { type: "text/plain" }),
-            );
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = "code-station-feedback.txt";
-            a.click();
-            setTimeout(() => URL.revokeObjectURL(url), 1000);
+            downloadBlob(report, "code-station-feedback.txt");
             setStatus("Download requested. Nothing has been submitted.");
           }}
         >

@@ -12,7 +12,8 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "next build && node scripts/generate-offline-manifest.mjs",
+    "postinstall": "node scripts/copy-pdfjs-assets.mjs",
+    "build": "node scripts/copy-pdfjs-assets.mjs && next build && node scripts/generate-offline-manifest.mjs",
     "build:mcp": "esbuild mcp/cli.ts --bundle --platform=node --target=node22 --format=esm --packages=external --outfile=bin/codestation-mcp.mjs && chmod +x bin/codestation-mcp.mjs && mkdir -p packages/codestation-mcp/bin && cp bin/codestation-mcp.mjs packages/codestation-mcp/bin/ && chmod +x packages/codestation-mcp/bin/codestation-mcp.mjs",
     "publish:mcp": "npm run build:mcp && cd packages/codestation-mcp && npm publish --access public",
     "mcp": "node ./bin/codestation-mcp.mjs",
@@ -24,7 +25,8 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "audit:ui": "node scripts/audit-ui.mjs"
   },
   "dependencies": {
     "@cfworker/json-schema": "^4.1.1",
@@ -42,6 +44,7 @@
     "next": "^15.5.0",
     "node-sql-parser": "5.4.0",
     "pdf-lib": "^1.17.1",
+    "pdfjs-dist": "^6.5.438",
     "qrcode": "^1.5.4",
     "razorpay": "^2.9.8",
     "react": "^19.1.0",

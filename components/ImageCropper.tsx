@@ -1,6 +1,9 @@
 "use client";
 
 import { useRef, type KeyboardEvent, type PointerEvent } from "react";
+import { Button } from "./ui/Button";
+import { Hint } from "./ui/Field";
+import ui from "./ui/ui.module.css";
 import styles from "./ImageStation.module.css";
 
 export type Crop = { x: number; y: number; width: number; height: number };
@@ -43,19 +46,44 @@ export default function ImageCropper({ id, src, width, height, value, onChange, 
     bound(active.resize ? { ...active.crop, width: active.crop.width + dx, height: active.crop.height + dy } : { ...active.crop, x: Math.max(0, Math.min(width - active.crop.width, active.crop.x + dx)), y: Math.max(0, Math.min(height - active.crop.height, active.crop.y + dy)) });
   }
 
-  return <fieldset className={styles.cropper} aria-describedby={describedBy} aria-invalid={describedBy ? true : undefined}>
-    <legend>Crop selection</legend>
-    <p id={`${id}-help`} className={styles.hint}>Drag the selection to move it; drag its corner to resize. Arrow keys move one pixel; Shift + arrows resize.</p>
-    <div ref={board} className={styles.cropBoard}>
-      <img src={src} alt="Local image crop preview" draggable={false} width={width} height={height} />
-      <div className={styles.cropSelection} role="group" tabIndex={0} aria-label="Move crop selection" aria-describedby={`${id}-help ${id}-dimensions`} style={{ left: `${value.x / width * 100}%`, top: `${value.y / height * 100}%`, width: `${value.width / width * 100}%`, height: `${value.height / height * 100}%` }} onKeyDown={event => keyboard(event)} onPointerDown={event => start(event, false)} onPointerMove={move} onPointerUp={() => { drag.current = null; }} onPointerCancel={() => { drag.current = null; }}>
-        <button type="button" className={styles.cropHandle} aria-label="Resize crop selection" aria-describedby={`${id}-help ${id}-dimensions`} onKeyDown={event => { event.stopPropagation(); keyboard(event, true); }} onPointerDown={event => start(event, true)} onPointerMove={event => { event.stopPropagation(); move(event); }} onPointerUp={() => { drag.current = null; }} onPointerCancel={() => { drag.current = null; }} />
+  return (
+    <fieldset className={styles.cropper} aria-describedby={describedBy} aria-invalid={describedBy ? true : undefined}>
+      <legend className={ui.legend}>Crop selection</legend>
+      <Hint id={`${id}-help`}>Drag the selection to move it; drag its corner to resize. Arrow keys move one pixel; Shift + arrows resize.</Hint>
+      <div ref={board} className={styles.cropBoard}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={src} alt="Local image crop preview" draggable={false} width={width} height={height} />
+        <div
+          className={styles.cropSelection}
+          role="group"
+          tabIndex={0}
+          aria-label="Move crop selection"
+          aria-describedby={`${id}-help ${id}-dimensions`}
+          style={{ left: `${value.x / width * 100}%`, top: `${value.y / height * 100}%`, width: `${value.width / width * 100}%`, height: `${value.height / height * 100}%` }}
+          onKeyDown={event => keyboard(event)}
+          onPointerDown={event => start(event, false)}
+          onPointerMove={move}
+          onPointerUp={() => { drag.current = null; }}
+          onPointerCancel={() => { drag.current = null; }}
+        >
+          <button
+            type="button"
+            className={styles.cropHandle}
+            aria-label="Resize crop selection"
+            aria-describedby={`${id}-help ${id}-dimensions`}
+            onKeyDown={event => { event.stopPropagation(); keyboard(event, true); }}
+            onPointerDown={event => start(event, true)}
+            onPointerMove={event => { event.stopPropagation(); move(event); }}
+            onPointerUp={() => { drag.current = null; }}
+            onPointerCancel={() => { drag.current = null; }}
+          />
+        </div>
       </div>
-    </div>
-    <p id={`${id}-dimensions`} className={styles.hint} aria-live="polite">Selection: {value.width} × {value.height} pixels at {value.x}, {value.y}.</p>
-    <div className={styles.actions}>
-      <button type="button" className="button" onClick={() => bound({ x: 0, y: 0, width, height })}>Select whole image</button>
-      <button type="button" className="button" onClick={() => bound({ x: Math.floor(width / 4), y: Math.floor(height / 4), width: Math.max(1, Math.floor(width / 2)), height: Math.max(1, Math.floor(height / 2)) })}>Select center</button>
-    </div>
-  </fieldset>;
+      <p id={`${id}-dimensions`} className={ui.hint} aria-live="polite">Selection: {value.width} × {value.height} pixels at {value.x}, {value.y}.</p>
+      <div className={ui.actions}>
+        <Button onClick={() => bound({ x: 0, y: 0, width, height })}>Select whole image</Button>
+        <Button onClick={() => bound({ x: Math.floor(width / 4), y: Math.floor(height / 4), width: Math.max(1, Math.floor(width / 2)), height: Math.max(1, Math.floor(height / 2)) })}>Select center</Button>
+      </div>
+    </fieldset>
+  );
 }

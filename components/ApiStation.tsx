@@ -4,6 +4,18 @@ import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "r
 import { getApiDefinition, type ApiToolId } from "@/config/api-tools";
 import { ApiError, type ApiResult, type ApiValues } from "@/lib/tools/api/types";
 import ApiStructuredFields, { apiFieldMatches, type ApiStructuredKind } from "./ApiStructuredFields";
+import { Button } from "./ui/Button";
+import { ButtonLink } from "./ui/Button";
+import { Callout } from "./ui/Callout";
+import { Select, Textarea, TextInput } from "./ui/controls";
+import { EmptyState } from "./ui/EmptyState";
+import { Field, Hint } from "./ui/Field";
+import { Panel } from "./ui/Panel";
+import { PrivacyNote } from "./ui/PrivacyNote";
+import { StatusLine } from "./ui/StatusLine";
+import { ToolLayout } from "./ui/ToolLayout";
+import { useCopy } from "./ui/useCopy";
+import ui from "./ui/ui.module.css";
 import styles from "./ApiStation.module.css";
 
 type Definition = NonNullable<ReturnType<typeof getApiDefinition>>;
@@ -39,6 +51,7 @@ function Station({ definition }: { definition: Definition }) {
   const [result, setResult] = useState<ApiResult | null>(null);
   const [error, setError] = useState<{ text: string; field?: string } | null>(null);
   const [notice, setNotice] = useState("");
+  const { copy: copyText } = useCopy();
   const [busy, setBusy] = useState(false);
   const revision = useRef(0);
   const mounted = useRef(false);
@@ -132,13 +145,9 @@ function Station({ definition }: { definition: Definition }) {
 
   async function copy(text: string) {
     const currentRevision = revision.current;
-    try {
-      if (!navigator.clipboard?.writeText) throw new Error("Clipboard unavailable");
-      await navigator.clipboard.writeText(text);
-      if (mounted.current && revision.current === currentRevision) setNotice(tester ? "Response copied." : "Result copied.");
-    } catch {
-      if (mounted.current && revision.current === currentRevision) setNotice("Could not copy. Select the result and copy it manually.");
-    }
+    const ok = await copyText(text);
+    if (!mounted.current || revision.current !== currentRevision) return;
+    setNotice(ok ? (tester ? "Response copied." : "Result copied.") : "Could not copy. Select the result and copy it manually.");
   }
 
   const curl = typeof result?.data?.curl === "string" ? result.data.curl : undefined;
@@ -146,54 +155,68 @@ function Station({ definition }: { definition: Definition }) {
   const copyField = (contract as { copyField?: string }).copyField;
   const contractCopy = copyField ? result?.data?.[copyField] : undefined;
   const copyValue = result?.data?.valid === false ? "" : result?.copyText ?? (typeof contractCopy === "string" ? contractCopy : contractCopy !== undefined ? JSON.stringify(contractCopy, null, 2) : tester && typeof result?.data?.responseBody === "string" ? result.data.responseBody : result?.text ?? "");
-  const canCopy = result && contract.copy && result.data?.valid !== false && (!tester || !["Aborted", "Network or CORS error"].includes(String(result.data?.state)));
+  const canCopy = Boolean(result && contract.copy && result.data?.valid !== false && (!tester || !["Aborted", "Network or CORS error"].includes(String(result.data?.state))));
 
   return <div className={styles.station}>
-    <div className={styles.layout}>
-      <form ref={form} className={styles.panel} onSubmit={event => void submit(event)} noValidate autoComplete="off" aria-labelledby={`${id}-input-heading`}>
-        <div className={styles.panelHead}><h2 id={`${id}-input-heading`}>{definition.name} input</h2><button type="button" className="button" onClick={() => load(contract.example)}>Load example</button></div>
-        <div className={styles.fields}>{contract.fields.map(field => {
-          const fieldId = `${id}-${field.name}`;
-          const invalid = apiFieldMatches(error?.field, field.name);
-          const describedBy = [field.hint ? `${fieldId}-hint` : "", invalid ? `${id}-error` : ""].filter(Boolean).join(" ") || undefined;
-          if (structured.has(field.control)) return <div key={field.name} className={styles.field}>
-            <ApiStructuredFields kind={field.control as ApiStructuredKind} name={field.name} id={fieldId} label={field.label} value={values[field.name]} onChange={value => change(field.name, value)} describedBy={describedBy} errorField={error?.field} />
-            {field.hint && <p id={`${fieldId}-hint`} className={styles.hint}>{field.hint}</p>}
-          </div>;
-          const controlled = {
-            id: fieldId, name: field.name, "data-api-field": field.name, className: styles.input,
-            required: !field.optional, "aria-describedby": describedBy, "aria-invalid": invalid || undefined,
-            value: typeof values[field.name] === "string" ? values[field.name] as string : "",
-            onChange: (event: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => change(field.name, event.target.value),
-          };
-          return <div key={field.name} className={styles.field}>
-            <label htmlFor={fieldId}>{field.label}{field.optional && <span className={styles.optional}> (optional)</span>}</label>
-            {field.control === "select" ? <select {...controlled}>{field.options?.map(option => <option key={option} value={option}>{option}</option>)}</select>
-              : field.control === "textarea" ? <textarea {...controlled} rows={7} className={`${styles.input} ${styles.textarea}`} wrap="off" placeholder={field.placeholder} autoComplete="off" autoCapitalize="off" spellCheck={false} />
-                : <input {...controlled} type={field.control === "password" || field.name === "password" || field.name === "token" ? "password" : "text"} placeholder={field.placeholder} autoComplete="off" autoCapitalize="off" spellCheck={false} />}
-            {field.hint && <p id={`${fieldId}-hint`} className={styles.hint}>{field.hint}</p>}
-          </div>;
-        })}{contract.notices.map(text => <p className={styles.note} key={text}>{text}</p>)}</div>
-        <div className={styles.actions}><button type="submit" className="button primary" disabled={busy}>{busy ? tester ? "Sending…" : "Processing…" : contract.action}</button>
-          {tester && busy && <button type="button" className="button" onClick={cancel}>Cancel</button>}
-          <button type="button" className="button" onClick={() => load(contract.defaults)}>Clear</button></div>
-      </form>
-      <section className={styles.panel} aria-labelledby={`${id}-result`} aria-busy={busy}>
-        <div className={styles.panelHead}><h2 id={`${id}-result`}>{outputLabel}</h2>{canCopy && <div className={styles.resultActions}>
-          {rest ? <><button type="button" className="button" disabled={curl === undefined} onClick={() => curl !== undefined && void copy(curl)}>Copy cURL</button><button type="button" className="button" disabled={fetchCode === undefined} onClick={() => fetchCode !== undefined && void copy(fetchCode)}>Copy Fetch</button></>
-            : <button type="button" className="button" aria-label={tester ? "Copy Response" : `Copy ${outputLabel}`} onClick={() => void copy(copyValue)}>{tester ? "Copy Response" : "Copy"}</button>}
-        </div>}</div>
+    <ToolLayout kind="form" className={styles.layout}>
+      <Panel title={`${definition.name} input`} headingId={`${id}-input-heading`} padded>
+        <form ref={form} className={styles.form} onSubmit={event => void submit(event)} noValidate autoComplete="off" aria-labelledby={`${id}-input-heading`}>
+          <div className={styles.formTop}><Button size="sm" onClick={() => load(contract.example)}>Load example</Button></div>
+          <div className={styles.fields}>{contract.fields.map(field => {
+            const fieldId = `${id}-${field.name}`;
+            const invalid = apiFieldMatches(error?.field, field.name);
+            const describedBy = [field.hint ? `${fieldId}-hint` : "", invalid ? `${id}-error` : ""].filter(Boolean).join(" ") || undefined;
+            if (structured.has(field.control)) return <div key={field.name} className={styles.full}>
+              <ApiStructuredFields kind={field.control as ApiStructuredKind} name={field.name} id={fieldId} label={field.label} value={values[field.name]} onChange={value => change(field.name, value)} describedBy={describedBy} errorField={error?.field} />
+              {field.hint && <Hint id={`${fieldId}-hint`} className={styles.fieldHint}>{field.hint}</Hint>}
+            </div>;
+            const secret = field.control === "password" || field.name === "password" || field.name === "token";
+            const common = {
+              id: fieldId, name: field.name, "data-api-field": field.name,
+              required: !field.optional, "aria-describedby": describedBy, "aria-invalid": invalid || undefined,
+              value: typeof values[field.name] === "string" ? values[field.name] as string : "",
+              onChange: (event: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => change(field.name, event.target.value),
+              placeholder: field.placeholder, autoComplete: "off", spellCheck: false, autoCapitalize: "off" as const,
+            };
+            return <Field key={field.name} id={fieldId} label={<>{field.label}{field.optional && <span className={styles.optional}> (optional)</span>}</>} hint={field.hint}>
+              {field.control === "select" ? <Select {...common}>{field.options?.map(option => <option key={option} value={option}>{option}</option>)}</Select>
+                : field.control === "textarea" ? <Textarea {...common} rows={7} wrap="off" className={`${ui.control} ${ui.textarea} ${ui.mono}`} />
+                  : <TextInput {...common} type={secret ? "password" : "text"} />}
+            </Field>;
+          })}{contract.notices.map(text => <Hint className={styles.note} key={text}>{text}</Hint>)}</div>
+          <div className={ui.actions}>
+            <Button type="submit" variant="primary" disabled={busy} aria-busy={busy}>{busy ? tester ? "Sending…" : "Processing…" : contract.action}</Button>
+            {tester && busy && <Button onClick={cancel}>Cancel</Button>}
+            <Button onClick={() => load(contract.defaults)}>Clear</Button>
+          </div>
+        </form>
+      </Panel>
+      <Panel
+        title={outputLabel}
+        headingId={`${id}-result`}
+        aria-busy={busy || undefined}
+        actions={canCopy ? (rest
+          ? <><Button size="sm" disabled={curl === undefined} onClick={() => curl !== undefined && void copy(curl)}>Copy cURL</Button><Button size="sm" disabled={fetchCode === undefined} onClick={() => fetchCode !== undefined && void copy(fetchCode)}>Copy Fetch</Button></>
+          : <Button size="sm" aria-label={tester ? "Copy Response" : `Copy ${outputLabel}`} onClick={() => void copy(copyValue)}>{tester ? "Copy Response" : "Copy"}</Button>) : undefined}
+        padded
+      >
         {result ? <div className={styles.result}>
           {!!result.warnings?.length && <div className={styles.warning} role="alert">{result.warnings.map((warning, index) => <p key={index}>{warning}</p>)}</div>}
-          {rest && curl !== undefined && fetchCode !== undefined ? <>{typeof result.data?.summary === "string" && <div><h3>Request summary</h3><pre className={styles.output} tabIndex={0} aria-label="Request summary value">{result.data.summary}</pre></div>}<div><h3>cURL</h3><pre className={styles.output} tabIndex={0} aria-label="cURL value">{curl}</pre></div><div><h3>Fetch</h3><pre className={styles.output} tabIndex={0} aria-label="Fetch value">{fetchCode}</pre></div></>
-            : <><pre className={styles.output} tabIndex={0} aria-label={`${outputLabel} value`}>{!tester && copyField ? copyValue : result.text}</pre>{!tester && copyField && contract.outputs.length > 1 && <pre className={styles.output} tabIndex={0} aria-label={`${outputLabel} details`}>{result.text}</pre>}</>}
-        </div> : <p className={styles.empty}>Your result will appear here after you {contract.action.toLowerCase()}. Editing an input clears the previous result.</p>}
-      </section>
-    </div>
-    {error && <p ref={errorRef} id={`${id}-error`} className={styles.error} role="alert" tabIndex={-1}>{error.text}</p>}
-    <p className={styles.status} role="status" aria-atomic="true">{notice}</p>
-    {definition.pairedTool && <a className={styles.pairLink} href={`/tools/${definition.pairedTool}`}>Open {getApiDefinition(definition.pairedTool)?.name ?? "paired tool"}</a>}
-    <p className={styles.privacy}>{tester ? "Only Send Request contacts the supplied endpoint directly from this browser. Inputs and responses are not saved. Browser CORS rules apply." : "All processing stays in this browser. Inputs are not transmitted or saved."}</p>
+          {rest && curl !== undefined && fetchCode !== undefined ? <>
+            {typeof result.data?.summary === "string" && <div><h3 className={styles.resultTitle}>Request summary</h3><pre className={ui.output} tabIndex={0} aria-label="Request summary value">{result.data.summary}</pre></div>}
+            <div><h3 className={styles.resultTitle}>cURL</h3><pre className={ui.output} tabIndex={0} aria-label="cURL value">{curl}</pre></div>
+            <div><h3 className={styles.resultTitle}>Fetch</h3><pre className={ui.output} tabIndex={0} aria-label="Fetch value">{fetchCode}</pre></div>
+          </> : <>
+            <pre className={ui.output} tabIndex={0} aria-label={`${outputLabel} value`}>{!tester && copyField ? copyValue : result.text}</pre>
+            {!tester && copyField && contract.outputs.length > 1 && <pre className={ui.output} tabIndex={0} aria-label={`${outputLabel} details`}>{result.text}</pre>}
+          </>}
+        </div> : <EmptyState>Your result will appear here after you {contract.action.toLowerCase()}. Editing an input clears the previous result.</EmptyState>}
+      </Panel>
+    </ToolLayout>
+    {error && <Callout kind="error" ref={errorRef} id={`${id}-error`} className={styles.alert} tabIndex={-1}>{error.text}</Callout>}
+    <StatusLine className={styles.status}>{notice}</StatusLine>
+    {definition.pairedTool && <div className={styles.pairRow}><ButtonLink href={`/tools/${definition.pairedTool}`} size="sm" variant="ghost">Open {getApiDefinition(definition.pairedTool)?.name ?? "paired tool"}</ButtonLink></div>}
+    <PrivacyNote className={styles.privacy}>{tester ? "Only Send Request contacts the supplied endpoint directly from this browser. Inputs and responses are not saved. Browser CORS rules apply." : "All processing stays in this browser. Inputs are not transmitted or saved."}</PrivacyNote>
   </div>;
 }
 

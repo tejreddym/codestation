@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { validateCoupon, type CouponValidationResult } from "@/lib/coupons";
 import styles from "./ProSubscriptionManager.module.css";
+import { useCopy } from "./ui/useCopy";
 
 interface VerifyResult {
   valid: boolean;
@@ -40,6 +41,7 @@ export function ProSubscriptionManager() {
     null,
   );
   const [copiedKey, setCopiedKey] = useState(false);
+  const { copy } = useCopy();
 
   // Coupon state
   const [couponInput, setCouponInput] = useState("");
@@ -237,8 +239,8 @@ export function ProSubscriptionManager() {
     }
   }
 
-  function copyToClipboard(text: string) {
-    navigator.clipboard.writeText(text);
+  async function copyToClipboard(text: string) {
+    if (!(await copy(text))) return;
     setCopiedKey(true);
     setTimeout(() => setCopiedKey(false), 2000);
   }
@@ -396,7 +398,7 @@ export function ProSubscriptionManager() {
               <code>{generatedResult.key}</code>
               <button
                 type="button"
-                className={styles.copyBtn}
+                className={styles.keyCopyBtn}
                 onClick={() => copyToClipboard(generatedResult.key!)}
               >
                 {copiedKey ? "Copied!" : "Copy Key"}

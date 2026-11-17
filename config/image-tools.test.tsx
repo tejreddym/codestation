@@ -8,9 +8,10 @@ import ToolPage, { generateMetadata } from "@/app/tools/[slug]/page";
 vi.mock("@/components/ToolWorkspace", () => ({ default: () => null }));
 afterEach(cleanup);
 describe("Image contracts and routes", () => {
-  it("exposes 28 genuine-capability workflows with one shared favicon and no unverified AVIF encoding", () => {
+  it("exposes 28 still-image workflows plus one shared favicon and no unverified AVIF encoding", () => {
     expect(imageTools).toHaveLength(28); expect(getStation("image")?.toolCount).toBe(28);
     expect(getTool("png-to-avif")).toBeUndefined(); expect(getTool("jpg-to-avif")).toBeUndefined();
+    expect((imageTools as readonly { id: string }[]).some(tool => tool.id === "video-thumbnail-generator")).toBe(false);
     expect(tools.filter(tool => tool.id === "favicon-generator")).toHaveLength(1);
     expect(getStation("web")?.toolList).toContain("favicon-generator");
   });

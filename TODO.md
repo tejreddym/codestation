@@ -1,5 +1,74 @@
 # TODO
 
+## Batch 4 — Homepage Search Placement, Station Corrections & SEO/AEO/GEO — 2026-11-16
+
+- [x] Separate homepage search results from detection matches, hide PersonalTools/Quick access while typing, move triage below results, and compress the panel to an internal scroll with 390 px no-overflow.
+- [x] Add combobox/listbox semantics, wrap-around Arrow navigation, Enter open, Escape clear with focus restoration, hover active, and a single polite count.
+- [x] Recategorise the four Developer Tools entries and remove the empty category; extract the Video station and correct Image/PDF/signature copy.
+- [x] Replace the hardcoded Image station fallback and add a category-to-station registry test.
+- [x] Add homepage metadata, origin-guarded canonical/OG/Twitter, WebSite/WebApplication/FAQPage schema, visible FAQ and `public/llms.txt`; remove the global layout canonical.
+- [x] Update counts to 377 tools / 30 categories / 30 stations and refresh current-state docs and copy.
+- [x] Run `npx tsc --noEmit`, `npm run audit:ui`, `npm run lint`, `npm test` and 55 headless-Chrome acceptance checks.
+- [ ] Production build and real WebMCP host execution remain for later verification.
+
+## Batch 3 — Video Thumbnails, Pomodoro & Count Fixes — 2026-11-16
+
+- [x] Remove the manual `| Code Station` suffix from four finance SEO titles and confirm the rendered title has one template suffix.
+- [x] Refresh live copy to 377 tools / 30 stations and “370+” tools; leave historical changelog counts unchanged.
+- [x] Route oversized finance amounts through per-field validation (`aria-invalid`, `aria-describedby`, visible error) and keep the catch as a last resort; test 1e20, 0 and negative values.
+- [x] Add `video-thumbnail-generator` with video validation, metadata, playhead and evenly spaced capture, PNG/JPEG quality, max-width scaling with a 4096 px clamp, sequential progress and Cancel, per-frame downloads, ZIP output and object-URL cleanup.
+- [x] Add pure thumbnail helpers in `lib/tools/video/` and component tests.
+- [x] Add the Productivity station with `pomodoro-timer`, absolute-time countdown, visibility resync, keyboard controls, optional auto-start and opt-in beep; no storage, notifications or title changes.
+- [x] Add pure Pomodoro helpers and fake-timer component tests.
+- [x] Add WebMCP manual-file/manual-UI cases and dispatcher tests.
+- [x] Update contract, registry, homepage, station-landing, image and productivity tests to 377 tools / 30 categories / 30 stations.
+- [x] Run `npx tsc --noEmit`, `npm run audit:ui`, `npm run lint` and the full test suite.
+- [x] Verify both tools and regression routes in headless Chrome against the dev server at 1440/390 in light and dark, including fixtures, ZIP contents, cancel, errors, object-URL revocation, keyboard use and a clean console/network (59 main checks + 4 fresh-page replacement checks).
+- [ ] Verify the OpenNext production build for the new client-only chunks (not run; the dev server owns `.next`).
+- [ ] Independent Safari/Firefox codec checks, WebMCP host execution, visual and acceptance checks remain for the Test Engineer.
+
+## Batch 2 — PDF Tools — 2026-11-16
+
+- [x] Install `pdfjs-dist@6.5.438` as an exact runtime dependency and self-host the worker, cmaps and standard fonts under `public/pdfjs/` via an idempotent script wired to `postinstall` and `build`; no CDN.
+- [x] Add the lazy browser-only PDF.js loader with shared hardened document options; keep pdf.js out of the server bundle and render the station before a file is chosen.
+- [x] Add pure range, text, filename and reorder helpers with unit tests.
+- [x] Add `ProgressBar` with a labeled native progressbar contract.
+- [x] Implement `pdf-to-text`, `pdf-to-images` and `pdf-reorder-pages` with page selection, search counts, TXT/PNG/JPEG/ZIP downloads, sequential render + cancel, drag/keyboard reordering, focus retention and reopen-verified export.
+- [x] Dispatch all three ids from `PdfStation` without changing `pdf-text-extractor` or existing branches.
+- [x] Extend the PDF registry, station description, WebMCP manual-file notice, and counts to 375 tools / 29 categories / 28 stations while live copy stays 370+.
+- [x] Update contract/registry tests and run typecheck, UI audit, lint, focused suites and the full test suite.
+- [x] Verify in a real browser against the dev server: extraction, errors, image dimensions, ZIP entries, cancel, object-URL revocation, drag and keyboard reorder, exported PDF order, and 1440/390 light/dark layouts.
+- [ ] Verify the OpenNext production build serves `public/pdfjs/` assets and the lazy pdf.js chunk (not run; the dev server owns `.next`).
+- [ ] Independent visual, cross-browser, and acceptance checks remain for the Test Engineer.
+
+## Batch 1 — Finance & Calculators Station — 2026-11-15
+
+- [x] Add a Finance & Calculators station (`finance-calculators`) with registry entry, `Landmark` mark, landing notice, workspace guard, and related stations.
+- [x] Implement pure EMI, loan prepayment, GST, and SIP engines in `lib/tools/finance/` with typed inputs, typed results, and validation errors.
+- [x] Add `config/finance-tools.ts` with hand-written descriptions, keywords, related tools, SEO metadata, and local contract notices.
+- [x] Build `components/FinanceStation.tsx` and layout-only CSS for the four calculators with defaults, validation, empty states, CSV downloads, copy, and reset.
+- [x] Add explicit WebMCP dispatcher cases and dispatcher tests for all four tools.
+- [x] Add engine and registry tests; update global counts to 372 tools / 29 categories / 28 stations and live copy to 370+.
+- [x] Run typecheck, UI audit, lint, and the full test suite; perform browser checks at 1440/390 in light and dark.
+- [ ] Independent visual, cross-browser, and acceptance checks remain for the Test Engineer.
+
+## Feature Wave 1 — Command Palette & Git Station — 2026-11-11
+
+- [x] Build a globally mounted command palette shell with Cmd/Ctrl+K, header trigger, focus restoration, and lazy dialog loading.
+- [x] Implement grouped tool/station/action results, `searchTools` reuse, empty featured state, combobox/listbox ARIA, full arrow/Home/End/Enter/Escape handling, and backdrop/close-button dismissal.
+- [x] Add `lib/command-palette/catalog.ts` as a dialog-only projection of the registry and stations.
+- [x] Add command-palette tests for lazy loading, keyboard behavior, filtering, navigation, focus, and no network/storage side effects.
+- [x] Avoid a duplicate Cmd/Ctrl+K dialog by yielding the launcher shortcut when the palette is mounted.
+- [x] Create Station 27 — Git & Version Control at `/stations/git` with `GitBranch`, related stations, and a local-only notice.
+- [x] Implement six new bounded Git text tools plus shared `gitignore-generator` (route unchanged).
+- [x] Add Git engines under `lib/tools/git/`, local contracts in `config/git-tools.ts`, and accessible UI in `components/GitStation.tsx`.
+- [x] Wire Git tools into `config/tools.ts`, `config/stations.ts`, `components/ToolWorkspace.tsx`, `components/StationMark.tsx`, `components/StationLanding.tsx`, and the WebMCP dispatcher.
+- [x] Add engine, UI, WebMCP dispatcher, unique-slug, and station-count tests.
+- [x] Update live count copy to 360+ tools / 27 stations and refresh stale category/station assertions.
+- [x] Verify `npm run typecheck`, `npm test` (6,585 tests), and `npm run build` (420 pages); palette chunk is 6,933 bytes gzip.
+- [x] Document the station in `docs/GIT_STATION.md`.
+- [ ] Independent visual, cross-browser, and acceptance checks remain for the Test Engineer.
+
 ## Strategic Ad Placements Expansion — 2026-11-11
 
 - [x] Embed bottom 728x90 leaderboard ad unit in all tool pages (`app/tools/[slug]/page.tsx`).

@@ -26,6 +26,7 @@ export default async function ToolPage({ params }: { params: Promise<{ slug: str
   const tool = getTool(slug);
   if (!tool) notFound();
   const local = tool.localContract ?? getImageDefinition(tool.id)?.localContract;
+  const stationRoute = getStationByName(tool.category)?.route;
   return <main className="shell">
     <JsonLd schema={[
       {
@@ -103,7 +104,7 @@ export default async function ToolPage({ params }: { params: Promise<{ slug: str
     <div style={{ display: "flex", flexWrap: "wrap", gap: "32px", alignItems: "flex-start", marginTop: "32px" }}>
       <div style={{ flex: "1 1 0%", minWidth: "min(100%, 600px)" }}>
         <ToolHelp tool={tool} />
-        {local ? <div className="content"><p><Link href={getStationByName(tool.category)?.route ?? "/stations/image"}>Browse the {tool.category} station →</Link>{tool.id === "favicon-generator" && <> · <Link href="/stations/image">Browse the Image station →</Link></>}</p><h2>What does this tool do?</h2><p>{local.purpose} Inputs: {local.fields.map(field => field.label).join(", ")}. Outputs: {local.outputs.join(", ")}.</p><h2>How to use it?</h2><p>{local.usage}</p><p>{tool.category === "Markdown" ? "Browser-local processing; preview image URLs may be requested by the browser. Generated markup is sanitized inert text and inputs are not persisted or logged." : "Browser-local processing. No uploads, content logging, persistence or remote resource loading. Generated markup is inert text; files are treated as untrusted data."}</p>{local.notices.map(notice => <p key={notice}>{notice}</p>)}<nav aria-label="Related tools"><h2>Related tools</h2><ul>{(tool.relatedTools ?? []).map(getTool).filter(tool => !!tool).map(tool => <li key={tool.id}><Link href={`/tools/${tool.slug}`}>{tool.name}</Link></li>)}</ul></nav></div> : tool.apiContract ? <div className="content">
+        {local ? <div className="content"><p>{stationRoute ? <Link href={stationRoute}>Browse the {tool.category} station →</Link> : <Link href="/tools">Browse all tools →</Link>}{tool.id === "favicon-generator" && <> · <Link href="/stations/image">Browse the Image station →</Link></>}</p><h2>What does this tool do?</h2><p>{local.purpose} Inputs: {local.fields.map(field => field.label).join(", ")}. Outputs: {local.outputs.join(", ")}.</p><h2>How to use it?</h2><p>{local.usage}</p><p>{tool.category === "Markdown" ? "Browser-local processing; preview image URLs may be requested by the browser. Generated markup is sanitized inert text and inputs are not persisted or logged." : "Browser-local processing. No uploads, content logging, persistence or remote resource loading. Generated markup is inert text; files are treated as untrusted data."}</p>{local.notices.map(notice => <p key={notice}>{notice}</p>)}<nav aria-label="Related tools"><h2>Related tools</h2><ul>{(tool.relatedTools ?? []).map(getTool).filter(tool => !!tool).map(tool => <li key={tool.id}><Link href={`/tools/${tool.slug}`}>{tool.name}</Link></li>)}</ul></nav></div> : tool.apiContract ? <div className="content">
           <p><Link href="/stations/api">Browse the API station →</Link></p>
           <h2>What does this tool do?</h2><p>{tool.apiContract.purpose} Inputs: {tool.apiContract.fields.map(field => field.label).join(", ")}. Outputs: {tool.apiContract.outputs.join(", ")}.</p>
           <h2>How to use it?</h2><p>{tool.apiContract.usage}</p>

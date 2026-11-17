@@ -6,6 +6,7 @@ import { readFileSync } from "node:fs";
 import { apiTools, apiToolIds } from "./api-tools";
 import { getTool, tools } from "./tools";
 import { getStation } from "./stations";
+import { extendedTools } from "./extended-tools";
 import ToolPage, { generateMetadata, generateStaticParams } from "@/app/tools/[slug]/page";
 import ApiPage from "@/app/stations/api/page";
 import sitemap from "@/app/sitemap";
@@ -24,7 +25,9 @@ const fields = {
 describe("API exact contracts and discovery", () => {
   it("contributes exactly 16 unique contracts and one explicit network boundary", () => {
     expect(apiToolIds).toEqual(Object.keys(fields)); expect(apiTools).toHaveLength(16);
-    expect(tools.filter(tool => tool.category === "API")).toEqual(apiTools);
+    const extendedApi = extendedTools.filter(tool => tool.category === "API");
+    expect(extendedApi.map(tool => tool.id)).toEqual(["curl-to-any-language"]);
+    expect(tools.filter(tool => tool.category === "API").map(tool => tool.id)).toEqual([...apiTools.map(tool => tool.id), "curl-to-any-language"]);
     expect(new Set(tools.map(tool => tool.id)).size).toBe(tools.length);
     expect(apiTools.filter(tool => tool.apiContract.sendsRequest).map(tool => tool.id)).toEqual(["api-request-tester"]);
   });
@@ -42,17 +45,19 @@ describe("API exact contracts and discovery", () => {
   });
   it("uses existing landing cards with keyboard local search", async () => {
     const user = userEvent.setup(); render(<ApiPage />);
-    expect(getStation("api")).toMatchObject({ name: "API", route: "/stations/api", toolCount: 16 });
-    expect(screen.getByRole("status").textContent).toBe("16 of 16 tools");
+    expect(getStation("api")).toMatchObject({ name: "API", route: "/stations/api", toolCount: 17 });
+    expect(screen.getByRole("status").textContent).toBe("17 of 17 tools");
     for (const tool of apiTools) expect(screen.getByRole("link", { name: new RegExp(tool.name) }).getAttribute("href")).toBe(tool.route);
+    expect(screen.getByRole("link", { name: /cURL to Any Language Generator/ }).getAttribute("href")).toBe("/tools/curl-to-any-language");
     const input = screen.getByRole("textbox", { name: "Search API tools" }); input.focus(); await user.keyboard("GraphQL");
-    expect(screen.getByRole("status").textContent).toBe("3 of 16 tools");
+    expect(screen.getByRole("status").textContent).toBe("3 of 17 tools");
     await user.clear(input); await user.type(input, "unmatched"); expect(screen.getByText("No API tools match that search.")).toBeTruthy();
   });
-  it("preserves theme, focus, mobile layout and no new sink in local code", () => {
-    for (const file of ["components/ApiStation.module.css", "components/ApiStructuredFields.module.css"]) {
-      const css = readFileSync(file, "utf8"); expect(css).toContain("var(--ink)"); expect(css).toContain("focus-visible"); expect(css).toContain("@media");
-    }
+  it("keeps layout-only station CSS, shared theme/focus/mobile styles and no new sink in local code", () => {
+    const layout = ["components/ApiStation.module.css", "components/ApiStructuredFields.module.css"].map(file => readFileSync(file, "utf8")).join("\n");
+    for (const token of ["var(--space-4)", "var(--space-6)", "min-width: 0", "display: grid", "@media"]) expect(layout).toContain(token);
+    const shared = ["components/ui/ui.module.css", "app/styles/tokens.css"].map(file => readFileSync(file, "utf8")).join("\n");
+    for (const token of ["var(--surface)", "var(--ink)", "44px", ":focus-visible", "@media", "minmax(0, 1fr)", "overflow-wrap: anywhere"]) expect(shared).toContain(token);
     for (const file of ["lib/tools/api/curl.ts", "lib/tools/api/graphql.ts", "lib/tools/api/local.ts", "components/ApiStation.tsx"]) {
       const source = readFileSync(file, "utf8"); expect(source).not.toMatch(/\beval\s*\(|\bnew Function\s*\(|console\.log|localStorage|sessionStorage|dangerouslySetInnerHTML/);
     }

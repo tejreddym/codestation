@@ -5,6 +5,8 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { dateTimeWeekdays, getDateTimeDefinition, type DateTimeToolDefinition, type DateTimeToolId } from "@/config/date-time-tools";
 import type { DateTimeResult, DateTimeValues } from "@/lib/tools/date-time/types";
 import styles from "./DateTimeStation.module.css";
+import ui from "./ui/ui.module.css";
+import { useCopy } from "./ui/useCopy";
 
 const COMMON_ZONES = ["UTC", "America/New_York", "America/Chicago", "America/Los_Angeles", "Europe/London", "Europe/Berlin", "Asia/Kolkata", "Asia/Tokyo", "Australia/Sydney", "Pacific/Auckland"];
 
@@ -20,6 +22,7 @@ function Station({ definition }: { definition: DateTimeToolDefinition }) {
   const revision = useRef(0);
   const mounted = useRef(false);
   const errorRef = useRef<HTMLParagraphElement>(null);
+  const { copy: copyText } = useCopy();
 
   useEffect(() => {
     mounted.current = true;
@@ -75,13 +78,13 @@ function Station({ definition }: { definition: DateTimeToolDefinition }) {
   async function copy(value: string, label: string) {
     const currentRevision = revision.current;
     setNotice("");
-    try {
-      if (!navigator.clipboard?.writeText) throw new Error("Clipboard unavailable");
-      await navigator.clipboard.writeText(value);
-      if (mounted.current && revision.current === currentRevision) setNotice(`${label} copied${value === "" ? " (empty value)" : ""}.`);
-    } catch {
-      if (mounted.current && revision.current === currentRevision) setNotice("Could not copy. Select the result and copy it manually.");
-    }
+    const ok = await copyText(value);
+    if (!mounted.current || revision.current !== currentRevision) return;
+    setNotice(
+      ok
+        ? `${label} copied${value === "" ? " (empty value)" : ""}.`
+        : "Could not copy. Select the result and copy it manually."
+    );
   }
 
   const paired = "pairedTool" in definition ? getDateTimeDefinition(definition.pairedTool) : undefined;
@@ -92,8 +95,8 @@ function Station({ definition }: { definition: DateTimeToolDefinition }) {
       <Link className={styles.related} href={`/tools/${paired.slug}`}>Switch to {paired.name} →</Link>
     </nav>}
     <div className={styles.layout}>
-      <form className={styles.panel} onSubmit={event => void submit(event)} noValidate aria-labelledby={`${id}-input`} aria-describedby={error ? `${id}-error` : undefined}>
-        <div className={styles.panelHead}><h2 id={`${id}-input`}>{definition.name} input</h2><button type="button" className="button" onClick={() => load(contract.example)}>Load example</button></div>
+      <form className={ui.panel} onSubmit={event => void submit(event)} noValidate aria-labelledby={`${id}-input`} aria-describedby={error ? `${id}-error` : undefined}>
+        <div className={ui.panelHeader}><h2 id={`${id}-input`} className={ui.panelTitle}>{definition.name} input</h2><button type="button" className={ui.button} onClick={() => load(contract.example)}>Load example</button></div>
         <div className={styles.fields}>
           {contract.fields.filter(field => !field.when || values[field.when.field] === field.when.value).map(field => {
             const fieldId = `${id}-${field.name}`;
@@ -121,12 +124,12 @@ function Station({ definition }: { definition: DateTimeToolDefinition }) {
           })}
           {contract.notices.map(text => <p className={styles.note} key={text}>{text}</p>)}
         </div>
-        <div className={styles.actions}><button type="submit" className="button primary" disabled={busy}>{busy ? "Calculating…" : contract.action}</button><button type="button" className="button" onClick={() => load(contract.defaults)}>Clear</button></div>
+        <div className={styles.actions}><button type="submit" className={`${ui.button} ${ui.primary}`} disabled={busy}>{busy ? "Calculating…" : contract.action}</button><button type="button" className={ui.button} onClick={() => load(contract.defaults)}>Clear</button></div>
       </form>
-      <section className={styles.panel} aria-labelledby={`${id}-result`} aria-busy={busy}>
-        <div className={styles.panelHead}><h2 id={`${id}-result`}>{contract.outputLabel}</h2></div>
+      <section className={ui.panel} aria-labelledby={`${id}-result`} aria-busy={busy}>
+        <div className={ui.panelHeader}><h2 id={`${id}-result`} className={ui.panelTitle}>{contract.outputLabel}</h2></div>
         {result ? <div className={styles.result}><dl className={styles.resultList}>{result.rows.map((row, index) => <div key={`${row.label}-${index}`}>
-          <dt className={styles.rowHead}><span>{row.label}</span><button type="button" className="button" aria-label={`Copy ${row.label}`} onClick={() => void copy(row.value, row.label)}>Copy</button></dt>
+          <dt className={styles.rowHead}><span>{row.label}</span><button type="button" className={ui.button} aria-label={`Copy ${row.label}`} onClick={() => void copy(row.value, row.label)}>Copy</button></dt>
           <dd><pre className={styles.output} tabIndex={0} aria-label={`${row.label} value`}>{row.value}</pre>{row.value === "" && <p className={styles.hint}>Empty value — Copy copies exactly zero characters.</p>}</dd>
         </div>)}</dl></div> : <p className={styles.empty}>Your result will appear here after you {contract.action.toLowerCase()}. Editing an input clears the previous result.</p>}
       </section>

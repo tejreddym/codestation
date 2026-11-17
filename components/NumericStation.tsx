@@ -9,6 +9,8 @@ import { getTemperatureScale, temperatureScales } from "@/config/temperature-too
 import { numberBaseCatalog } from "@/config/number-base-tools";
 import { convertNumberBase, formatNumberBase } from "@/lib/tools/number-base";
 import styles from "./NumericStation.module.css";
+import ui from "./ui/ui.module.css";
+import { useCopy } from "./ui/useCopy";
 
 type Values = Record<string, string | boolean>;
 type NumericResult = { text: string; sourceText: string; value: number | bigint };
@@ -19,6 +21,7 @@ export default function NumericStation({ toolId }: { toolId: NumericToolId }) {
   const [result, setResult] = useState<NumericResult | null>(null);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const { copy } = useCopy();
 
   const unitOptions = useMemo(() => toolId === "unit-converter" ? unitCatalog[values.category as UnitCategory] ?? [] : [], [toolId, values.category]);
   const optionsFor = (name: string) => name === "from" || name === "to"
@@ -90,8 +93,8 @@ export default function NumericStation({ toolId }: { toolId: NumericToolId }) {
     return base ? `${base.label} — base ${option}` : option;
   }
 
-  return <div className={`tool-layout ${styles.station}`}>
-    <div className="panel"><form className={styles.form} onSubmit={submit} noValidate aria-describedby="numeric-status">
+  return <div className={`${ui.layout} ${ui.form} ${styles.station}`}>
+    <div className={ui.panel}><form className={styles.form} onSubmit={submit} noValidate aria-describedby="numeric-status">
       <h2>{definition.name} input</h2>
       {definition.localContract.fields.map(field => {
         const id = `numeric-${toolId}-${field.name}`;
@@ -99,10 +102,10 @@ export default function NumericStation({ toolId }: { toolId: NumericToolId }) {
         const choices = options.length ? options : field.options ?? [];
         return <div className={styles.field} key={field.name}><label htmlFor={id}>{field.label}</label>{field.control === "checkbox" ? <input id={id} type="checkbox" checked={values[field.name] === true} onChange={event => change(field.name, event.target.checked)} /> : field.control === "select" ? <select id={id} value={String(values[field.name] ?? "")} onChange={event => change(field.name, event.target.value)}>{choices.map(option => <option key={option} value={option}>{optionLabel(field.name, option)}</option>)}</select> : <input id={id} type="text" inputMode="decimal" value={String(values[field.name] ?? "")} onChange={event => change(field.name, event.target.value)} />}</div>;
       })}
-        <div className={`actions ${styles.actions}`}><button className="button primary" type="submit">Convert</button><button className="button" type="button" onClick={swap} disabled={!result}>Swap</button><button className="button" type="button" onClick={clear}>Clear</button></div>
+        <div className={`${ui.actions} ${styles.actions}`}><button className={`${ui.button} ${ui.primary}`} type="submit">Convert</button><button className={ui.button} type="button" onClick={swap} disabled={!result}>Swap</button><button className={ui.button} type="button" onClick={clear}>Clear</button></div>
       {definition.localContract.notices.map(text => <p className="muted" key={text}>{text}</p>)}
     </form></div>
-    <section className="panel" aria-labelledby="numeric-output"><h2 id="numeric-output" className={styles.outputHeading}>{definition.localContract.outputs.join(" · ")}</h2>{result ? <div className={styles.output}><pre tabIndex={0}>{result.text}</pre><button className="button" type="button" onClick={() => { if (!navigator.clipboard) { setNotice("Could not copy."); return; } void navigator.clipboard.writeText(result.text).then(() => setNotice("Copied."), () => setNotice("Could not copy.")); }}>Copy</button></div> : <p className="muted">Convert a valid source value to see the result.</p>}</section>
+    <section className={ui.panel} aria-labelledby="numeric-output"><h2 id="numeric-output" className={styles.outputHeading}>{definition.localContract.outputs.join(" · ")}</h2>{result ? <div className={styles.output}><pre tabIndex={0}>{result.text}</pre><button className={ui.button} type="button" onClick={async () => { const ok = await copy(result.text); setNotice(ok ? "Copied." : "Could not copy."); }}>Copy</button></div> : <p className="muted">Convert a valid source value to see the result.</p>}</section>
     <p id="numeric-status" role="status" aria-live="polite">{notice}</p>{error && <p role="alert">{error}</p>}
   </div>;
 }

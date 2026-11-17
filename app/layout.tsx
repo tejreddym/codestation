@@ -23,7 +23,7 @@ export const metadata: Metadata = {
       { url: "/brand/platform/apple-touch-icon-light-180.png", sizes: "180x180", type: "image/png" },
     ],
   },
-  ...(siteConfig.origin ? { metadataBase: new URL(siteConfig.origin), alternates: { canonical: "/" }, openGraph: { title: siteConfig.name, description: siteConfig.description, url: siteConfig.origin, siteName: siteConfig.name, type: "website" as const } } : {}),
+  ...(siteConfig.origin ? { metadataBase: new URL(siteConfig.origin), openGraph: { title: siteConfig.name, description: siteConfig.description, url: siteConfig.origin, siteName: siteConfig.name, type: "website" as const } } : {}),
   title: { default: siteConfig.name, template: `%s | ${siteConfig.name}` },
   description: siteConfig.description,
   robots: siteConfig.indexing ? { index: true, follow: true } : { index: false, follow: false },

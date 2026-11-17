@@ -5,6 +5,8 @@ import { getCronDefinition, type CronToolDefinition, type CronToolId } from "@/c
 import type { CronResult, CronValues } from "@/lib/tools/cron/types";
 import DateTimePicker from "./DateTimePicker";
 import styles from "./CronStation.module.css";
+import ui from "./ui/ui.module.css";
+import { useCopy } from "./ui/useCopy";
 
 const COMMON_ZONES = ["UTC", "America/New_York", "America/Chicago", "America/Los_Angeles", "Europe/London", "Europe/Berlin", "Asia/Kolkata", "Asia/Tokyo", "Australia/Sydney", "Pacific/Auckland"];
 
@@ -23,6 +25,7 @@ function Station({ definition }: { definition: CronToolDefinition }) {
   const mounted = useRef(false);
   const controller = useRef<AbortController | null>(null);
   const errorRef = useRef<HTMLParagraphElement>(null);
+  const { copy: copyText } = useCopy();
   const validatorStatus = result && definition.id === "cron-validator"
     ? result.rows.find(row => row.label === "Valid/Invalid status")?.value
     : undefined;
@@ -114,21 +117,21 @@ function Station({ definition }: { definition: CronToolDefinition }) {
   async function copy(value: string, label: string) {
     const currentRevision = revision.current;
     setNotice("");
-    try {
-      if (!navigator.clipboard?.writeText) throw new Error("Clipboard unavailable");
-      await navigator.clipboard.writeText(value);
-      if (mounted.current && revision.current === currentRevision) setNotice(`${label} copied${value === "" ? " (empty value)" : ""}.`);
-    } catch {
-      if (mounted.current && revision.current === currentRevision) setNotice("Could not copy. Select the result and copy it manually.");
-    }
+    const ok = await copyText(value);
+    if (!mounted.current || revision.current !== currentRevision) return;
+    setNotice(
+      ok
+        ? `${label} copied${value === "" ? " (empty value)" : ""}.`
+        : "Could not copy. Select the result and copy it manually."
+    );
   }
 
   return <div className={styles.station}>
     <div className={styles.layout}>
-      <form className={styles.panel} onSubmit={event => void submit(event)} noValidate aria-labelledby={`${id}-input`} aria-describedby={error ? `${id}-error` : undefined}>
-        <div className={styles.panelHead}>
-          <h2 id={`${id}-input`}>{definition.name} input</h2>
-          <button type="button" className="button" onClick={() => load(contract.example)}>Load example</button>
+      <form className={ui.panel} onSubmit={event => void submit(event)} noValidate aria-labelledby={`${id}-input`} aria-describedby={error ? `${id}-error` : undefined}>
+        <div className={ui.panelHeader}>
+          <h2 id={`${id}-input`} className={ui.panelTitle}>{definition.name} input</h2>
+          <button type="button" className={ui.button} onClick={() => load(contract.example)}>Load example</button>
         </div>
         <div className={styles.fields}>
           {definition.id === "cron-generator" && <p className={styles.mode} role="status" aria-atomic="true">
@@ -153,7 +156,7 @@ function Station({ definition }: { definition: CronToolDefinition }) {
                   ariaDescribedBy={describedBy} invalid={Boolean(associatedError)}
                   onChange={value => change(field.name, value)}
                 />
-                <button type="button" className="button" onClick={() => change("reference", new Date().toISOString())}>Current date and time</button>
+                <button type="button" className={ui.button} onClick={() => change("reference", new Date().toISOString())}>Current date and time</button>
               </div>;
               return <div className={styles.field} key={field.name}>
                 <label htmlFor={fieldId}>{field.label}{field.optional && <span className={styles.optional}> (optional)</span>}</label>
@@ -173,17 +176,17 @@ function Station({ definition }: { definition: CronToolDefinition }) {
           {contract.notices.map(text => <p className={styles.note} key={text}>{text}</p>)}
         </div>
         <div className={styles.actions}>
-          <button type="submit" className="button primary" disabled={busy}>{busy ? "Processing…" : contract.action}</button>
-          <button type="button" className="button" onClick={() => load(contract.defaults)}>Clear</button>
+          <button type="submit" className={`${ui.button} ${ui.primary}`} disabled={busy}>{busy ? "Processing…" : contract.action}</button>
+          <button type="button" className={ui.button} onClick={() => load(contract.defaults)}>Clear</button>
         </div>
       </form>
-      <section className={styles.panel} aria-labelledby={`${id}-result`} aria-busy={busy}>
-        <div className={styles.panelHead}><h2 id={`${id}-result`}>{contract.outputLabel}</h2></div>
+      <section className={ui.panel} aria-labelledby={`${id}-result`} aria-busy={busy}>
+        <div className={ui.panelHeader}><h2 id={`${id}-result`} className={ui.panelTitle}>{contract.outputLabel}</h2></div>
         {result ? <div className={styles.result}>
           <dl className={styles.resultList}>{result.rows.map((row, index) => <div key={`${row.label}-${index}`}>
             <dt className={styles.rowHead}>
               <span>{row.label}</span>
-              <button type="button" className="button" aria-label={`Copy ${row.label}`} onClick={() => void copy(row.value, row.label)}>Copy</button>
+              <button type="button" className={ui.button} aria-label={`Copy ${row.label}`} onClick={() => void copy(row.value, row.label)}>Copy</button>
             </dt>
             <dd>
               <pre id={`${id}-row-${index}`} className={styles.output} tabIndex={0} aria-label={`${row.label} value`}>{row.value}</pre>
@@ -197,12 +200,12 @@ function Station({ definition }: { definition: CronToolDefinition }) {
               <dd>
                 <div className={styles.rowHead}>
                   <span className={styles.hint}>Expression</span>
-                  <button type="button" className="button" aria-label={`Copy ${field.label} expression`} onClick={() => void copy(field.expression, `${field.label} expression`)}>Copy</button>
+                  <button type="button" className={ui.button} aria-label={`Copy ${field.label} expression`} onClick={() => void copy(field.expression, `${field.label} expression`)}>Copy</button>
                 </div>
                 <pre className={styles.output} tabIndex={0} aria-label={`${field.label} expression`}>{field.expression}</pre>
                 <div className={styles.rowHead}>
                   <span className={styles.hint}>Interpretation</span>
-                  <button type="button" className="button" aria-label={`Copy ${field.label} interpretation`} onClick={() => void copy(field.interpretation, `${field.label} interpretation`)}>Copy</button>
+                  <button type="button" className={ui.button} aria-label={`Copy ${field.label} interpretation`} onClick={() => void copy(field.interpretation, `${field.label} interpretation`)}>Copy</button>
                 </div>
                 <p className={styles.interpretation}>{field.interpretation}</p>
               </dd>

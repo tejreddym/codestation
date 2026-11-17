@@ -10,6 +10,9 @@ export const pdfToolIds = [
   "signature-pad",
   "pdf-watermark",
   "pdf-page-numberer",
+  "pdf-to-text",
+  "pdf-to-images",
+  "pdf-reorder-pages",
 ] as const;
 
 export type PdfToolId = (typeof pdfToolIds)[number];
@@ -45,15 +48,36 @@ const range: LocalField = {
 const notice =
   "100% in-browser PDF processing. Files are read in memory via client WebAssembly/JavaScript; no documents, content, or telemetry are uploaded to any server.";
 
+type DefineOptions = {
+  description?: string;
+  keywords?: readonly string[];
+  relatedTools?: readonly string[];
+  seoTitle?: string;
+  seoDescription?: string;
+  action?: string;
+};
+
 const define = (
   id: PdfToolId,
   title: string,
   fields: LocalField[],
   outputs: string[],
   defaults: Record<string, unknown> = {},
-  extra: string[] = []
-): LocalDefinition<PdfToolId> =>
-  localDefinition(id, title, "PDF", fields, outputs, defaults, [notice, ...extra], "Process");
+  extra: string[] = [],
+  options: DefineOptions = {}
+): LocalDefinition<PdfToolId> => {
+  const base = localDefinition(id, title, "PDF", fields, outputs, defaults, [notice, ...extra], options.action ?? "Process");
+  return {
+    ...base,
+    description: options.description ?? base.description,
+    keywords: options.keywords ? [...options.keywords] : base.keywords,
+    relatedTools: options.relatedTools ?? base.relatedTools,
+    seo: {
+      title: options.seoTitle ?? base.seo.title,
+      description: options.seoDescription ?? base.seo.description,
+    },
+  };
+};
 
 export const pdfTools: readonly LocalDefinition<PdfToolId>[] = [
   define(
@@ -127,7 +151,7 @@ export const pdfTools: readonly LocalDefinition<PdfToolId>[] = [
     [],
     ["Signature canvas", "Transparent PNG Download"],
     {},
-    ["Draw your signature with mouse, stylus, or touch, and export a clean, transparent PNG for signing PDF documents and forms."]
+    ["Draw your signature with mouse, stylus, or touch and export a clean transparent PNG. This tool does not open, sign, or modify a PDF; use the PNG in your own document workflow."]
   ),
   define(
     "pdf-watermark",
@@ -269,6 +293,122 @@ export const pdfTools: readonly LocalDefinition<PdfToolId>[] = [
       "Add clean, customizable page numbers to PDF headers or footers with support for standard, Roman, or custom numbering formats.",
       "Filter page ranges or skip title pages. Generated and previewed 100% locally in your browser.",
     ]
+  ),
+  define(
+    "pdf-to-text",
+    "PDF to Text",
+    [
+      pdfFile,
+      { ...range, label: "Pages to show" },
+      {
+        name: "search",
+        label: "Search extracted text",
+        control: "search",
+        optional: true,
+      },
+    ],
+    ["Page-by-page text", "Search match counts", "TXT download"],
+    { range: "all", search: "" },
+    [
+      "Reads the PDF's embedded text layer only. Pages with little or no text are flagged as possible scans; OCR is not performed.",
+      "Search is case-insensitive and counts matches on the selected pages. Copy and TXT downloads use the current page selection.",
+    ],
+    {
+      description:
+        "Extract selectable text from PDF pages, search it with match counts, copy it, and download a plain-text file. Pages that look scanned are flagged; this tool does not run OCR.",
+      keywords: [
+        "extract text from pdf",
+        "pdf to text",
+        "pdf text extractor",
+        "search pdf text",
+        "copy pdf text",
+        "pdf to txt",
+      ],
+      relatedTools: ["pdf-text-extractor", "pdf-to-images", "pdf-reorder-pages"],
+      seoTitle: "PDF to Text — Extract PDF Text Locally",
+      seoDescription:
+        "Extract text from PDF pages in your browser. Search with match counts, copy text, download TXT, and spot scanned pages without uploading the file.",
+      action: "Extract Text",
+    }
+  ),
+  define(
+    "pdf-to-images",
+    "PDF to Images",
+    [
+      pdfFile,
+      range,
+      {
+        name: "dpi",
+        label: "Resolution",
+        control: "select",
+        options: ["72 DPI", "150 DPI", "300 DPI"],
+      },
+      {
+        name: "format",
+        label: "Image format",
+        control: "select",
+        options: ["PNG", "JPEG"],
+      },
+      {
+        name: "quality",
+        label: "JPEG quality (%)",
+        control: "range",
+        min: 50,
+        max: 100,
+        optional: true,
+      },
+    ],
+    ["PNG or JPEG page images", "Per-page downloads", "ZIP archive", "Image dimensions"],
+    { range: "all", dpi: "150 DPI", format: "PNG", quality: 90 },
+    [
+      "Pages render sequentially at the chosen scale (DPI ÷ 72). A run is capped at 100 pages and warns above 50 pages at 300 DPI.",
+      "Cancel stops the render loop, aborts the current page and destroys the PDF document. Object URLs for previews are revoked on clear and unmount.",
+    ],
+    {
+      description:
+        "Render PDF pages as PNG or JPEG images at 72, 150 or 300 DPI, show each image's pixel dimensions, and download pages individually or as a ZIP archive.",
+      keywords: [
+        "pdf to png",
+        "pdf to jpg",
+        "pdf to images",
+        "convert pdf to image",
+        "pdf page to image",
+        "pdf to jpeg",
+      ],
+      relatedTools: ["pdf-to-text", "images-to-pdf", "pdf-reorder-pages"],
+      seoTitle: "PDF to Images — Convert PDF Pages to PNG or JPEG",
+      seoDescription:
+        "Convert PDF pages to PNG or JPEG at 72, 150, or 300 DPI. Preview dimensions, download each page, or export everything as a ZIP—entirely in your browser.",
+      action: "Render Images",
+    }
+  ),
+  define(
+    "pdf-reorder-pages",
+    "PDF Page Reorderer",
+    [pdfFile],
+    ["Reordered PDF file", "Page order mapping", "Page count"],
+    {},
+    [
+      "Drag a page card or use Move up / Move down. Focus stays on the moved page for keyboard users.",
+      "Remove pages without changing the source file, then export a new PDF. The mapping summary shows where each original page went.",
+    ],
+    {
+      description:
+        "Reorder PDF pages with drag-and-drop or keyboard controls, remove pages, review a page mapping summary, and export a new PDF without changing the original.",
+      keywords: [
+        "reorder pdf pages",
+        "organize pdf",
+        "rearrange pdf",
+        "move pdf pages",
+        "delete pdf pages",
+        "sort pdf pages",
+      ],
+      relatedTools: ["pdf-merge", "pdf-split", "pdf-page-deleter", "pdf-to-images"],
+      seoTitle: "PDF Page Reorderer — Rearrange PDF Pages",
+      seoDescription:
+        "Reorder or remove PDF pages with drag-and-drop or keyboard controls. Export a clean PDF with a page mapping summary—no upload or account required.",
+      action: "Export PDF",
+    }
   ),
 ];
 

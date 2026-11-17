@@ -19,6 +19,20 @@ import {
   type PageNumberPosition,
   type PageNumberVertical,
 } from "@/lib/tools/pdf/engine";
+import { Button } from "./ui/Button";
+import { Callout } from "./ui/Callout";
+import { CanvasStage } from "./ui/CanvasStage";
+import { Checkbox, ColorInput, RangeInput, Select, TextInput } from "./ui/controls";
+import { DropZone } from "./ui/DropZone";
+import { EmptyState } from "./ui/EmptyState";
+import { Field, Hint } from "./ui/Field";
+import { Panel } from "./ui/Panel";
+import { PreviewFrame } from "./ui/PreviewFrame";
+import { ToolLayout } from "./ui/ToolLayout";
+import PdfTextTool from "./PdfTextTool";
+import PdfImagesTool from "./PdfImagesTool";
+import PdfReorderTool from "./PdfReorderTool";
+import ui from "./ui/ui.module.css";
 import styles from "./PdfStation.module.css";
 
 function downloadBlob(data: Uint8Array, filename: string, mime = "application/pdf") {
@@ -95,9 +109,6 @@ export default function PdfStation({ toolId }: { toolId: PdfToolId }) {
   const [error, setError] = useState<string | null>(null);
   const [successNotice, setSuccessNotice] = useState<string | null>(null);
   const [metaInfo, setMetaInfo] = useState<PdfMetadataInfo | null>(null);
-
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const wmImageInputRef = useRef<HTMLInputElement>(null);
 
   // Clean up object URLs on unmount or URL replacement
   useEffect(() => {
@@ -255,8 +266,10 @@ export default function PdfStation({ toolId }: { toolId: PdfToolId }) {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
     const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const x = (e.clientX - rect.left) * scaleX;
+    const y = (e.clientY - rect.top) * scaleY;
 
     ctx.strokeStyle = penColor;
     ctx.lineWidth = penWidth;
@@ -277,8 +290,10 @@ export default function PdfStation({ toolId }: { toolId: PdfToolId }) {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
     const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const x = (e.clientX - rect.left) * scaleX;
+    const y = (e.clientY - rect.top) * scaleY;
 
     ctx.lineTo(x, y);
     ctx.stroke();
@@ -329,658 +344,318 @@ export default function PdfStation({ toolId }: { toolId: PdfToolId }) {
 
   const isMultiFile = toolId === "pdf-merge" || toolId === "images-to-pdf";
   const fileAccept = toolId === "images-to-pdf" ? "image/png,image/jpeg,image/webp,image/*" : ".pdf,application/pdf";
+  const processLabel = toolId === "pdf-merge"
+    ? "Merge & Download PDF"
+    : toolId === "pdf-split"
+      ? "Extract & Download PDF"
+      : toolId === "pdf-rotate"
+        ? "Rotate & Download PDF"
+        : toolId === "images-to-pdf"
+          ? "Convert to PDF"
+          : toolId === "pdf-page-deleter"
+            ? "Delete Pages & Download"
+            : toolId === "pdf-watermark"
+              ? "Apply Watermark & Preview"
+              : toolId === "pdf-page-numberer"
+                ? "Add Page Numbers & Preview"
+                : "Inspect Metadata";
+
+  if (toolId === "pdf-to-text") {
+    return <PdfTextTool definition={definition} />;
+  }
+
+  if (toolId === "pdf-to-images") {
+    return <PdfImagesTool definition={definition} />;
+  }
+
+  if (toolId === "pdf-reorder-pages") {
+    return <PdfReorderTool definition={definition} />;
+  }
+
+  if (toolId === "signature-pad") {
+    return (
+      <ToolLayout kind="data" className={styles.container}>
+        <Panel title={definition.name} headingId="signature-pad-heading" padded>
+          <Hint>{definition.description}</Hint>
+          <div className={styles.controlsRow}>
+            <Field id="sig-pen-color" label="Ink Color">
+              <ColorInput id="sig-pen-color" value={penColor} onChange={e => setPenColor(e.target.value)} />
+            </Field>
+            <Field id="pen-width-range" label={`Stroke Width (${penWidth}px)`}>
+              <RangeInput id="pen-width-range" min="1" max="8" value={penWidth} onChange={e => setPenWidth(Number(e.target.value))} />
+            </Field>
+          </div>
+          <CanvasStage
+            kind="bitmap"
+            label="Signature drawing area"
+            background="checker"
+            footer={<div className={ui.actions}>
+              <Button variant="primary" onClick={() => downloadSignature(true)} disabled={!hasSignature}>Download Transparent PNG</Button>
+              <Button onClick={() => downloadSignature(false)} disabled={!hasSignature}>Download White Background PNG</Button>
+              <Button variant="danger" onClick={clearSignature}>Clear Canvas</Button>
+            </div>}
+          >
+            <canvas
+              ref={sigCanvasRef}
+              width={600}
+              height={220}
+              className={styles.signatureCanvas}
+              onPointerDown={startDrawing}
+              onPointerMove={draw}
+              onPointerUp={stopDrawing}
+              onPointerLeave={stopDrawing}
+            />
+          </CanvasStage>
+        </Panel>
+      </ToolLayout>
+    );
+  }
 
   return (
-    <div className={styles.container}>
-      <section className={styles.card}>
-        <div className={styles.header}>
-          <h2>{definition.name}</h2>
-          <p>{definition.description}</p>
-        </div>
+    <ToolLayout kind="form" className={styles.container}>
+      <Panel title={definition.name} headingId={`${toolId}-heading`} padded>
+        <Hint>{definition.description}</Hint>
 
-        <div className={styles.body}>
-          {toolId === "signature-pad" ? (
-            <div className={styles.formGrid}>
-              <div style={{ display: "flex", gap: "16px", alignItems: "center", marginBottom: "8px" }}>
-                <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                  <label htmlFor="sig-pen-color" className={styles.label}>Ink Color</label>
-                  <input
-                    id="sig-pen-color"
-                    type="color"
-                    value={penColor}
-                    onChange={(e) => setPenColor(e.target.value)}
-                  />
+        <DropZone
+          label={isMultiFile ? "Upload Documents / Images" : "Upload Document"}
+          accept={fileAccept}
+          multiple={isMultiFile}
+          onFiles={files => handleFileSelect(files, isMultiFile)}
+        >
+          <span className={styles.dropzoneText}>
+            {isMultiFile
+              ? "Click or drag files here"
+              : singleFile
+                ? `Selected: ${singleFile.name}`
+                : "Click or drag a PDF file here"}
+          </span>
+          <span className={styles.dropzoneSub}>
+            {isMultiFile
+              ? "Supported: PDF or Images. 100% processed locally in memory."
+              : "Files never leave your browser."}
+          </span>
+        </DropZone>
+
+        {isMultiFile && selectedFiles.length > 0 && (
+          <div className={styles.fileList}>
+            {selectedFiles.map((file, i) => (
+              <div key={`${file.name}-${i}`} className={styles.fileItem}>
+                <div>
+                  <span className={styles.fileName}>{file.name}</span>
+                  <span className={styles.fileSize}>({formatBytes(file.size)})</span>
                 </div>
-                <div className={styles.field} style={{ flexDirection: "row", alignItems: "center", gap: "8px" }}>
-                  <label htmlFor="pen-width-range" className={styles.label}>Stroke Width</label>
-                  <input
-                    id="pen-width-range"
-                    type="range"
-                    min="1"
-                    max="8"
-                    value={penWidth}
-                    onChange={(e) => setPenWidth(Number(e.target.value))}
-                  />
-                  <span style={{ fontSize: "12px", color: "var(--muted)" }}>{penWidth}px</span>
-                </div>
+                <Button size="sm" variant="danger" onClick={() => removeFile(i)}>Remove</Button>
               </div>
+            ))}
+          </div>
+        )}
 
-              <div className={styles.canvasWrap}>
-                <canvas
-                  ref={sigCanvasRef}
-                  width={600}
-                  height={220}
-                  className={styles.signatureCanvas}
-                  onPointerDown={startDrawing}
-                  onPointerMove={draw}
-                  onPointerUp={stopDrawing}
-                  onPointerLeave={stopDrawing}
-                />
-              </div>
+        {toolId === "pdf-split" && (
+          <Field id="range-input" label="Page Range" hint="Enter comma-separated page numbers or hyphenated ranges.">
+            <TextInput id="range-input" type="text" value={rangeInput} onChange={e => setRangeInput(e.target.value)} placeholder="e.g. 1-3, 5, 8" />
+          </Field>
+        )}
 
-              <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
-                <button
-                  type="button"
-                  className={styles.primaryBtn}
-                  onClick={() => downloadSignature(true)}
-                  disabled={!hasSignature}
-                >
-                  Download Transparent PNG
-                </button>
-                <button
-                  type="button"
-                  className={styles.secondaryBtn}
-                  onClick={() => downloadSignature(false)}
-                  disabled={!hasSignature}
-                >
-                  Download White Background PNG
-                </button>
-                <button
-                  type="button"
-                  className={styles.secondaryBtn}
-                  onClick={clearSignature}
-                  style={{ color: "var(--red)" }}
-                >
-                  Clear Canvas
-                </button>
+        {toolId === "pdf-rotate" && (
+          <>
+            <Field id="rotate-angle" label="Rotation Direction">
+              <Select id="rotate-angle" value={rotateAngle} onChange={e => setRotateAngle(Number(e.target.value) as 90 | 180 | 270)}>
+                <option value={90}>90° Clockwise</option>
+                <option value={180}>180° Flip Upside-Down</option>
+                <option value={270}>270° Counter-Clockwise</option>
+              </Select>
+            </Field>
+            <Field id="rotate-range" label="Pages to Rotate (Optional)">
+              <TextInput id="rotate-range" type="text" value={rangeInput} onChange={e => setRangeInput(e.target.value)} placeholder="Leave empty for all pages, or e.g. 1, 3-5" />
+            </Field>
+          </>
+        )}
+
+        {toolId === "images-to-pdf" && (
+          <Field id="page-size" label="Target PDF Page Size">
+            <Select id="page-size" value={pageSize} onChange={e => setPageSize(e.target.value as "A4" | "Letter" | "FitImage")}>
+              <option value="A4">A4 (Standard Document)</option>
+              <option value="Letter">US Letter</option>
+              <option value="FitImage">Fit Exactly to Image Dimensions</option>
+            </Select>
+          </Field>
+        )}
+
+        {toolId === "pdf-page-deleter" && (
+          <Field id="delete-pages" label="Page numbers to delete">
+            <TextInput id="delete-pages" type="text" value={deleteInput} onChange={e => setDeleteInput(e.target.value)} placeholder="e.g. 1, 3, 5-7" />
+          </Field>
+        )}
+
+        {toolId === "pdf-watermark" && (
+          <>
+            <Field id="wm-type" label="Watermark Type">
+              <Select id="wm-type" value={wmType} onChange={e => setWmType(e.target.value as "text" | "image")}>
+                <option value="text">Text Watermark</option>
+                <option value="image">Image Watermark (PNG / JPG)</option>
+              </Select>
+            </Field>
+
+            {wmType === "text" ? (
+              <div className={styles.grid}>
+                <Field id="wm-text" label="Watermark Text">
+                  <TextInput id="wm-text" type="text" value={wmText} onChange={e => setWmText(e.target.value)} placeholder="e.g. CONFIDENTIAL, DRAFT" />
+                </Field>
+                <Field id="wm-font-size" label="Font Size (pt)">
+                  <TextInput id="wm-font-size" type="number" min="10" max="150" value={wmFontSize} onChange={e => setWmFontSize(Number(e.target.value))} />
+                </Field>
+                <Field id="wm-color" label="Color">
+                  <ColorInput id="wm-color" value={wmColor} onChange={e => setWmColor(e.target.value)} />
+                </Field>
               </div>
+            ) : (
+              <div className={styles.grid}>
+                <Field id="wm-image-file" label="Select Watermark Image">
+                  <TextInput id="wm-image-file" type="file" accept="image/png,image/jpeg,image/jpg" onChange={e => {
+                    if (e.target.files && e.target.files[0]) setWmImageFile(e.target.files[0]);
+                  }} />
+                  {wmImageFile && <Hint>Selected: {wmImageFile.name} ({formatBytes(wmImageFile.size)})</Hint>}
+                </Field>
+                <Field id="wm-scale" label="Scale (%)">
+                  <TextInput id="wm-scale" type="number" min="10" max="300" value={wmScale} onChange={e => setWmScale(Number(e.target.value))} />
+                </Field>
+              </div>
+            )}
+
+            <div className={styles.grid}>
+              <Field id="wm-position" label="Placement Position">
+                <Select id="wm-position" value={wmPosition} onChange={e => setWmPosition(e.target.value as WatermarkPosition)}>
+                  <option value="center">Center</option>
+                  <option value="tile">Tile / Repeating Grid</option>
+                  <option value="top-left">Top-Left</option>
+                  <option value="top-right">Top-Right</option>
+                  <option value="bottom-left">Bottom-Left</option>
+                  <option value="bottom-right">Bottom-Right</option>
+                </Select>
+              </Field>
+              <Field id="wm-rotation" label="Rotation Angle (°)">
+                <Select id="wm-rotation" value={wmRotation} onChange={e => setWmRotation(Number(e.target.value))}>
+                  <option value={45}>45° Diagonal</option>
+                  <option value={0}>0° Horizontal</option>
+                  <option value={90}>90° Vertical</option>
+                  <option value={315}>315° Reverse Diagonal</option>
+                </Select>
+              </Field>
+              <Field id="wm-opacity" label={`Opacity (${wmOpacity}%)`}>
+                <RangeInput id="wm-opacity" min="5" max="100" value={wmOpacity} onChange={e => setWmOpacity(Number(e.target.value))} />
+              </Field>
+              <Field id="wm-range" label="Page Range (Optional)">
+                <TextInput id="wm-range" type="text" value={wmPageRange} onChange={e => setWmPageRange(e.target.value)} placeholder="Leave blank for all pages (e.g. 1-5, 8)" />
+              </Field>
             </div>
-          ) : (
-            <div className={styles.formGrid}>
-              {/* File dropzone */}
-              <div className={styles.field}>
-                <span className={styles.label}>
-                  {isMultiFile ? "Upload Documents / Images" : "Upload Document"}
-                </span>
-                <div
-                  className={styles.dropzone}
-                  onClick={() => fileInputRef.current?.click()}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") fileInputRef.current?.click();
-                  }}
-                >
-                  <div className={styles.dropzoneText}>
-                    {isMultiFile
-                      ? "Click or drag files here"
-                      : singleFile
-                        ? `Selected: ${singleFile.name}`
-                        : "Click or drag a PDF file here"}
-                  </div>
-                  <div className={styles.dropzoneSub}>
-                    {isMultiFile
-                      ? "Supported: PDF or Images. 100% processed locally in memory."
-                      : "Files never leave your browser."}
-                  </div>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    multiple={isMultiFile}
-                    accept={fileAccept}
-                    className={styles.fileInput}
-                    onChange={(e) => handleFileSelect(e.target.files, isMultiFile)}
-                  />
-                </div>
+          </>
+        )}
 
-                {/* Multi file list display */}
-                {isMultiFile && selectedFiles.length > 0 && (
-                  <div className={styles.fileList}>
-                    {selectedFiles.map((file, i) => (
-                      <div key={`${file.name}-${i}`} className={styles.fileItem}>
-                        <div>
-                          <span className={styles.fileName}>{file.name}</span>
-                          <span className={styles.fileSize}>({formatBytes(file.size)})</span>
-                        </div>
-                        <button
-                          type="button"
-                          className={styles.removeBtn}
-                          onClick={() => removeFile(i)}
-                        >
-                          Remove
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+        {toolId === "pdf-page-numberer" && (
+          <>
+            <div className={styles.grid}>
+              <Field id="pn-format" label="Numbering Format">
+                <Select id="pn-format" value={pnFormat} onChange={e => setPnFormat(e.target.value as PageNumberFormat)}>
+                  <option value="page-x-of-y">Page X of Y (e.g. Page 1 of 10)</option>
+                  <option value="x-of-y">X / Y (e.g. 1 / 10)</option>
+                  <option value="x">X (e.g. 1)</option>
+                  <option value="roman-lower">Roman Lower (i, ii, iii...)</option>
+                  <option value="roman-upper">Roman Upper (I, II, III...)</option>
+                  <option value="custom">Custom Prefix / Suffix</option>
+                </Select>
+              </Field>
 
-              {/* Split Page Range */}
-              {toolId === "pdf-split" && (
-                <div className={styles.field}>
-                  <label htmlFor="range-input" className={styles.label}>
-                    Page Range
-                  </label>
-                  <input
-                    id="range-input"
-                    type="text"
-                    value={rangeInput}
-                    onChange={(e) => setRangeInput(e.target.value)}
-                    placeholder="e.g. 1-3, 5, 8"
-                    className={styles.input}
-                  />
-                  <span className={styles.hint}>Enter comma-separated page numbers or hyphenated ranges.</span>
-                </div>
-              )}
-
-              {/* Rotate Angle */}
-              {toolId === "pdf-rotate" && (
+              {pnFormat === "custom" && (
                 <>
-                  <div className={styles.field}>
-                    <label htmlFor="rotate-angle" className={styles.label}>
-                      Rotation Direction
-                    </label>
-                    <select
-                      id="rotate-angle"
-                      value={rotateAngle}
-                      onChange={(e) => setRotateAngle(Number(e.target.value) as 90 | 180 | 270)}
-                      className={styles.select}
-                    >
-                      <option value={90}>90° Clockwise</option>
-                      <option value={180}>180° Flip Upside-Down</option>
-                      <option value={270}>270° Counter-Clockwise</option>
-                    </select>
-                  </div>
-                  <div className={styles.field}>
-                    <label htmlFor="rotate-range" className={styles.label}>
-                      Pages to Rotate (Optional)
-                    </label>
-                    <input
-                      id="rotate-range"
-                      type="text"
-                      value={rangeInput}
-                      onChange={(e) => setRangeInput(e.target.value)}
-                      placeholder="Leave empty for all pages, or e.g. 1, 3-5"
-                      className={styles.input}
-                    />
-                  </div>
+                  <Field id="pn-prefix" label="Prefix">
+                    <TextInput id="pn-prefix" type="text" value={pnPrefix} onChange={e => setPnPrefix(e.target.value)} placeholder="e.g. - " />
+                  </Field>
+                  <Field id="pn-suffix" label="Suffix">
+                    <TextInput id="pn-suffix" type="text" value={pnSuffix} onChange={e => setPnSuffix(e.target.value)} placeholder="e.g.  -" />
+                  </Field>
                 </>
               )}
 
-              {/* Images to PDF Page Size */}
-              {toolId === "images-to-pdf" && (
-                <div className={styles.field}>
-                  <label htmlFor="page-size" className={styles.label}>
-                    Target PDF Page Size
-                  </label>
-                  <select
-                    id="page-size"
-                    value={pageSize}
-                    onChange={(e) => setPageSize(e.target.value as "A4" | "Letter" | "FitImage")}
-                    className={styles.select}
-                  >
-                    <option value="A4">A4 (Standard Document)</option>
-                    <option value="Letter">US Letter</option>
-                    <option value="FitImage">Fit Exactly to Image Dimensions</option>
-                  </select>
-                </div>
-              )}
-
-              {/* Delete Pages */}
-              {toolId === "pdf-page-deleter" && (
-                <div className={styles.field}>
-                  <label htmlFor="delete-pages" className={styles.label}>
-                    Page numbers to delete
-                  </label>
-                  <input
-                    id="delete-pages"
-                    type="text"
-                    value={deleteInput}
-                    onChange={(e) => setDeleteInput(e.target.value)}
-                    placeholder="e.g. 1, 3, 5-7"
-                    className={styles.input}
-                  />
-                </div>
-              )}
-
-              {/* Watermark Controls */}
-              {toolId === "pdf-watermark" && (
-                <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-                  <div className={styles.field}>
-                    <label htmlFor="wm-type" className={styles.label}>
-                      Watermark Type
-                    </label>
-                    <select
-                      id="wm-type"
-                      value={wmType}
-                      onChange={(e) => setWmType(e.target.value as "text" | "image")}
-                      className={styles.select}
-                    >
-                      <option value="text">Text Watermark</option>
-                      <option value="image">Image Watermark (PNG / JPG)</option>
-                    </select>
-                  </div>
-
-                  {wmType === "text" ? (
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px" }}>
-                      <div className={styles.field}>
-                        <label htmlFor="wm-text" className={styles.label}>Watermark Text</label>
-                        <input
-                          id="wm-text"
-                          type="text"
-                          value={wmText}
-                          onChange={(e) => setWmText(e.target.value)}
-                          placeholder="e.g. CONFIDENTIAL, DRAFT"
-                          className={styles.input}
-                        />
-                      </div>
-                      <div className={styles.field}>
-                        <label htmlFor="wm-font-size" className={styles.label}>Font Size (pt)</label>
-                        <input
-                          id="wm-font-size"
-                          type="number"
-                          min="10"
-                          max="150"
-                          value={wmFontSize}
-                          onChange={(e) => setWmFontSize(Number(e.target.value))}
-                          className={styles.input}
-                        />
-                      </div>
-                      <div className={styles.field}>
-                        <label htmlFor="wm-color" className={styles.label}>Color</label>
-                        <input
-                          id="wm-color"
-                          type="color"
-                          value={wmColor}
-                          onChange={(e) => setWmColor(e.target.value)}
-                          style={{ height: "42px", padding: "2px", width: "100%", background: "var(--surface)", border: "1px solid var(--line-strong)", borderRadius: "var(--radius-sm)" }}
-                        />
-                      </div>
-                    </div>
-                  ) : (
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px" }}>
-                      <div className={styles.field}>
-                        <label htmlFor="wm-image-file" className={styles.label}>Select Watermark Image</label>
-                        <input
-                          ref={wmImageInputRef}
-                          id="wm-image-file"
-                          type="file"
-                          accept="image/png,image/jpeg,image/jpg"
-                          onChange={(e) => {
-                            if (e.target.files && e.target.files[0]) {
-                              setWmImageFile(e.target.files[0]);
-                            }
-                          }}
-                          className={styles.input}
-                        />
-                        {wmImageFile && (
-                          <span className={styles.hint}>Selected: {wmImageFile.name} ({formatBytes(wmImageFile.size)})</span>
-                        )}
-                      </div>
-                      <div className={styles.field}>
-                        <label htmlFor="wm-scale" className={styles.label}>Scale (%)</label>
-                        <input
-                          id="wm-scale"
-                          type="number"
-                          min="10"
-                          max="300"
-                          value={wmScale}
-                          onChange={(e) => setWmScale(Number(e.target.value))}
-                          className={styles.input}
-                        />
-                      </div>
-                    </div>
-                  )}
-
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px" }}>
-                    <div className={styles.field}>
-                      <label htmlFor="wm-position" className={styles.label}>Placement Position</label>
-                      <select
-                        id="wm-position"
-                        value={wmPosition}
-                        onChange={(e) => setWmPosition(e.target.value as WatermarkPosition)}
-                        className={styles.select}
-                      >
-                        <option value="center">Center</option>
-                        <option value="tile">Tile / Repeating Grid</option>
-                        <option value="top-left">Top-Left</option>
-                        <option value="top-right">Top-Right</option>
-                        <option value="bottom-left">Bottom-Left</option>
-                        <option value="bottom-right">Bottom-Right</option>
-                      </select>
-                    </div>
-
-                    <div className={styles.field}>
-                      <label htmlFor="wm-rotation" className={styles.label}>Rotation Angle (°)</label>
-                      <select
-                        id="wm-rotation"
-                        value={wmRotation}
-                        onChange={(e) => setWmRotation(Number(e.target.value))}
-                        className={styles.select}
-                      >
-                        <option value={45}>45° Diagonal</option>
-                        <option value={0}>0° Horizontal</option>
-                        <option value={90}>90° Vertical</option>
-                        <option value={315}>315° Reverse Diagonal</option>
-                      </select>
-                    </div>
-
-                    <div className={styles.field}>
-                      <div style={{ display: "flex", justifyContent: "space-between" }}>
-                        <label htmlFor="wm-opacity" className={styles.label}>Opacity</label>
-                        <span style={{ fontSize: "12px", color: "var(--muted)" }}>{wmOpacity}%</span>
-                      </div>
-                      <input
-                        id="wm-opacity"
-                        type="range"
-                        min="5"
-                        max="100"
-                        value={wmOpacity}
-                        onChange={(e) => setWmOpacity(Number(e.target.value))}
-                      />
-                    </div>
-
-                    <div className={styles.field}>
-                      <label htmlFor="wm-range" className={styles.label}>Page Range (Optional)</label>
-                      <input
-                        id="wm-range"
-                        type="text"
-                        value={wmPageRange}
-                        onChange={(e) => setWmPageRange(e.target.value)}
-                        placeholder="Leave blank for all pages (e.g. 1-5, 8)"
-                        className={styles.input}
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Page Numberer Controls */}
-              {toolId === "pdf-page-numberer" && (
-                <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px" }}>
-                    <div className={styles.field}>
-                      <label htmlFor="pn-format" className={styles.label}>Numbering Format</label>
-                      <select
-                        id="pn-format"
-                        value={pnFormat}
-                        onChange={(e) => setPnFormat(e.target.value as PageNumberFormat)}
-                        className={styles.select}
-                      >
-                        <option value="page-x-of-y">Page X of Y (e.g. Page 1 of 10)</option>
-                        <option value="x-of-y">X / Y (e.g. 1 / 10)</option>
-                        <option value="x">X (e.g. 1)</option>
-                        <option value="roman-lower">Roman Lower (i, ii, iii...)</option>
-                        <option value="roman-upper">Roman Upper (I, II, III...)</option>
-                        <option value="custom">Custom Prefix / Suffix</option>
-                      </select>
-                    </div>
-
-                    {pnFormat === "custom" && (
-                      <>
-                        <div className={styles.field}>
-                          <label htmlFor="pn-prefix" className={styles.label}>Prefix</label>
-                          <input
-                            id="pn-prefix"
-                            type="text"
-                            value={pnPrefix}
-                            onChange={(e) => setPnPrefix(e.target.value)}
-                            placeholder="e.g. - "
-                            className={styles.input}
-                          />
-                        </div>
-                        <div className={styles.field}>
-                          <label htmlFor="pn-suffix" className={styles.label}>Suffix</label>
-                          <input
-                            id="pn-suffix"
-                            type="text"
-                            value={pnSuffix}
-                            onChange={(e) => setPnSuffix(e.target.value)}
-                            placeholder="e.g.  -"
-                            className={styles.input}
-                          />
-                        </div>
-                      </>
-                    )}
-
-                    <div className={styles.field}>
-                      <label htmlFor="pn-vertical" className={styles.label}>Vertical Position</label>
-                      <select
-                        id="pn-vertical"
-                        value={pnVertical}
-                        onChange={(e) => setPnVertical(e.target.value as PageNumberVertical)}
-                        className={styles.select}
-                      >
-                        <option value="footer">Footer (Bottom)</option>
-                        <option value="header">Header (Top)</option>
-                      </select>
-                    </div>
-
-                    <div className={styles.field}>
-                      <label htmlFor="pn-alignment" className={styles.label}>Alignment</label>
-                      <select
-                        id="pn-alignment"
-                        value={pnAlignment}
-                        onChange={(e) => setPnAlignment(e.target.value as PageNumberPosition)}
-                        className={styles.select}
-                      >
-                        <option value="center">Center</option>
-                        <option value="right">Right</option>
-                        <option value="left">Left</option>
-                      </select>
-                    </div>
-
-                    <div className={styles.field}>
-                      <label htmlFor="pn-font" className={styles.label}>Font</label>
-                      <select
-                        id="pn-font"
-                        value={pnFont}
-                        onChange={(e) => setPnFont(e.target.value as PageNumberFont)}
-                        className={styles.select}
-                      >
-                        <option value="Helvetica">Helvetica</option>
-                        <option value="Times Roman">Times Roman</option>
-                        <option value="Courier">Courier</option>
-                      </select>
-                    </div>
-
-                    <div className={styles.field}>
-                      <label htmlFor="pn-font-size" className={styles.label}>Font Size (pt)</label>
-                      <input
-                        id="pn-font-size"
-                        type="number"
-                        min="6"
-                        max="36"
-                        value={pnFontSize}
-                        onChange={(e) => setPnFontSize(Number(e.target.value))}
-                        className={styles.input}
-                      />
-                    </div>
-
-                    <div className={styles.field}>
-                      <label htmlFor="pn-color" className={styles.label}>Color</label>
-                      <input
-                        id="pn-color"
-                        type="color"
-                        value={pnColor}
-                        onChange={(e) => setPnColor(e.target.value)}
-                        style={{ height: "42px", padding: "2px", width: "100%", background: "var(--surface)", border: "1px solid var(--line-strong)", borderRadius: "var(--radius-sm)" }}
-                      />
-                    </div>
-
-                    <div className={styles.field}>
-                      <label htmlFor="pn-margin" className={styles.label}>Margin (pt)</label>
-                      <input
-                        id="pn-margin"
-                        type="number"
-                        min="10"
-                        max="100"
-                        value={pnMargin}
-                        onChange={(e) => setPnMargin(Number(e.target.value))}
-                        className={styles.input}
-                      />
-                    </div>
-
-                    <div className={styles.field}>
-                      <label htmlFor="pn-start-num" className={styles.label}>Start Numbering From</label>
-                      <input
-                        id="pn-start-num"
-                        type="number"
-                        min="1"
-                        value={pnStartNum}
-                        onChange={(e) => setPnStartNum(Number(e.target.value))}
-                        className={styles.input}
-                      />
-                    </div>
-
-                    <div className={styles.field}>
-                      <label htmlFor="pn-range" className={styles.label}>Page Range (Optional)</label>
-                      <input
-                        id="pn-range"
-                        type="text"
-                        value={pnPageRange}
-                        onChange={(e) => setPnPageRange(e.target.value)}
-                        placeholder="Leave blank for all (e.g. 2-10)"
-                        className={styles.input}
-                      />
-                    </div>
-                  </div>
-
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "4px" }}>
-                    <input
-                      id="pn-skip-first"
-                      type="checkbox"
-                      checked={pnSkipFirst}
-                      onChange={(e) => setPnSkipFirst(e.target.checked)}
-                      style={{ cursor: "pointer", width: "16px", height: "16px" }}
-                    />
-                    <label htmlFor="pn-skip-first" className={styles.label} style={{ cursor: "pointer", marginBottom: 0 }}>
-                      Skip first page (Cover / Title Page)
-                    </label>
-                  </div>
-                </div>
-              )}
-
-              {/* Action buttons */}
-              <div className={styles.actions}>
-                <button
-                  type="button"
-                  className={styles.primaryBtn}
-                  onClick={handleProcess}
-                  disabled={busy || (isMultiFile ? selectedFiles.length === 0 : !singleFile)}
-                >
-                  {busy
-                    ? "Processing..."
-                    : toolId === "pdf-merge"
-                      ? "Merge & Download PDF"
-                      : toolId === "pdf-split"
-                        ? "Extract & Download PDF"
-                        : toolId === "pdf-rotate"
-                          ? "Rotate & Download PDF"
-                          : toolId === "images-to-pdf"
-                            ? "Convert to PDF"
-                            : toolId === "pdf-page-deleter"
-                              ? "Delete Pages & Download"
-                              : toolId === "pdf-watermark"
-                                ? "Apply Watermark & Preview"
-                                : toolId === "pdf-page-numberer"
-                                  ? "Add Page Numbers & Preview"
-                                  : "Inspect Metadata"}
-                </button>
-              </div>
-
-              {/* Error & Feedback */}
-              {error && <div className={styles.errorBanner}>{error}</div>}
-
-              {successNotice && (
-                <div className={styles.resultBox}>
-                  <div className={styles.successTitle}>✓ Success</div>
-                  <p style={{ margin: 0, fontSize: "13.5px", color: "var(--ink)" }}>{successNotice}</p>
-                </div>
-              )}
-
-              {/* In-Memory Preview & Download for Watermark & Page Numberer */}
-              {previewUrl && (
-                <div style={{ marginTop: "24px" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px", flexWrap: "wrap", gap: "10px" }}>
-                    <span className={styles.label} style={{ fontSize: "14px" }}>Document Live Preview</span>
-                    {processedBytes && singleFile && (
-                      <button
-                        type="button"
-                        className={styles.primaryBtn}
-                        onClick={() => {
-                          const prefix = toolId === "pdf-watermark" ? "watermarked_" : "numbered_";
-                          downloadBlob(processedBytes, `${prefix}${singleFile.name}`);
-                        }}
-                      >
-                        Download Modified PDF ({formatBytes(processedBytes.byteLength)})
-                      </button>
-                    )}
-                  </div>
-                  <iframe
-                    src={`${previewUrl}#toolbar=0`}
-                    style={{
-                      width: "100%",
-                      height: "540px",
-                      border: "1px solid var(--line-strong)",
-                      borderRadius: "var(--radius-sm)",
-                      background: "var(--surface-alt)",
-                    }}
-                    title="In-Memory PDF Preview"
-                  />
-                </div>
-              )}
-
-              {/* Metadata Display */}
-              {metaInfo && (
-                <div className={styles.resultBox}>
-                  <div className={styles.successTitle}>Document Information</div>
-                  <div className={styles.metaGrid}>
-                    <div className={styles.metaItem}>
-                      <div className={styles.metaLabel}>Total Pages</div>
-                      <div className={styles.metaValue}>{metaInfo.pageCount}</div>
-                    </div>
-                    <div className={styles.metaItem}>
-                      <div className={styles.metaLabel}>Title</div>
-                      <div className={styles.metaValue}>{metaInfo.title}</div>
-                    </div>
-                    <div className={styles.metaItem}>
-                      <div className={styles.metaLabel}>Author</div>
-                      <div className={styles.metaValue}>{metaInfo.author}</div>
-                    </div>
-                    <div className={styles.metaItem}>
-                      <div className={styles.metaLabel}>Producer</div>
-                      <div className={styles.metaValue}>{metaInfo.producer || "N/A"}</div>
-                    </div>
-                    <div className={styles.metaItem}>
-                      <div className={styles.metaLabel}>Created</div>
-                      <div className={styles.metaValue}>
-                        {metaInfo.creationDate ? new Date(metaInfo.creationDate).toLocaleString() : "N/A"}
-                      </div>
-                    </div>
-                    <div className={styles.metaItem}>
-                      <div className={styles.metaLabel}>Modified</div>
-                      <div className={styles.metaValue}>
-                        {metaInfo.modificationDate ? new Date(metaInfo.modificationDate).toLocaleString() : "N/A"}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
+              <Field id="pn-vertical" label="Vertical Position">
+                <Select id="pn-vertical" value={pnVertical} onChange={e => setPnVertical(e.target.value as PageNumberVertical)}>
+                  <option value="footer">Footer (Bottom)</option>
+                  <option value="header">Header (Top)</option>
+                </Select>
+              </Field>
+              <Field id="pn-alignment" label="Alignment">
+                <Select id="pn-alignment" value={pnAlignment} onChange={e => setPnAlignment(e.target.value as PageNumberPosition)}>
+                  <option value="center">Center</option>
+                  <option value="right">Right</option>
+                  <option value="left">Left</option>
+                </Select>
+              </Field>
+              <Field id="pn-font" label="Font">
+                <Select id="pn-font" value={pnFont} onChange={e => setPnFont(e.target.value as PageNumberFont)}>
+                  <option value="Helvetica">Helvetica</option>
+                  <option value="Times Roman">Times Roman</option>
+                  <option value="Courier">Courier</option>
+                </Select>
+              </Field>
+              <Field id="pn-font-size" label="Font Size (pt)">
+                <TextInput id="pn-font-size" type="number" min="6" max="36" value={pnFontSize} onChange={e => setPnFontSize(Number(e.target.value))} />
+              </Field>
+              <Field id="pn-color" label="Color">
+                <ColorInput id="pn-color" value={pnColor} onChange={e => setPnColor(e.target.value)} />
+              </Field>
+              <Field id="pn-margin" label="Margin (pt)">
+                <TextInput id="pn-margin" type="number" min="10" max="100" value={pnMargin} onChange={e => setPnMargin(Number(e.target.value))} />
+              </Field>
+              <Field id="pn-start-num" label="Start Numbering From">
+                <TextInput id="pn-start-num" type="number" min="1" value={pnStartNum} onChange={e => setPnStartNum(Number(e.target.value))} />
+              </Field>
+              <Field id="pn-range" label="Page Range (Optional)">
+                <TextInput id="pn-range" type="text" value={pnPageRange} onChange={e => setPnPageRange(e.target.value)} placeholder="Leave blank for all (e.g. 2-10)" />
+              </Field>
             </div>
-          )}
+            <Checkbox id="pn-skip-first" checked={pnSkipFirst} onChange={e => setPnSkipFirst(e.target.checked)} label="Skip first page (Cover / Title Page)" />
+          </>
+        )}
+
+        <div className={ui.actions}>
+          <Button variant="primary" onClick={handleProcess} disabled={busy || (isMultiFile ? selectedFiles.length === 0 : !singleFile)}>
+            {busy ? "Processing..." : processLabel}
+          </Button>
         </div>
-      </section>
-    </div>
+      </Panel>
+
+      <Panel title="Result" headingId={`${toolId}-result`} aria-busy={busy} padded>
+        {error && <Callout kind="error">{error}</Callout>}
+        {successNotice && <Callout kind="success">{successNotice}</Callout>}
+
+        {previewUrl && (
+          <>
+            <PreviewFrame title="In-Memory PDF Preview" src={`${previewUrl}#toolbar=0`} height={540} />
+            {processedBytes && singleFile && (
+              <div className={ui.actions}>
+                <Button variant="primary" onClick={() => {
+                  const prefix = toolId === "pdf-watermark" ? "watermarked_" : "numbered_";
+                  downloadBlob(processedBytes, `${prefix}${singleFile.name}`);
+                }}>Download Modified PDF ({formatBytes(processedBytes.byteLength)})</Button>
+              </div>
+            )}
+          </>
+        )}
+
+        {metaInfo && (
+          <dl className={styles.metaGrid}>
+            <div className={styles.metaItem}><dt className={styles.metaLabel}>Total Pages</dt><dd className={styles.metaValue}>{metaInfo.pageCount}</dd></div>
+            <div className={styles.metaItem}><dt className={styles.metaLabel}>Title</dt><dd className={styles.metaValue}>{metaInfo.title}</dd></div>
+            <div className={styles.metaItem}><dt className={styles.metaLabel}>Author</dt><dd className={styles.metaValue}>{metaInfo.author}</dd></div>
+            <div className={styles.metaItem}><dt className={styles.metaLabel}>Producer</dt><dd className={styles.metaValue}>{metaInfo.producer || "N/A"}</dd></div>
+            <div className={styles.metaItem}><dt className={styles.metaLabel}>Created</dt><dd className={styles.metaValue}>{metaInfo.creationDate ? new Date(metaInfo.creationDate).toLocaleString() : "N/A"}</dd></div>
+            <div className={styles.metaItem}><dt className={styles.metaLabel}>Modified</dt><dd className={styles.metaValue}>{metaInfo.modificationDate ? new Date(metaInfo.modificationDate).toLocaleString() : "N/A"}</dd></div>
+          </dl>
+        )}
+
+        {!error && !successNotice && !previewUrl && !metaInfo && (
+          <EmptyState>Choose a document and run the tool to see its result here.</EmptyState>
+        )}
+      </Panel>
+    </ToolLayout>
   );
 }

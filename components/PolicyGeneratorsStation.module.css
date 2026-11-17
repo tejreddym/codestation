@@ -346,12 +346,12 @@
 
 .btnPrimary {
   background: var(--action-bg, #d9f975);
-  color: var(--action-fg, #142200);
+  color: var(--action-ink);
   border-color: var(--action-border, #b2e624);
 }
 
 .btnPrimary:hover {
-  background: var(--action-bg-hover, #cbf356);
+  background: var(--action-hover);
 }
 
 .statsBar {

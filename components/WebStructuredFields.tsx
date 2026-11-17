@@ -2,6 +2,7 @@
 
 import { useRef, type ChangeEvent } from "react";
 import styles from "./WebStructuredFields.module.css";
+import ui from "./ui/ui.module.css";
 
 export type WebStructuredKind = "parameters" | "groups" | "sitemaps" | "entries" | "icons";
 type RecordValue = Record<string, unknown>;
@@ -78,7 +79,7 @@ export default function WebStructuredFields({ kind, name, id, label, value, onCh
       const record: RecordValue = raw && typeof raw === "object" ? raw : {};
       const prefix = `${title} ${index + 1}`;
       return <div className={styles.record} key={index}>
-        <div className={styles.recordHead}><strong>{prefix}</strong><button type="button" className={styles.button} data-remove={name} aria-label={`Remove ${noun} ${index + 1}`} onClick={event => remove(index, event.currentTarget)}>Remove</button></div>
+        <div className={styles.recordHead}><strong>{prefix}</strong><button type="button" className={ui.button} data-remove={name} aria-label={`Remove ${noun} ${index + 1}`} onClick={event => remove(index, event.currentTarget)}>Remove</button></div>
         {kind === "sitemaps" ? input(`${name}.${index}`, `${prefix} URL`, raw, next => onChange(records.map((item, position) => position === index ? next : item)))
           : <div className={styles.cells}>{Object.keys(templates[kind]).filter(key => key !== "allow" && key !== "disallow").map(key => input(`${name}.${index}.${key}`, `${prefix} ${labels[key]}`, record[key], next => update(index, key, next), choices[key]))}</div>}
         {kind === "groups" && (["allow", "disallow"] as const).map(directive => {
@@ -86,14 +87,14 @@ export default function WebStructuredFields({ kind, name, id, label, value, onCh
           return <fieldset key={directive} className={styles.editor}><legend>{prefix} {directive} paths</legend>
             {paths.map((path, pathIndex) => <div key={pathIndex} className={styles.path}>
               {input(`${name}.${index}.${directive}.${pathIndex}`, `${prefix} ${directive} path ${pathIndex + 1}`, path, next => update(index, directive, paths.map((item, position) => position === pathIndex ? next : item)))}
-              <button type="button" className={styles.button} aria-label={`Remove ${prefix.toLowerCase()} ${directive} path ${pathIndex + 1}`} onClick={event => {
+              <button type="button" className={ui.button} aria-label={`Remove ${prefix.toLowerCase()} ${directive} path ${pathIndex + 1}`} onClick={event => {
                 const source = event.currentTarget;
                 const container = source.closest("fieldset");
                 update(index, directive, paths.filter((_, position) => position !== pathIndex));
                 focusAfterChange(source, () => container?.querySelector<HTMLButtonElement>(`button[data-add-path]`)?.focus());
               }}>Remove</button>
             </div>)}
-            <button type="button" className={styles.button} data-add-path disabled={paths.length >= LIMIT} onClick={event => {
+            <button type="button" className={ui.button} data-add-path disabled={paths.length >= LIMIT} onClick={event => {
               const source = event.currentTarget;
               const container = source.closest("fieldset");
               update(index, directive, [...paths, ""]);
@@ -103,6 +104,6 @@ export default function WebStructuredFields({ kind, name, id, label, value, onCh
         })}
       </div>;
     })}</div>
-    <button type="button" className={styles.button} data-add={name} data-web-field={name} aria-describedby={describedBy} disabled={records.length >= LIMIT} onClick={event => add(event.currentTarget)}>Add {noun}</button>
+    <button type="button" className={ui.button} data-add={name} data-web-field={name} aria-describedby={describedBy} disabled={records.length >= LIMIT} onClick={event => add(event.currentTarget)}>Add {noun}</button>
   </fieldset>;
 }

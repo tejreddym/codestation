@@ -2,7 +2,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, render, screen } from "@testing-library/react";
 import { PDFDocument } from "pdf-lib";
-import { pdfTools } from "./pdf-tools";
+import { pdfTools, isPdfToolId } from "./pdf-tools";
 import { getStation } from "./stations";
 import ToolPage, { generateMetadata } from "@/app/tools/[slug]/page";
 import {
@@ -16,9 +16,39 @@ import {
 vi.mock("@/components/ToolWorkspace", () => ({ default: () => null }));
 afterEach(cleanup);
 
-it("registers exactly 9 PDF contracts", () => {
-  expect(pdfTools).toHaveLength(9);
-  expect(getStation("pdf")).toMatchObject({ route: "/stations/pdf", toolCount: 9 });
+it("registers exactly 12 PDF contracts", () => {
+  expect(pdfTools).toHaveLength(12);
+  expect(getStation("pdf")).toMatchObject({ route: "/stations/pdf", toolCount: 12 });
+});
+
+it("adds the text, image and reorder workflows without changing the metadata tool", () => {
+  const metadata = pdfTools.find((tool) => tool.id === "pdf-text-extractor");
+  expect(metadata?.name).toBe("PDF Metadata & Info");
+
+  const text = pdfTools.find((tool) => tool.id === "pdf-to-text");
+  expect(text?.name).toBe("PDF to Text");
+  expect(text?.keywords).toEqual(expect.arrayContaining(["extract text from pdf", "pdf to text"]));
+  expect(text?.localContract.notices.join(" ")).toMatch(/OCR is not performed/);
+  expect(text?.relatedTools.length).toBeGreaterThan(0);
+
+  const images = pdfTools.find((tool) => tool.id === "pdf-to-images");
+  expect(images?.name).toBe("PDF to Images");
+  expect(images?.keywords).toEqual(expect.arrayContaining(["pdf to png", "pdf to jpg"]));
+  expect(images?.localContract.notices.join(" ")).toMatch(/capped at 100 pages/);
+  expect(images?.localContract.defaults).toMatchObject({ dpi: "150 DPI", format: "PNG" });
+
+  const reorder = pdfTools.find((tool) => tool.id === "pdf-reorder-pages");
+  expect(reorder?.name).toBe("PDF Page Reorderer");
+  expect(reorder?.keywords).toEqual(expect.arrayContaining(["reorder pdf pages", "organize pdf"]));
+  expect(reorder?.localContract.action).toBe("Export PDF");
+
+  for (const tool of [text, images, reorder]) {
+    expect(tool).toBeDefined();
+    expect(tool && isPdfToolId(tool.id)).toBe(true);
+    expect(tool?.seo.description.length).toBeGreaterThan(60);
+    expect(tool?.seo.title).not.toContain("| Code Station");
+    expect(tool?.relatedTools.every((related) => isPdfToolId(related))).toBe(true);
+  }
 });
 
 it.each(pdfTools)("$id public direct metadata/contract", async (tool) => {

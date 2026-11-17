@@ -149,6 +149,28 @@ import {
   generatePolicyText,
 } from "../tools/policy-generators/engine";
 import type { PolicyToolId, PolicyOutputFormat } from "../tools/policy-generators/types";
+import {
+  buildConventionalCommit,
+  formatCommitBuilderOutput,
+  parseConventionalCommit,
+  explainGitCommand,
+  generateChangelog,
+  generateGitAttributes,
+  generateGitHook,
+  type GitAttributesEol,
+  type GitHookType,
+  type GitLinguistFlag,
+} from "../tools/git";
+import { calculateEmi } from "../tools/finance/emi";
+import { comparePrepayment, type PrepaymentStrategy } from "../tools/finance/prepayment";
+import {
+  calculateGst,
+  calculateGstLines,
+  type GstLineInput,
+  type GstMode,
+  type GstSupply,
+} from "../tools/finance/gst";
+import { projectSip } from "../tools/finance/sip";
 import { getTool } from "../../config/tools";
 
 function uint8ArrayToBase64(bytes: Uint8Array): string {
@@ -813,6 +835,47 @@ export async function dispatchToolExecution(
       return JSON.stringify(result, null, 2);
     }
 
+    // ----------------- Git & Version Control Station -----------------
+    case "conventional-commit-builder": {
+      const result = buildConventionalCommit({
+        type: String(options.type ?? "feat"),
+        scope: options.scope ? String(options.scope) : undefined,
+        description: String(options.description ?? input),
+        body: options.body ? String(options.body) : undefined,
+        footer: options.footer ? String(options.footer) : undefined,
+        breaking: options.breaking === true || options.breaking === "true",
+        breakingDescription: options.breakingDescription ? String(options.breakingDescription) : undefined,
+      });
+      return formatCommitBuilderOutput(result);
+    }
+    case "conventional-commit-validator":
+      return JSON.stringify(parseConventionalCommit(input), null, 2);
+    case "git-command-explainer":
+      return JSON.stringify(explainGitCommand(input), null, 2);
+    case "changelog-generator":
+      return generateChangelog(input).markdown;
+    case "gitattributes-generator": {
+      const result = generateGitAttributes({
+        eol: (options.eol ?? "auto") as GitAttributesEol,
+        binaryGlobs: options.binaryGlobs ? String(options.binaryGlobs) : undefined,
+        linguistGlobs: options.linguistGlobs ? String(options.linguistGlobs) : undefined,
+        linguistFlag: (options.linguistFlag ?? "none") as GitLinguistFlag,
+        exportIgnore: options.exportIgnore ? String(options.exportIgnore) : undefined,
+      });
+      return result.content;
+    }
+    case "git-hooks-generator": {
+      const result = generateGitHook({
+        hook: (options.hook ?? "pre-commit") as GitHookType,
+        commands: String(options.commands ?? input),
+        failFast:
+          options.failFast === undefined ||
+          options.failFast === true ||
+          options.failFast === "true",
+      });
+      return JSON.stringify(result, null, 2);
+    }
+
     // ----------------- Policy Generators Station -----------------
     case "privacy-policy-generator":
     case "terms-and-conditions-generator":
@@ -823,6 +886,145 @@ export async function dispatchToolExecution(
       const canonicalId = (normId === "terms-conditions-generator" ? "terms-and-conditions-generator" : normId) as PolicyToolId;
       const format = (options.format as PolicyOutputFormat) || "markdown";
       return generatePolicyText(canonicalId, format, options);
+    }
+
+    // ----------------- Finance & Calculators Station -----------------
+    case "emi-calculator": {
+      const result = calculateEmi({
+        principal: Number(options.principal ?? input),
+        annualRate: Number(options.annualRate ?? options.rate ?? 8.5),
+        months: Number(options.months ?? (options.years !== undefined ? Number(options.years) * 12 : 240)),
+        processingFee:
+          options.processingFee !== undefined && options.processingFee !== ""
+            ? Number(options.processingFee)
+            : undefined,
+      });
+      return JSON.stringify(result, null, 2);
+    }
+    case "loan-prepayment-calculator": {
+      const result = comparePrepayment({
+        principal: Number(options.principal ?? input),
+        annualRate: Number(options.annualRate ?? options.rate ?? 9),
+        months: Number(options.months ?? 240),
+        emi:
+          options.emi !== undefined && options.emi !== ""
+            ? Number(options.emi)
+            : undefined,
+        oneTime: Number(options.oneTime ?? 0),
+        extraMonthly: Number(options.extraMonthly ?? 0),
+        chargePercent: Number(options.chargePercent ?? 0),
+        strategy: String(options.strategy ?? "reduce-tenure") as PrepaymentStrategy,
+      });
+      return JSON.stringify(result, null, 2);
+    }
+    case "gst-calculator": {
+      const supply = String(options.supply ?? "intra") as GstSupply;
+      const mode = String(options.mode ?? "exclusive") as GstMode;
+      if (Array.isArray(options.lines)) {
+        const lines: GstLineInput[] = options.lines.map((line: Record<string, unknown>) => ({
+          description: line.description === undefined ? undefined : String(line.description),
+          amount: Number(line.amount),
+          rate: Number(line.rate),
+        }));
+        return JSON.stringify(calculateGstLines(lines, supply, mode), null, 2);
+      }
+      const result = calculateGst({
+        amount: Number(options.amount ?? input),
+        rate: Number(options.rate ?? 18),
+        mode,
+        supply,
+      });
+      return JSON.stringify(result, null, 2);
+    }
+    case "sip-calculator": {
+      const rawCompare = options.compareRates;
+      const compareRates = Array.isArray(rawCompare)
+        ? rawCompare.map(value => Number(value))
+        : typeof rawCompare === "string"
+          ? rawCompare.split(",").map(value => value.trim()).filter(Boolean).map(value => Number(value))
+          : [];
+      const result = projectSip({
+        monthly: Number(options.monthly ?? input),
+        years: Number(options.years ?? 10),
+        annualReturn: Number(options.annualReturn ?? options.rate ?? 12),
+        stepUpPercent: Number(options.stepUpPercent ?? 0),
+        inflationPercent: Number(options.inflationPercent ?? 0),
+        compareRates,
+      });
+      return JSON.stringify(result, null, 2);
+    }
+
+    case "audio-trimmer":
+    case "audio-compressor":
+    case "audio-merger":
+    case "audio-converter": {
+      const toolDef = getTool(normId);
+      return JSON.stringify(
+        {
+          tool: toolDef?.name ?? normId,
+          id: normId,
+          category: "Audio",
+          status: "manual-file-required",
+          canonicalUrl: `https://codestation.in/tools/${toolDef?.slug ?? normId}`,
+          notice:
+            "This tool needs local audio chosen with the file picker in the browser UI. WebMCP cannot read an audio file from disk, decode it, or run a real-time MediaRecorder, so no audio is processed by this call. Open the tool, select the audio, and all decoding and rendering stay in the browser.",
+        },
+        null,
+        2
+      );
+    }
+
+    case "video-thumbnail-generator": {
+      const toolDef = getTool(normId);
+      return JSON.stringify(
+        {
+          tool: toolDef?.name ?? normId,
+          id: normId,
+          category: "Image",
+          status: "manual-file-required",
+          canonicalUrl: `https://codestation.in/tools/${toolDef?.slug ?? normId}`,
+          notice:
+            "This tool needs a local video chosen with the file picker in the browser UI. WebMCP cannot read a file from disk or seek a video, so no frame is captured by this call. Open the tool, select the video, and all decoding stays in the browser.",
+        },
+        null,
+        2
+      );
+    }
+
+    case "pomodoro-timer": {
+      const toolDef = getTool(normId);
+      return JSON.stringify(
+        {
+          tool: toolDef?.name ?? normId,
+          id: normId,
+          category: "Productivity",
+          status: "manual-ui-required",
+          canonicalUrl: `https://codestation.in/tools/${toolDef?.slug ?? normId}`,
+          notice:
+            "This timer needs the visible Start, Pause, Resume, Reset and Skip controls over real elapsed time. WebMCP cannot run a live countdown on this page, so no session is started by this call. Open the tool and control the timer in the browser UI.",
+        },
+        null,
+        2
+      );
+    }
+
+    case "pdf-to-text":
+    case "pdf-to-images":
+    case "pdf-reorder-pages": {
+      const toolDef = getTool(normId);
+      return JSON.stringify(
+        {
+          tool: toolDef?.name ?? normId,
+          id: normId,
+          category: "PDF",
+          status: "manual-file-required",
+          canonicalUrl: `https://codestation.in/tools/${toolDef?.slug ?? normId}`,
+          notice:
+            "This tool needs a local PDF chosen with the file picker in the browser UI. WebMCP cannot read a file from disk, so no document is processed by this call. Open the tool, select the PDF, and all parsing stays in the browser.",
+        },
+        null,
+        2
+      );
     }
 
     // ----------------- Generic Registered Tool Fallback -----------------

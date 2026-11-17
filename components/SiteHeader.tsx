@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import ToolLauncher from "./ToolLauncher";
+import CommandPalette from "./CommandPalette";
 import ThemeToggle from "./ThemeToggle";
 import StationMark from "./StationMark";
 
@@ -20,6 +21,7 @@ export default function SiteHeader() {
       <Link href="/settings" onClick={() => setOpen(false)}>Settings</Link>
       <Link href="/about" onClick={() => setOpen(false)}>About</Link>
     </nav>
+    <CommandPalette />
     <ToolLauncher />
     <ThemeToggle />
   </div></header>;

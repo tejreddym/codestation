@@ -8,6 +8,7 @@ import { searchTools } from "@/lib/tool-search";
 import { detectTools, type Detection } from "@/lib/workbench/detection";
 import { useWorkbench } from "./WorkbenchProvider";
 import { useSafePathname, useSafeRouter } from "./useSafeNavigation";
+import ui from "./ui/ui.module.css";
 
 export default function ToolLauncher() {
   const dialog = useRef<HTMLDialogElement>(null);
@@ -115,6 +116,9 @@ export default function ToolLauncher() {
 
   useEffect(() => {
     const key = (event: KeyboardEvent) => {
+      // The global command palette owns this shortcut when it is mounted.
+      // Standalone launcher tests (and any embed without the palette) keep it.
+      if (document.querySelector("[data-command-palette-shell]")) return;
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
         event.preventDefault();
         openSearch();
@@ -191,15 +195,15 @@ export default function ToolLauncher() {
           <>
             <div className="launcher-heading">
               <h2 id="launcher-title">{mode === "search" ? "Find your next tool" : "Smart Detection"}</h2>
-              <button className="button" onClick={close} type="button">
+              <button className={ui.button} onClick={close} type="button">
                 Close
               </button>
             </div>
             <div className="actions">
-              <button className="button" type="button" onClick={() => setMode("search")}>
+              <button className={ui.button} type="button" onClick={() => setMode("search")}>
                 Search tools
               </button>
-              <button className="button" type="button" onClick={() => setMode("detect")}>
+              <button className={ui.button} type="button" onClick={() => setMode("detect")}>
                 Detect content
               </button>
               <Link href="/settings" onClick={close}>
@@ -263,7 +267,7 @@ export default function ToolLauncher() {
                   Inspect text locally. Suggestions fill a tool’s primary input, replacing existing text. Nothing runs
                   automatically.
                 </p>
-                <button type="button" className="button primary" onClick={() => void readClipboard()}>
+                <button type="button" className={`${ui.button} ${ui.primary}`} onClick={() => void readClipboard()}>
                   Paste from clipboard &amp; detect
                 </button>
                 <label className="field-label" htmlFor="detection-text">
@@ -278,7 +282,7 @@ export default function ToolLauncher() {
                   }}
                   maxLength={200001}
                 />
-                <button type="button" className="button" onClick={() => inspect(text)}>
+                <button type="button" className={ui.button} onClick={() => inspect(text)}>
                   Detect pasted text
                 </button>
                 <p role="status">{message}</p>

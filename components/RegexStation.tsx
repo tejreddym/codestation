@@ -2,6 +2,10 @@
 
 import { useMemo, useState } from "react";
 import { escapeRegexLiteral, type RegexOperation, type RegexResult } from "@/lib/tools/regex-station";
+import styles from "./RegexStation.module.css";
+import ui from "./ui/ui.module.css";
+import { downloadBlob } from "./ui/useDownload";
+import { useCopy } from "./ui/useCopy";
 
 type Props = { toolId: string };
 const operationFor: Record<string, RegexOperation> = { "regex-tester": "test", "regex-replace-tester": "replace", "regex-match-inspector": "inspect", "regex-group-extractor": "groups", "regex-flag-tester": "flags", "regex-capture-group-tester": "capture", "regex-split-tester": "split" };
@@ -15,15 +19,6 @@ function runInWorker(payload: unknown): Promise<RegexResult> {
     worker.onerror = () => { window.clearTimeout(timeout); worker.terminate(); reject(new Error("Could not run the regular expression.")); };
     worker.postMessage(payload);
   });
-}
-
-function downloadResult(output: string, filename: string) {
-  const link = document.createElement("a");
-  const url = URL.createObjectURL(new Blob([output], { type: "text/plain;charset=utf-8" }));
-  link.href = url;
-  link.download = filename;
-  link.click();
-  URL.revokeObjectURL(url);
 }
 
 function Highlighted({ text, matches }: { text: string; matches: Array<{ index: number; end: number }> }) {
@@ -67,6 +62,7 @@ export default function RegexStation({ toolId }: Props) {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
+  const { copy: copyText } = useCopy();
 
   const operation = operationFor[toolId];
   const builder = toolId === "regex-pattern-builder";
@@ -99,11 +95,15 @@ export default function RegexStation({ toolId }: Props) {
 
   const output = result?.output ?? result?.escaped ?? (result?.parts ? result.parts.join("\n") : result?.pattern ?? (result ? JSON.stringify(result, null, 2) : ""));
 
-  const copy = async () => { if (!output) return; await navigator.clipboard?.writeText(output); setNotice("Copied"); };
-  const download = () => { if (!output) return; downloadResult(output, "regex-result.txt"); setNotice("Downloaded"); };
+  const copy = async () => {
+    if (!output) return;
+    const ok = await copyText(output);
+    setNotice(ok ? "Copied" : "Could not copy. Select the result and copy it manually.");
+  };
+  const download = () => { if (!output) return; downloadBlob(output, "regex-result.txt"); setNotice("Downloaded"); };
   const clear = () => { setText(""); setResult(null); setError(""); setNotice(""); };
 
-  return <div className="regex-station">
+  return <div className={styles.station}>
     <div className="option-grid regex-options">
       <label>Pattern<input value={pattern} onChange={(event) => setPattern(event.target.value)} aria-label="Regular expression pattern" /></label>
       {flagTester ? (
@@ -131,17 +131,17 @@ export default function RegexStation({ toolId }: Props) {
       </label>
     ))}</div><p className="muted">Select a pattern or type a custom one above. The preview shows a lookahead for building complex patterns.</p></fieldset>}
 
-    <div className="tool-layout">
-      <div className="panel">
-        <div className="panel-head"><span>{toolId === "regex-escape" ? "Literal input" : "Sample text"}</span><button className="button" onClick={() => setText("Code Station\ncode locally")}>Example</button></div>
+    <div className={`${ui.layout} ${ui.form} ${styles.layout}`}>
+      <div className={ui.panel}>
+        <div className={ui.panelHeader}><span className={ui.panelTitle}>{toolId === "regex-escape" ? "Literal input" : "Sample text"}</span><button className={ui.button} onClick={() => setText("Code Station\ncode locally")}>Example</button></div>
         <textarea value={text} onChange={(event) => setText(event.target.value)} aria-label="Regex sample text" />
       </div>
-      <div className="panel">
-        <div className="panel-head"><span>Result</span><span><button className="button" onClick={copy} disabled={!output}>Copy</button> <button className="button" onClick={download} disabled={!output}>Download</button></span></div>
-        <div className="output" aria-live="polite">{result?.matches && operation === "inspect" ? <Highlighted text={text} matches={result.matches} /> : output || "Your result will appear here."}</div>
+      <div className={ui.panel}>
+        <div className={ui.panelHeader}><span className={ui.panelTitle}>Result</span><span><button className={ui.button} onClick={copy} disabled={!output}>Copy</button> <button className={ui.button} onClick={download} disabled={!output}>Download</button></span></div>
+        <div className={ui.output} aria-live="polite">{result?.matches && operation === "inspect" ? <Highlighted text={text} matches={result.matches} /> : output || "Your result will appear here."}</div>
       </div>
     </div>
-    <div className="actions"><button className="button primary" onClick={execute} disabled={busy}>{busy ? "Running…" : "Run regex"}</button><button className="button" onClick={clear}>Clear</button></div>
+    <div className={ui.actions}><button className={`${ui.button} ${ui.primary}`} onClick={execute} disabled={busy}>{busy ? "Running…" : "Run regex"}</button><button className={ui.button} onClick={clear}>Clear</button></div>
     {result?.count !== undefined && <p className="muted" aria-live="polite">{result.count} match{result.count === 1 ? "" : "es"}{result.truncated ? " (limited)" : ""}</p>}
     {error && <div className="error" role="alert">{error}</div>}
     {notice && <div className="muted" role="status">{notice}</div>}

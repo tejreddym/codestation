@@ -49,10 +49,10 @@ describe("Encoding canonical registry and page contracts", () => {
     expect(await nextConfig.redirects!()).toContainEqual({ source: `/tools/${source}`, destination: `/tools/${destination}`, permanent: true });
   });
   it("uses existing theme tokens, stacking, focus and touch rules (static CSS check)", () => {
-    const css = readFileSync("components/EncodingStation.module.css", "utf8");
-    expect(css).toContain("max-width: 760px");
-    expect(css).toContain("var(--surface)"); expect(css).toContain("var(--ink)");
-    expect(css).toContain("min-height: 44px"); expect(css).toContain(":focus-visible");
-    expect(css).toContain("minmax(0, 1fr)"); expect(css).toContain("overflow-wrap: anywhere");
+    const layout = readFileSync("components/EncodingStation.module.css", "utf8");
+    for (const rule of ["var(--space-6)", "min-width: 0", "display: grid", "overflow-wrap: anywhere"]) expect(layout).toContain(rule);
+    // Visual, responsive, focus and touch rules come from the shared UI layer.
+    const shared = readFileSync("components/ui/ui.module.css", "utf8") + readFileSync("app/styles/tokens.css", "utf8");
+    for (const rule of ["var(--surface)", "var(--ink)", "44px", ":focus-visible", "@media", "minmax(0, 1fr)", "overflow-wrap: anywhere"]) expect(shared).toContain(rule);
   });
 });

@@ -28,6 +28,9 @@ import {
   replaceText,
   transformTextLines,
 } from "@/lib/tools/text-station";
+import ui from "./ui/ui.module.css";
+import { downloadBlob } from "./ui/useDownload";
+import { useCopy } from "./ui/useCopy";
 
 type Props = { toolId: string };
 
@@ -159,6 +162,7 @@ export default function TextStation({ toolId }: Props) {
   const [notice, setNotice] = useState("");
   const [status, setStatus] = useState("");
   const [busy, setBusy] = useState(false);
+  const { copy: copyText } = useCopy();
 
   const [caseMode, setCaseMode] = useState<CaseMode>(caseFor(toolId));
   const [findValue, setFindValue] = useState("Code");
@@ -284,24 +288,18 @@ export default function TextStation({ toolId }: Props) {
 
   const copyOutput = async () => {
     if (!output) return;
-    try {
-      if (!navigator.clipboard) throw new Error("Clipboard access is unavailable.");
-      await navigator.clipboard.writeText(output);
+    const ok = await copyText(output);
+    if (ok) {
       setNotice("Output copied to the clipboard.");
       setError("");
-    } catch {
+    } else {
       setError("Clipboard access is unavailable. Select the output and copy it manually.");
     }
   };
 
   const downloadOutput = () => {
     if (!output) return;
-    const link = document.createElement("a");
-    const url = URL.createObjectURL(new Blob([output], { type: "text/plain;charset=utf-8" }));
-    link.href = url;
-    link.download = `${slugFor(toolId)}-result.txt`;
-    link.click();
-    URL.revokeObjectURL(url);
+    downloadBlob(output, `${slugFor(toolId)}-result.txt`);
     setNotice("Output downloaded.");
     setError("");
   };
@@ -384,9 +382,9 @@ export default function TextStation({ toolId }: Props) {
 
   return <div className="text-station">
     {renderControls()}
-    {diffTool && <div className="panel diff-input"><div className="panel-head"><span>Compare with</span><button className="button" type="button" onClick={() => setSecondaryInput(defaultSecondary)}>Example</button></div><textarea id={secondaryId} value={secondaryInput} onChange={(event) => setSecondaryInput(event.target.value)} aria-label="Comparison text" placeholder="Paste the second text here." /></div>}
-    <div className="tool-layout"><div className="panel"><div className="panel-head"><span>Input</span><button className="button" type="button" onClick={loadExample}>Example</button></div><textarea id={inputId} value={input} onChange={(event) => setInput(event.target.value)} aria-label="Text Station input" placeholder="Paste text here to begin." /></div><div className="panel"><div className="panel-head"><span>Output</span><span><button className="button" type="button" onClick={copyOutput} disabled={!output}>Copy</button> <button className="button" type="button" onClick={downloadOutput} disabled={!output}>Download</button></span></div><div className="output" aria-live="polite">{output || "Your result will appear here."}</div></div></div>
-    <div className="actions"><button className="button primary" type="button" onClick={run} disabled={busy}>{busy ? "Processing…" : isCounter ? "Count text" : generatorTool ? "Generate" : extractorTool ? "Extract" : "Run tool"}</button><button className="button" type="button" onClick={useOutputAsInput} disabled={!output}>Use output as input</button><button className="button" type="button" onClick={clear}>Clear</button></div>
+    {diffTool && <div className={ui.panel}><div className={ui.panelHeader}><span className={ui.panelTitle}>Compare with</span><button className={ui.button} type="button" onClick={() => setSecondaryInput(defaultSecondary)}>Example</button></div><textarea id={secondaryId} value={secondaryInput} onChange={(event) => setSecondaryInput(event.target.value)} aria-label="Comparison text" placeholder="Paste the second text here." /></div>}
+    <div className={`${ui.layout} ${ui.form}`}><div className={ui.panel}><div className={ui.panelHeader}><span className={ui.panelTitle}>Input</span><button className={ui.button} type="button" onClick={loadExample}>Example</button></div><textarea id={inputId} value={input} onChange={(event) => setInput(event.target.value)} aria-label="Text Station input" placeholder="Paste text here to begin." /></div><div className={ui.panel}><div className={ui.panelHeader}><span className={ui.panelTitle}>Output</span><span><button className={ui.button} type="button" onClick={copyOutput} disabled={!output}>Copy</button> <button className={ui.button} type="button" onClick={downloadOutput} disabled={!output}>Download</button></span></div><div className={ui.output} aria-live="polite">{output || "Your result will appear here."}</div></div></div>
+    <div className={ui.actions}><button className={`${ui.button} ${ui.primary}`} type="button" onClick={run} disabled={busy}>{busy ? "Processing…" : isCounter ? "Count text" : generatorTool ? "Generate" : extractorTool ? "Extract" : "Run tool"}</button><button className={ui.button} type="button" onClick={useOutputAsInput} disabled={!output}>Use output as input</button><button className={ui.button} type="button" onClick={clear}>Clear</button></div>
      {status && <p className="muted" aria-live="polite">{status}</p>}
      {output && <p className="muted" aria-live="polite">{output.length} characters · {output.split(/\r\n|\r|\n/).length} line{output.split(/\r\n|\r|\n/).length === 1 ? "" : "s"}</p>}
     {error && <div className="error" role="alert">{error}</div>}

@@ -1,0 +1,75 @@
+/* Layout only. Visuals come from components/ui/ui.module.css and tokens. */
+.container {
+  min-width: 0;
+}
+
+.stack {
+  display: grid;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.dropText {
+  display: block;
+  color: var(--ink);
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+
+.dropSub {
+  display: block;
+  margin-top: var(--space-1);
+  color: var(--secondary);
+  font-size: var(--text-xs);
+}
+
+.options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: var(--space-3);
+  align-items: end;
+}
+
+.results {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.resultItem {
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface-alt);
+}
+
+.resultHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.resultName {
+  min-width: 0;
+  color: var(--ink);
+  font-size: var(--text-sm);
+  overflow-wrap: anywhere;
+}
+
+.resultState {
+  color: var(--secondary);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+.resultMessage {
+  margin: 0;
+  color: var(--secondary);
+  font-size: var(--text-sm);
+  overflow-wrap: anywhere;
+}

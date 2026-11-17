@@ -165,7 +165,7 @@ export const SHARED_TOOLS: SharedToolDefinition[] = [
     version: "1.2.0",
     accessLevel: "pro",
     privacyClassification: "local-only",
-    category: "Security & Crypto",
+    category: "Security",
     keywords: ["env", "audit", "secrets", "scanner", "leak", "security", "credentials"],
     inputSchema: {
       type: "object",
@@ -269,7 +269,7 @@ export const SHARED_TOOLS: SharedToolDefinition[] = [
     version: "1.2.0",
     accessLevel: "pro",
     privacyClassification: "local-only",
-    category: "Text",
+    category: "Git & Version Control",
     keywords: ["git", "conflict", "merge", "resolver", "diff3", "ours", "theirs"],
     inputSchema: {
       type: "object",
@@ -406,7 +406,7 @@ export const SHARED_TOOLS: SharedToolDefinition[] = [
     version: "1.2.0",
     accessLevel: "pro",
     privacyClassification: "local-only",
-    category: "Security & Crypto",
+    category: "Security",
     keywords: ["jwt", "token", "decode", "claims", "header", "auth"],
     inputSchema: {
       type: "object",
@@ -541,7 +541,7 @@ export const SHARED_TOOLS: SharedToolDefinition[] = [
     version: "1.2.0",
     accessLevel: "pro",
     privacyClassification: "local-only",
-    category: "Security & Crypto",
+    category: "Security",
     keywords: ["hash", "sha256", "sha512", "md5", "sha1", "crc32", "digest"],
     inputSchema: {
       type: "object",
@@ -588,7 +588,7 @@ export const SHARED_TOOLS: SharedToolDefinition[] = [
     version: "1.2.0",
     accessLevel: "free",
     privacyClassification: "local-only",
-    category: "Security & Crypto",
+    category: "Security",
     keywords: ["uuid", "random", "guid", "v4"],
     inputSchema: {
       type: "object",

@@ -23,9 +23,9 @@ const defaultNotices: Record<string, string> = {
   markdown: "Markdown is processed locally. Generated HTML is sanitized inert text; remote image URLs in previews may be requested by the browser.",
   "color-css": "Color calculations and CSS generation run locally using bounded, validated values.",
   converters: "Cards reuse canonical registered tool identities and show only format mappings present in the capability registry.",
-  pdf: "PDF processing and document signing run entirely within your browser memory. Documents are never uploaded, logged, or sent to a server.",
+  pdf: "PDF processing runs entirely within your browser memory. Documents are never uploaded, logged, or sent to a server. The signature pad exports a PNG image; it does not open, sign, or modify a PDF.",
   "qr-barcode": "Barcodes and QR codes are generated and rendered locally in your browser with zero server requests.",
-  audio: "Audio waveform visualization, playback, and WAV rendering run 100% locally in your browser with zero file uploads.",
+  audio: "Audio decoding, trimming, compression, merging, playback and WAV rendering run 100% locally in your browser with zero file uploads. WebM/Opus conversion is recorded in real time only when the browser supports it; MP3 encoding is not available.",
   "code-generation": "Code generation, AST transformations, and schema inference execute entirely in your browser with zero server uploads.",
   "network-devops": "Network subnetting, certificate parsing, and cloud config generation run locally with zero server requests.",
   "frontend-css": "CSS Grid, Flexbox, keyframe animations, and visual styling tools render entirely in your browser with zero server uploads.",
@@ -34,6 +34,10 @@ const defaultNotices: Record<string, string> = {
   "crypto-pki": "Cryptographic key generation, AES-GCM operations, CSR inspection, and JWT signing run locally using Web Crypto API. Private keys and secrets never leave your device.",
   "ai-prompts": "AI prompt construction, token estimation, and vector calculations run entirely in your browser with zero server uploads or external LLM API calls.",
   "policy-generators": "Policy generation and legal document formatting run 100% locally in your browser memory. Your company details, contact information, and generated legal texts are never uploaded, logged, or stored.",
+  git: "Git messages, commands, changelogs, attributes, and hook scripts are generated as inert text in your browser. No repository is read and no Git command is executed, uploaded, logged, or stored.",
+  "finance-calculators": "EMI, prepayment, GST, and SIP calculations run entirely in your browser. Amounts, rates, and results are never uploaded, logged, or stored, and every projection is an estimate rather than financial or tax advice.",
+  productivity: "Focus and break timers run only in this page. No timer state is saved, no notification permission is requested, and the page title is never changed.",
+  video: "Video frames are decoded and captured locally in this browser. Videos are never uploaded, audio is not processed, and captured images are not persisted.",
 };
 
 function catalogData(stationId: string, stationToolList: readonly string[]) {

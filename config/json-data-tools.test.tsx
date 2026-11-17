@@ -4,6 +4,7 @@ import { cleanup, render, screen, within } from "@testing-library/react";
 import { readFileSync } from "node:fs";
 import ToolPage, { generateMetadata, generateStaticParams } from "@/app/tools/[slug]/page";
 import { tools, getTool } from "./tools";
+import { extendedTools } from "./extended-tools";
 import { jsonDataTools, getJsonDataDefinition } from "./json-data-tools";
 import nextConfig from "../next.config";
 
@@ -11,9 +12,11 @@ vi.mock("@/components/ToolWorkspace", () => ({ default: () => null }));
 afterEach(cleanup);
 const publicSlugs = `json-formatter json-validator json-minifier json-to-yaml yaml-to-json json-to-csv csv-to-json json-diff json-tree-viewer json-schema-validator json-schema-generator jsonpath-tester json-escape json-unescape json-key-sorter json-array-to-object json-object-to-array json-lines-formatter json-lines-validator json-lines-to-json json-to-json-lines json-structure-inspector json-statistics-analyzer csv-formatter csv-validator csv-column-analyzer csv-delimiter-detector csv-to-tsv tsv-to-csv csv-to-markdown csv-to-html-table csv-cleaner csv-column-reorderer csv-row-filter csv-data-deduplicator csv-transposer json-to-xml xml-to-json json-to-toml toml-to-json yaml-diff yaml-formatter yaml-validator xml-formatter xml-validator xml-minifier`.split(" ");
 describe("JSON & Data registry/routes", () => {
-  it("has exactly the specified 46 unique station URLs and IDs in the central registry", () => {
+  it("has exactly the specified 46 station URLs plus one extended tool in the central registry", () => {
     expect(jsonDataTools.map(tool => tool.slug).sort()).toEqual(publicSlugs.sort());
-    expect(tools.filter(tool => tool.category === "JSON & Data")).toEqual([...jsonDataTools]);
+    const extendedJson = extendedTools.filter(tool => tool.category === "JSON & Data");
+    expect(extendedJson.map(tool => tool.id)).toEqual(["mock-data"]);
+    expect(tools.filter(tool => tool.category === "JSON & Data").map(tool => tool.id)).toEqual([...jsonDataTools.map(tool => tool.id), "mock-data"]);
     expect(new Set(tools.map(tool => tool.slug)).size).toBe(tools.length);
     expect(new Set(tools.map(tool => tool.id)).size).toBe(tools.length);
     expect(new Set(jsonDataTools.map(tool => tool.description)).size).toBe(46);
@@ -43,11 +46,11 @@ describe("JSON & Data registry/routes", () => {
     expect(await nextConfig.redirects!()).toContainEqual({ source: `/tools/${tool.id}`, destination: `/tools/${tool.slug}`, permanent: true });
   });
   it("keeps theme-aware responsive CSS and focus/touch rules without global theme edits", () => {
-    const css = readFileSync("components/JsonDataStation.module.css", "utf8");
-    expect(css).toContain("@media (max-width: 760px)");
-    expect(css).toContain("grid-template-columns: minmax(0, 1fr)");
-    expect(css).toContain("var(--surface)"); expect(css).toContain("var(--ink)");
-    expect(css).toContain("min-height: 44px"); expect(css).toContain(":focus-visible");
+    const layout = readFileSync("components/JsonDataStation.module.css", "utf8");
+    for (const rule of ["@media", "var(--space-6)", "min-width: 0", "overflow: auto"]) expect(layout).toContain(rule);
+    // Visual, theme, focus and touch rules come from the shared UI layer, not from global theme edits.
+    const shared = readFileSync("components/ui/ui.module.css", "utf8") + readFileSync("app/styles/tokens.css", "utf8");
+    for (const rule of ["var(--surface)", "var(--ink)", "44px", ":focus-visible", "@media", "minmax(0, 1fr)", "overflow-wrap: anywhere"]) expect(shared).toContain(rule);
     // Static contract check only; real responsive/theme visual review is separate.
   });
 });

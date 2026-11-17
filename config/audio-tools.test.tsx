@@ -8,9 +8,20 @@ import ToolPage, { generateMetadata } from "@/app/tools/[slug]/page";
 vi.mock("@/components/ToolWorkspace", () => ({ default: () => null }));
 afterEach(cleanup);
 
-it("registers exactly 1 Audio contract", () => {
-  expect(audioTools).toHaveLength(1);
-  expect(getStation("audio")).toMatchObject({ route: "/stations/audio", toolCount: 1 });
+it("registers exactly 4 Audio contracts in the Audio station", () => {
+  expect(audioTools).toHaveLength(4);
+  expect(audioTools.map(tool => tool.id)).toEqual([
+    "audio-trimmer",
+    "audio-compressor",
+    "audio-merger",
+    "audio-converter",
+  ]);
+  expect(getStation("audio")).toMatchObject({ route: "/stations/audio", toolCount: 4 });
+  for (const tool of audioTools) {
+    expect(tool.category).toBe("Audio");
+    expect(tool.keywords.length).toBeGreaterThan(3);
+    expect(tool.relatedTools.length).toBeGreaterThan(0);
+  }
 });
 
 it.each(audioTools)("$id public direct metadata/contract", async (tool) => {

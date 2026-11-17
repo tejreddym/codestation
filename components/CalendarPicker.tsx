@@ -166,7 +166,7 @@ export default function CalendarPicker({
         <div className={styles.iconGroup}>
           <button
             type="button"
-            className={`${styles.iconButton} ${open ? styles.iconButtonActive : ""}`}
+            className={`${styles.pickerButton} ${open ? styles.pickerButtonActive : ""}`}
             onClick={() => setOpen(!open)}
             aria-label={`Open calendar for ${label}`}
             tabIndex={-1}

@@ -6,8 +6,9 @@ decorative artwork without changing tool contracts or state behavior.
 
 ## Palette and semantic tokens
 
-The shared tokens live in `app/globals.css` and switch with the existing
-`data-theme` attribute:
+The shared tokens live in `app/styles/tokens.css` (the only token file) and
+switch with the existing `data-theme` attribute. See `docs/UI_SYSTEM.md` for
+the full layer map, shared primitives, and tool UI rules:
 
 | Role | Light | Dark |
 | --- | --- | --- |

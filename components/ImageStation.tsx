@@ -7,6 +7,18 @@ import { capabilitiesFor, capabilityForRoute } from "@/config/conversion-capabil
 import { useConverterSession } from "./ConverterSession";
 import { ImageError, type ImageResult, type ImageValues } from "@/lib/tools/image/types";
 import ImageCropper, { type Crop } from "./ImageCropper";
+import { Button, ButtonLink } from "./ui/Button";
+import { Callout } from "./ui/Callout";
+import { Checkbox, Select, Textarea, TextInput } from "./ui/controls";
+import { cx } from "./ui/cx";
+import { EmptyState } from "./ui/EmptyState";
+import { Field, Hint } from "./ui/Field";
+import { Panel } from "./ui/Panel";
+import { PrivacyNote } from "./ui/PrivacyNote";
+import { StatusLine } from "./ui/StatusLine";
+import { ToolLayout } from "./ui/ToolLayout";
+import { useCopy } from "./ui/useCopy";
+import ui from "./ui/ui.module.css";
 import styles from "./ImageStation.module.css";
 
 type Definition = NonNullable<ReturnType<typeof getImageDefinition>>;
@@ -33,6 +45,7 @@ function Station({ definition }: { definition: Definition }) {
   const [crop, setCrop] = useState<Crop | null>(null);
   const [error, setError] = useState<{ message: string; field?: string } | null>(null);
   const [notice, setNotice] = useState("");
+  const { copy: copyText } = useCopy();
   const [busy, setBusy] = useState(false);
   const [inspecting, setInspecting] = useState(false);
   const router = useSafeRouter();
@@ -189,11 +202,9 @@ function Station({ definition }: { definition: Definition }) {
 
   async function copy(text: string, label: string) {
     const current = revision.current;
-    try {
-      if (!navigator.clipboard?.writeText) throw new Error("Clipboard unavailable");
-      await navigator.clipboard.writeText(text);
-      if (mounted.current && revision.current === current) setNotice(`${label} copied.`);
-    } catch { if (mounted.current && revision.current === current) setNotice("Could not copy. Select the text result and copy it manually."); }
+    const ok = await copyText(text);
+    if (!mounted.current || revision.current !== current) return;
+    setNotice(ok ? `${label} copied.` : "Could not copy. Select the text result and copy it manually.");
   }
 
   function download() {
@@ -212,50 +223,208 @@ function Station({ definition }: { definition: Definition }) {
   const dataUri = typeof result?.data.dataUri === "string" ? result.data.dataUri : undefined;
   const textLabel = contract.outputs[0] ?? "Result";
   const outputLabel = contract.outputs.join(" · ");
-  return <div className={styles.station}>
-    <div className={styles.layout}>
-      <form ref={form} className={styles.panel} onSubmit={event => void submit(event)} noValidate autoComplete="off" aria-labelledby={`${id}-input`} aria-describedby={`${id}-status${error ? ` ${id}-error` : ""}`} aria-busy={busy || inspecting}>
-        <div className={styles.panelHead}><h2 id={`${id}-input`}>{definition.name} input</h2></div>
-        <div className={styles.fields}>{converter && <div className={styles.field}><label htmlFor={`${id}-output-format`}>Output Format</label><select id={`${id}-output-format`} className={styles.input} value={currentTarget} onChange={event => selectTarget(event.target.value)} aria-describedby={`${id}-status`}><option value="" disabled>Select an output format</option>{targetOptions.map(target => <option key={target} value={target}>{target.toUpperCase()}</option>)}</select><p className={styles.hint}>Source: {sourceSession?.format?.toUpperCase() ?? converter.source.toUpperCase()} ({sourceSession ? "detected" : "route default"}). Changing this target keeps the original file in memory.</p></div>}{contract.fields.filter(field => field.name !== "crop" && !(isCropper && ["x", "y", "width", "height"].includes(field.name))).map(field => {
-          const fieldId = `${id}-${field.name}`;
-          const invalid = !!error && (!error.field || error.field === field.name);
-          const shared = { id: fieldId, name: field.name, "data-image-field": field.name, "aria-describedby": `${id}-status${invalid ? ` ${id}-error` : ""}`, "aria-invalid": invalid || undefined, required: !field.optional && !(svgAlternative && ["source", "file"].includes(field.name)) };
-          const value = values[field.name] ?? "";
-          if (field.control === "checkbox") return <label className={styles.checkbox} key={field.name} htmlFor={fieldId}><input {...shared} type="checkbox" checked={value === true || value === "true"} onChange={event => change(field.name, event.target.checked)} />{field.label}</label>;
-          return <div className={styles.field} key={field.name}><label htmlFor={fieldId}>{field.label}</label>
-            {field.control === "file" ? <input {...shared} ref={fileInput} className={styles.input} type="file" accept={field.accept} onChange={event => void chooseFile(event.target.files?.[0] ?? null)} />
-              : field.control === "select" ? <select {...shared} className={styles.input} value={String(value)} onChange={event => change(field.name, event.target.value)}>{field.options?.map(option => <option key={option} value={option}>{option === "image/jpeg" ? "JPEG" : option === "image/webp" ? "WebP" : option}</option>)}</select>
-                : field.control === "textarea" ? <textarea {...shared} className={`${styles.input} ${styles.textarea}`} value={String(value)} rows={7} autoCapitalize="off" spellCheck={false} onChange={event => change(field.name, event.target.value)} />
-                  : <input {...shared} className={styles.input} type={field.control === "number" ? "number" : "text"} value={String(value)} min={field.min} max={field.max} step={field.control === "number" ? "1" : undefined} onChange={event => change(field.name, event.target.value)} />}
-          </div>;
-        })}
-          {svgAlternative && <p className={styles.hint}>Choose one SVG source: selecting a file clears source text; editing source text clears the file.</p>}
-           {dimensions && (isResizer || isCropper) && <p className={styles.hint}>Original image: {dimensions.width} × {dimensions.height} pixels</p>}
-          {sourceUrl && dimensions && (isCropper && crop ? <ImageCropper id={`${id}-crop`} src={sourceUrl} width={dimensions.width} height={dimensions.height} value={crop} describedBy={error ? `${id}-error` : undefined} onChange={next => { invalidate(); setCrop(next); }} /> : <figure className={styles.preview}><img src={sourceUrl} alt="Selected local image preview" /><figcaption>Selected local image</figcaption></figure>)}
-          {contract.notices.map((text, index) => <p className={styles.note} key={index}>{text}</p>)}
+
+  return (
+    <ToolLayout kind="data" className={styles.station}>
+      <form
+        ref={form}
+        onSubmit={event => void submit(event)}
+        noValidate
+        autoComplete="off"
+        aria-labelledby={`${id}-input`}
+        aria-describedby={`${id}-status${error ? ` ${id}-error` : ""}`}
+        aria-busy={busy || inspecting}
+      >
+        <div className={styles.columns}>
+          <Panel title={`${definition.name} input`} headingId={`${id}-input`} padded>
+            <div className={styles.fields}>
+              {converter && (
+                <Field
+                  id={`${id}-output-format`}
+                  label="Output Format"
+                  hint={`Source: ${sourceSession?.format?.toUpperCase() ?? converter.source.toUpperCase()} (${sourceSession ? "detected" : "route default"}). Changing this target keeps the original file in memory.`}
+                >
+                  <Select
+                    id={`${id}-output-format`}
+                    value={currentTarget}
+                    onChange={event => selectTarget(event.target.value)}
+                    aria-describedby={`${id}-status`}
+                  >
+                    <option value="" disabled>Select an output format</option>
+                    {targetOptions.map(target => <option key={target} value={target}>{target.toUpperCase()}</option>)}
+                  </Select>
+                </Field>
+              )}
+
+              {contract.fields
+                .filter(field => field.name !== "crop" && !(isCropper && ["x", "y", "width", "height"].includes(field.name)))
+                .map(field => {
+                  const fieldId = `${id}-${field.name}`;
+                  const invalid = !!error && (!error.field || error.field === field.name);
+                  const shared = {
+                    id: fieldId,
+                    name: field.name,
+                    "data-image-field": field.name,
+                    "aria-describedby": `${id}-status${invalid ? ` ${id}-error` : ""}`,
+                    "aria-invalid": invalid || undefined,
+                    required: !field.optional && !(svgAlternative && ["source", "file"].includes(field.name)),
+                  };
+                  const value = values[field.name] ?? "";
+                  if (field.control === "checkbox") {
+                    return (
+                      <Checkbox
+                        key={field.name}
+                        {...shared}
+                        label={field.label}
+                        checked={value === true || value === "true"}
+                        onChange={event => change(field.name, event.target.checked)}
+                      />
+                    );
+                  }
+                  return (
+                    <Field key={field.name} id={fieldId} label={field.label}>
+                      {field.control === "file" ? (
+                        <input
+                          {...shared}
+                          ref={fileInput}
+                          className={ui.control}
+                          type="file"
+                          accept={field.accept}
+                          onChange={event => void chooseFile(event.target.files?.[0] ?? null)}
+                        />
+                      ) : field.control === "select" ? (
+                        <Select {...shared} value={String(value)} onChange={event => change(field.name, event.target.value)}>
+                          {field.options?.map(option => (
+                            <option key={option} value={option}>
+                              {option === "image/jpeg" ? "JPEG" : option === "image/webp" ? "WebP" : option}
+                            </option>
+                          ))}
+                        </Select>
+                      ) : field.control === "textarea" ? (
+                        <Textarea
+                          {...shared}
+                          value={String(value)}
+                          rows={7}
+                          autoCapitalize="off"
+                          spellCheck={false}
+                          onChange={event => change(field.name, event.target.value)}
+                        />
+                      ) : (
+                        <TextInput
+                          {...shared}
+                          type={field.control === "number" ? "number" : "text"}
+                          value={String(value)}
+                          min={field.min}
+                          max={field.max}
+                          step={field.control === "number" ? "1" : undefined}
+                          onChange={event => change(field.name, event.target.value)}
+                        />
+                      )}
+                    </Field>
+                  );
+                })}
+
+              {svgAlternative && <Hint>Choose one SVG source: selecting a file clears source text; editing source text clears the file.</Hint>}
+              {dimensions && (isResizer || isCropper) && <Hint>Original image: {dimensions.width} × {dimensions.height} pixels</Hint>}
+
+              {sourceUrl && dimensions && (
+                isCropper && crop ? (
+                  <ImageCropper
+                    id={`${id}-crop`}
+                    src={sourceUrl}
+                    width={dimensions.width}
+                    height={dimensions.height}
+                    value={crop}
+                    describedBy={error ? `${id}-error` : undefined}
+                    onChange={next => { invalidate(); setCrop(next); }}
+                  />
+                ) : (
+                  <figure className={styles.preview}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={sourceUrl} alt="Selected local image preview" />
+                    <figcaption>Selected local image</figcaption>
+                  </figure>
+                )
+              )}
+
+              {contract.notices.map((text, index) => <Hint key={index}>{text}</Hint>)}
+            </div>
+          </Panel>
+
+          <Panel
+            title="Result"
+            headingId={`${id}-output`}
+            aria-busy={busy}
+            actions={result ? (
+              <div className={ui.actions}>
+                {base64 !== undefined && <Button size="sm" onClick={() => void copy(base64, "Base64")}>Copy Base64</Button>}
+                {dataUri !== undefined && <Button size="sm" onClick={() => void copy(dataUri, "Data URI")}>Copy Data URI</Button>}
+                {result.text !== undefined && base64 === undefined && dataUri === undefined && (
+                  <Button size="sm" aria-label={`Copy ${textLabel}`} onClick={() => void copy(result.text!, textLabel)}>Copy</Button>
+                )}
+                {result.blob && result.extension && <Button size="sm" onClick={download}>Download {result.extension.toUpperCase()}</Button>}
+              </div>
+            ) : undefined}
+            padded
+          >
+            {result ? (
+              <div className={styles.result}>
+                {!!result.warnings?.length && (
+                  <div role="alert" className={cx(ui.callout, ui.calloutWarning)}>
+                    {result.warnings.map((warning, index) => <p key={index}>{warning}</p>)}
+                  </div>
+                )}
+                {resultUrl && (
+                  <figure className={styles.preview}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={resultUrl} alt={`${definition.name} result preview`} />
+                    <figcaption>Processed local image</figcaption>
+                  </figure>
+                )}
+                {result.text !== undefined && !Object.values(result.data).includes(result.text) && (
+                  <pre className={cx(ui.output, styles.output)} tabIndex={0} aria-label={`${textLabel} value`}>{result.text}</pre>
+                )}
+                <dl className={styles.dataList} aria-label={`${outputLabel} values`}>
+                  {Object.entries(result.data).map(([key, value]) => (
+                    <div key={key}>
+                      <dt>{key}</dt>
+                      <dd>
+                        {typeof value === "string" && (key === "base64" || key === "dataUri" || value === result.text)
+                          ? <pre className={cx(ui.output, styles.output)} tabIndex={0} aria-label={`${key} value`}>{value}</pre>
+                          : <ResultValue value={value} label={key} />}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+              </div>
+            ) : (
+              <EmptyState>Your result will appear after you {contract.action.toLowerCase()}. Editing an input clears the previous result.</EmptyState>
+            )}
+          </Panel>
         </div>
-        <div className={`${styles.actions} ${styles.formActions}`}><button type="submit" className="button primary" disabled={busy || inspecting}>{busy ? "Processing…" : contract.action}</button><button type="button" className="button" onClick={clear}>Clear</button></div>
+
+        <div className={cx(ui.actions, styles.formActions)}>
+          <Button type="submit" variant="primary" disabled={busy || inspecting} aria-busy={busy}>
+            {busy ? "Processing…" : contract.action}
+          </Button>
+          <Button onClick={clear}>Clear</Button>
+        </div>
       </form>
-      <section className={styles.panel} aria-labelledby={`${id}-output`} aria-busy={busy}>
-        <div className={styles.panelHead}><h2 id={`${id}-output`}>{outputLabel}</h2>{result && <div className={styles.actions}>
-          {base64 !== undefined && <button type="button" className="button" onClick={() => void copy(base64, "Base64")}>Copy Base64</button>}
-          {dataUri !== undefined && <button type="button" className="button" onClick={() => void copy(dataUri, "Data URI")}>Copy Data URI</button>}
-          {result.text !== undefined && base64 === undefined && dataUri === undefined && <button type="button" className="button" aria-label={`Copy ${textLabel}`} onClick={() => void copy(result.text!, textLabel)}>Copy</button>}
-          {result.blob && result.extension && <button type="button" className="button" onClick={download}>Download {result.extension.toUpperCase()}</button>}
-        </div>}</div>
-        {result ? <div className={styles.result}>
-          {!!result.warnings?.length && <div className={styles.warning} role="alert">{result.warnings.map((warning, index) => <p key={index}>{warning}</p>)}</div>}
-           {resultUrl && <figure className={styles.preview}><img src={resultUrl} alt={`${definition.name} result preview`} /><figcaption>Processed local image</figcaption></figure>}
-          {result.text !== undefined && !Object.values(result.data).includes(result.text) && <pre className={styles.output} tabIndex={0} aria-label={`${textLabel} value`}>{result.text}</pre>}
-          <dl className={styles.dataList} aria-label={`${outputLabel} values`}>{Object.entries(result.data).map(([key, value]) => <div key={key}><dt>{key}</dt><dd>{typeof value === "string" && (key === "base64" || key === "dataUri" || value === result.text) ? <pre className={styles.output} tabIndex={0} aria-label={`${key} value`}>{value}</pre> : <ResultValue value={value} label={key} />}</dd></div>)}</dl>
-        </div> : <p className={styles.empty}>Your result will appear after you {contract.action.toLowerCase()}. Editing an input clears the previous result.</p>}
-      </section>
-    </div>
-    {error && <p ref={errorRef} id={`${id}-error`} className={styles.error} role="alert" tabIndex={-1}>{error.message}</p>}
-    <p id={`${id}-status`} className={styles.status} role="status" aria-atomic="true">{notice}</p>
-    {definition.pairedTool && <a className={styles.pairLink} href={`/tools/${definition.pairedTool}`}>Open {getImageDefinition(definition.pairedTool)?.name ?? "paired tool"}</a>}
-    <p className={styles.privacy}>All processing stays in this browser. Inputs are not transmitted or saved.</p>
-  </div>;
+
+      {error && (
+        <Callout kind="error" ref={errorRef} id={`${id}-error`} tabIndex={-1}>
+          {error.message}
+        </Callout>
+      )}
+      <StatusLine id={`${id}-status`} className={styles.status}>{notice}</StatusLine>
+      {definition.pairedTool && (
+        <ButtonLink className={styles.pairLink} href={`/tools/${definition.pairedTool}`}>
+          Open {getImageDefinition(definition.pairedTool)?.name ?? "paired tool"}
+        </ButtonLink>
+      )}
+      <PrivacyNote>All processing stays in this browser. Inputs are not transmitted or saved.</PrivacyNote>
+    </ToolLayout>
+  );
 }
 
 export default function ImageStation({ toolId }: { toolId: ImageToolId }) {

@@ -1,0 +1,73 @@
+/*
+ * Element-level control baseline.
+ *
+ * Imported before app/globals.css, so the legacy rules still win in W0 and the
+ * rendered result is unchanged. As legacy rules are removed in later waves,
+ * this file becomes the authoritative base and every unmigrated tool inherits
+ * the same height, radius, border, background and focus treatment.
+ *
+ * Text-like inputs are targeted explicitly: styling bare `input` would also
+ * restyle checkbox, radio, range, file and color inputs.
+ */
+input[type="text"],
+input[type="number"],
+input[type="search"],
+input[type="email"],
+input[type="url"],
+input[type="date"],
+input[type="time"],
+input[type="datetime-local"],
+select {
+  min-height: var(--control-h-input);
+}
+
+input[type="text"],
+input[type="number"],
+input[type="search"],
+input[type="email"],
+input[type="url"],
+input[type="date"],
+input[type="time"],
+input[type="datetime-local"],
+select,
+textarea {
+  border-color: var(--line-strong);
+  border-radius: var(--radius-control);
+  background: var(--elevated);
+  color: var(--ink);
+}
+
+select {
+  padding: 10px 34px 10px 11px;
+}
+
+textarea {
+  font-size: var(--text-md);
+}
+
+input[type="color"] {
+  min-width: 52px;
+  min-height: var(--control-h-input);
+  padding: 4px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-control);
+  background: var(--elevated);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--muted);
+  opacity: 1;
+}
+
+input[aria-invalid="true"],
+select[aria-invalid="true"],
+textarea[aria-invalid="true"] {
+  border-color: var(--red);
+}
+
+input[type="checkbox"],
+input[type="radio"],
+input[type="range"] {
+  accent-color: var(--accent);
+}

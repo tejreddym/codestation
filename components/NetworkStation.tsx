@@ -17,10 +17,47 @@ import {
   type IpConversionResult,
   type CertInspectionResult,
 } from "@/lib/tools/network/engine";
+import { Button } from "./ui/Button";
+import { Callout } from "./ui/Callout";
+import { Checkbox, Select, Textarea, TextInput } from "./ui/controls";
+import { DataTable } from "./ui/DataTable";
+import { EmptyState } from "./ui/EmptyState";
+import { Field } from "./ui/Field";
+import { Panel } from "./ui/Panel";
+import { StatusLine } from "./ui/StatusLine";
+import { ToolLayout } from "./ui/ToolLayout";
+import { downloadBlob } from "./ui/useDownload";
+import { useCopy } from "./ui/useCopy";
+import ui from "./ui/ui.module.css";
 import styles from "./NetworkStation.module.css";
 
 interface NetworkStationProps {
   toolId: NetworkToolId;
+}
+
+type Row = [label: string, value: string];
+
+const PORT_CATEGORIES = ["All", "Web", "Database", "Mail", "Remote Access", "Network & Infrastructure", "Dev & Cloud"];
+const CIDR_PREFIXES = ["/8", "/16", "/24", "/26", "/28", "/30", "/32"];
+const DOCKER_LANGUAGES = [
+  ["node", "Node.js"],
+  ["python", "Python"],
+  ["go", "Go (Golang)"],
+  ["rust", "Rust"],
+  ["nginx", "Static Nginx"],
+] as const;
+
+function StatList({ rows, label }: { rows: Row[]; label: string }) {
+  return (
+    <dl className={styles.stats} aria-label={label}>
+      {rows.map(([term, value]) => (
+        <div className={styles.stat} key={term}>
+          <dt className={styles.statLabel}>{term}</dt>
+          <dd className={`${ui.mono} ${styles.statValue}`}>{value}</dd>
+        </div>
+      ))}
+    </dl>
+  );
 }
 
 export default function NetworkStation({ toolId }: NetworkStationProps) {
@@ -31,6 +68,7 @@ export default function NetworkStation({ toolId }: NetworkStationProps) {
   const [input, setInput] = useState(initialInput);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
+  const { copy } = useCopy();
 
   // CIDR state
   const [cidrResult, setCidrResult] = useState<CidrResult | null>(() => {
@@ -89,22 +127,14 @@ export default function NetworkStation({ toolId }: NetworkStationProps) {
   const [v1, setV1] = useState("1.2.3");
   const [v2, setV2] = useState("2.0.0");
 
-  function copyText(text: string, id: string) {
-    navigator.clipboard.writeText(text);
+  async function copyText(text: string, id: string) {
+    if (!(await copy(text))) return;
     setCopied(id);
     setTimeout(() => setCopied(null), 2000);
   }
 
   function downloadText(content: string, filename: string) {
-    const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    downloadBlob(content, filename);
   }
 
   // Handle CIDR updates
@@ -155,561 +185,433 @@ export default function NetworkStation({ toolId }: NetworkStationProps) {
     }
   }
 
-  return (
-    <div className={styles.container}>
-      {/* 1. CIDR Subnet Calculator */}
-      {toolId === "cidr-calculator" && (
-        <div className={styles.panel}>
-          <div className={styles.headingRow}>
-            <span className={styles.panelTitle}>Subnet Configuration</span>
-          </div>
-
-          <div className={styles.field}>
-            <label htmlFor="cidr-input">IPv4 Address &amp; CIDR Prefix</label>
-            <input
-              id="cidr-input"
-              type="text"
-              className={styles.input}
-              value={input}
-              onChange={(e) => handleCidrChange(e.target.value)}
-              placeholder="e.g. 192.168.1.0/24"
-            />
-          </div>
-
-          <div className={styles.chipGroup}>
-            {["/8", "/16", "/24", "/26", "/28", "/30", "/32"].map((p) => (
-              <button
-                key={p}
-                type="button"
-                className={styles.chip}
-                onClick={() => {
-                  const base = input.split("/")[0] || "192.168.1.0";
-                  handleCidrChange(`${base}${p}`);
-                }}
-              >
-                {p}
-              </button>
-            ))}
-          </div>
-
-          {error && <div className={styles.errorBanner}>{error}</div>}
-
-          {cidrResult && (
-            <div className={styles.resultsGrid}>
-              <div className={styles.statCard}>
-                <span className={styles.statLabel}>Network Address</span>
-                <span className={styles.statValue}>{cidrResult.networkAddress}</span>
-              </div>
-              <div className={styles.statCard}>
-                <span className={styles.statLabel}>Subnet Mask</span>
-                <span className={styles.statValue}>{cidrResult.netmask}</span>
-              </div>
-              <div className={styles.statCard}>
-                <span className={styles.statLabel}>Wildcard Mask</span>
-                <span className={styles.statValue}>{cidrResult.wildcardMask}</span>
-              </div>
-              <div className={styles.statCard}>
-                <span className={styles.statLabel}>Broadcast Address</span>
-                <span className={styles.statValue}>{cidrResult.broadcastAddress}</span>
-              </div>
-              <div className={styles.statCard}>
-                <span className={styles.statLabel}>Usable Host Range</span>
-                <span className={styles.statValue}>
-                  {cidrResult.firstUsableHost} — {cidrResult.lastUsableHost}
-                </span>
-              </div>
-              <div className={styles.statCard}>
-                <span className={styles.statLabel}>Usable Hosts</span>
-                <span className={styles.statValue}>
-                  {cidrResult.usableHosts.toLocaleString()} of {cidrResult.totalHosts.toLocaleString()}
-                </span>
-              </div>
-              <div className={styles.statCard}>
-                <span className={styles.statLabel}>Class &amp; Scope</span>
-                <span className={styles.statValue}>
-                  Class {cidrResult.ipClass} · {cidrResult.scope}
-                </span>
-              </div>
-              <div className={styles.statCard}>
-                <span className={styles.statLabel}>Binary Subnet Mask</span>
-                <span className={styles.statValue}>{cidrResult.binaryNetmask}</span>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* 2. IPv4 ⇄ IPv6 Converter */}
-      {toolId === "ipv4-to-ipv6" && (
-        <div className={styles.panel}>
-          <div className={styles.headingRow}>
-            <span className={styles.panelTitle}>IP Address Input</span>
-          </div>
-
-          <div className={styles.field}>
-            <label htmlFor="ip-input">Enter IPv4 or IPv6 Address</label>
-            <input
-              id="ip-input"
-              type="text"
-              className={styles.input}
-              value={input}
-              onChange={(e) => handleIpChange(e.target.value)}
-              placeholder="e.g. 192.168.1.1 or 2001:db8::1"
-            />
-          </div>
-
-          {error && <div className={styles.errorBanner}>{error}</div>}
-
-          {ipResult && (
-            <div className={styles.resultsGrid}>
-              <div className={styles.statCard}>
-                <span className={styles.statLabel}>Type</span>
-                <span className={styles.statValue}>{ipResult.inputType}</span>
-              </div>
-              <div className={styles.statCard}>
-                <span className={styles.statLabel}>Canonical</span>
-                <span className={styles.statValue}>{ipResult.canonical}</span>
-              </div>
-              {ipResult.ipv4Mapped && (
-                <div className={styles.statCard}>
-                  <span className={styles.statLabel}>IPv4-Mapped IPv6</span>
-                  <span className={styles.statValue}>{ipResult.ipv4Mapped}</span>
-                </div>
-              )}
-              {ipResult.sixToFour && (
-                <div className={styles.statCard}>
-                  <span className={styles.statLabel}>6to4 Notation</span>
-                  <span className={styles.statValue}>{ipResult.sixToFour}</span>
-                </div>
-              )}
-              {ipResult.expanded && (
-                <div className={styles.statCard}>
-                  <span className={styles.statLabel}>Full Expanded (32 Hex)</span>
-                  <span className={styles.statValue}>{ipResult.expanded}</span>
-                </div>
-              )}
-              <div className={styles.statCard}>
-                <span className={styles.statLabel}>Reverse DNS Pointer</span>
-                <span className={styles.statValue}>{ipResult.reverseDns}</span>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* 3. Certificate Inspector */}
-      {toolId === "cert-inspector" && (
-        <div className={styles.panel}>
-          <div className={styles.headingRow}>
-            <span className={styles.panelTitle}>X.509 Certificate (PEM)</span>
-          </div>
-
-          <div className={styles.field}>
-            <label htmlFor="cert-pem">Paste Certificate (-----BEGIN CERTIFICATE-----)</label>
-            <textarea
-              id="cert-pem"
-              className={styles.textarea}
-              value={input}
-              onChange={(e) => handleCertInspect(e.target.value)}
-              placeholder="Paste PEM certificate here..."
-            />
-          </div>
-
-          {error && <div className={styles.errorBanner}>{error}</div>}
-
-          {certResult && (
-            <div className={styles.resultsGrid}>
-              <div className={styles.statCard}>
-                <span className={styles.statLabel}>Status</span>
-                <span className={styles.statValue}>
-                  <span
-                    className={`${styles.badge} ${
-                      certResult.status === "Valid"
-                        ? styles.badgeSuccess
-                        : styles.badgeDanger
-                    }`}
+  const station = (() => {
+    // 1. CIDR Subnet Calculator
+    if (toolId === "cidr-calculator") {
+      const rows: Row[] = cidrResult ? [
+        ["Network Address", cidrResult.networkAddress],
+        ["Subnet Mask", cidrResult.netmask],
+        ["Wildcard Mask", cidrResult.wildcardMask],
+        ["Broadcast Address", cidrResult.broadcastAddress],
+        ["Usable Host Range", `${cidrResult.firstUsableHost} — ${cidrResult.lastUsableHost}`],
+        ["Usable Hosts", `${cidrResult.usableHosts.toLocaleString()} of ${cidrResult.totalHosts.toLocaleString()}`],
+        ["Class & Scope", `Class ${cidrResult.ipClass} · ${cidrResult.scope}`],
+        ["Binary Subnet Mask", cidrResult.binaryNetmask],
+      ] : [];
+      return (
+        <ToolLayout kind="form" className={styles.layout}>
+          <Panel title="Subnet Configuration" padded>
+            <div className={styles.form}>
+              <Field id="cidr-input" label="IPv4 Address & CIDR Prefix">
+                <TextInput
+                  id="cidr-input"
+                  type="text"
+                  value={input}
+                  onChange={(event) => handleCidrChange(event.target.value)}
+                  placeholder="e.g. 192.168.1.0/24"
+                  spellCheck={false}
+                  autoComplete="off"
+                />
+              </Field>
+              <div className={styles.chips} role="group" aria-label="CIDR prefix suggestions">
+                {CIDR_PREFIXES.map((prefix) => (
+                  <Button
+                    key={prefix}
+                    size="sm"
+                    variant={input.endsWith(prefix) ? "primary" : undefined}
+                    onClick={() => {
+                      const base = input.split("/")[0] || "192.168.1.0";
+                      handleCidrChange(`${base}${prefix}`);
+                    }}
                   >
-                    {certResult.status} ({certResult.daysRemaining} days left)
-                  </span>
-                </span>
+                    {prefix}
+                  </Button>
+                ))}
               </div>
-              <div className={styles.statCard}>
-                <span className={styles.statLabel}>Common Name (CN)</span>
-                <span className={styles.statValue}>{certResult.subject["CN"] || "N/A"}</span>
-              </div>
-              <div className={styles.statCard}>
-                <span className={styles.statLabel}>Issuer</span>
-                <span className={styles.statValue}>
-                  {certResult.issuer["O"] || certResult.issuer["CN"] || "N/A"}
-                </span>
-              </div>
-              <div className={styles.statCard}>
-                <span className={styles.statLabel}>Validity Period</span>
-                <span className={styles.statValue}>
-                  {certResult.validFrom} to {certResult.validTo}
-                </span>
-              </div>
-              <div className={styles.statCard}>
-                <span className={styles.statLabel}>Serial Number</span>
-                <span className={styles.statValue}>{certResult.serialNumber}</span>
-              </div>
-              <div className={styles.statCard}>
-                <span className={styles.statLabel}>Signature Algorithm</span>
-                <span className={styles.statValue}>{certResult.signatureAlgorithm}</span>
-              </div>
+              {error && <Callout kind="error" className={styles.alert}>{error}</Callout>}
             </div>
-          )}
-        </div>
-      )}
+          </Panel>
+          <Panel title="Subnet Result" padded>
+            {rows.length > 0
+              ? <StatList rows={rows} label="Subnet calculation result" />
+              : <EmptyState>Enter an IPv4 address and CIDR prefix to see the subnet breakdown.</EmptyState>}
+          </Panel>
+        </ToolLayout>
+      );
+    }
 
-      {/* 4. Ports Reference */}
-      {toolId === "port-reference" && (
-        <div className={styles.panel}>
-          <div className={styles.headingRow}>
-            <span className={styles.panelTitle}>Common Ports Directory</span>
-          </div>
+    // 2. IPv4 ⇄ IPv6 Converter
+    if (toolId === "ipv4-to-ipv6") {
+      const rows: Row[] = ipResult ? [
+        ["Type", ipResult.inputType],
+        ["Canonical", ipResult.canonical],
+        ...(ipResult.ipv4Mapped ? [["IPv4-Mapped IPv6", ipResult.ipv4Mapped] as Row] : []),
+        ...(ipResult.sixToFour ? [["6to4 Notation", ipResult.sixToFour] as Row] : []),
+        ...(ipResult.expanded ? [["Full Expanded (32 Hex)", ipResult.expanded] as Row] : []),
+        ["Reverse DNS Pointer", ipResult.reverseDns],
+      ] : [];
+      return (
+        <ToolLayout kind="form" className={styles.layout}>
+          <Panel title="IP Address Input" padded>
+            <div className={styles.form}>
+              <Field id="ip-input" label="Enter IPv4 or IPv6 Address">
+                <TextInput
+                  id="ip-input"
+                  type="text"
+                  value={input}
+                  onChange={(event) => handleIpChange(event.target.value)}
+                  placeholder="e.g. 192.168.1.1 or 2001:db8::1"
+                  spellCheck={false}
+                  autoComplete="off"
+                />
+              </Field>
+              {error && <Callout kind="error" className={styles.alert}>{error}</Callout>}
+            </div>
+          </Panel>
+          <Panel title="Conversion Result" padded>
+            {rows.length > 0
+              ? <StatList rows={rows} label="IP conversion result" />
+              : <EmptyState>Enter an IPv4 or IPv6 address to see its canonical forms.</EmptyState>}
+          </Panel>
+        </ToolLayout>
+      );
+    }
 
-          <div className={styles.formGrid}>
-            <div className={styles.field}>
-              <label htmlFor="port-filter">Search by Port, Service or Description</label>
-              <input
-                id="port-filter"
-                type="text"
-                className={styles.input}
-                value={portQuery}
-                onChange={(e) => setPortQuery(e.target.value)}
-                placeholder="e.g. 443, postgres, ssh, web..."
+    // 3. Certificate Inspector
+    if (toolId === "cert-inspector") {
+      const rows: Row[] = certResult ? [
+        ["Common Name (CN)", certResult.subject["CN"] || "N/A"],
+        ["Issuer", certResult.issuer["O"] || certResult.issuer["CN"] || "N/A"],
+        ["Validity Period", `${certResult.validFrom} to ${certResult.validTo}`],
+        ["Serial Number", certResult.serialNumber],
+        ["Signature Algorithm", certResult.signatureAlgorithm],
+      ] : [];
+      return (
+        <ToolLayout kind="form" className={styles.layout}>
+          <Panel title="X.509 Certificate (PEM)" padded>
+            <div className={styles.form}>
+              <Field id="cert-pem" label="Paste Certificate (-----BEGIN CERTIFICATE-----)">
+                <Textarea
+                  id="cert-pem"
+                  className={ui.mono}
+                  value={input}
+                  onChange={(event) => handleCertInspect(event.target.value)}
+                  placeholder="Paste PEM certificate here..."
+                  spellCheck={false}
+                  autoComplete="off"
+                />
+              </Field>
+              {error && <Callout kind="error" className={styles.alert}>{error}</Callout>}
+            </div>
+          </Panel>
+          <Panel title="Certificate Details" padded>
+            {certResult ? (
+              <div className={styles.form}>
+                <dl className={styles.stats} aria-label="Certificate status">
+                  <div className={styles.stat}>
+                    <dt className={styles.statLabel}>Status</dt>
+                    <dd className={styles.statValue}>
+                      <span className={`${styles.badge} ${certResult.status === "Valid" ? styles.badgeSuccess : styles.badgeDanger}`}>
+                        {certResult.status} ({certResult.daysRemaining} days left)
+                      </span>
+                    </dd>
+                  </div>
+                </dl>
+                <StatList rows={rows} label="Certificate details" />
+              </div>
+            ) : <EmptyState>Paste a PEM certificate to inspect its subject, issuer and validity.</EmptyState>}
+          </Panel>
+        </ToolLayout>
+      );
+    }
+
+    // 4. Ports Reference
+    if (toolId === "port-reference") {
+      const ports = searchPorts(portQuery)
+        .filter((port) => selectedPortCategory === "All" || port.category === selectedPortCategory)
+        .map((port) => ({
+          key: `${port.port}-${port.service}`,
+          cells: [
+            <strong key="port">{port.port}</strong>,
+            port.protocol,
+            port.service,
+            <span key="category" className={`${styles.badge} ${styles.badgeInfo}`}>{port.category}</span>,
+            port.description,
+          ],
+        }));
+      return (
+        <ToolLayout kind="data" className={styles.layout}>
+          <Panel title="Common Ports Directory" padded>
+            <div className={styles.form}>
+              <Field id="port-filter" label="Search by Port, Service or Description">
+                <TextInput
+                  id="port-filter"
+                  type="text"
+                  value={portQuery}
+                  onChange={(event) => setPortQuery(event.target.value)}
+                  placeholder="e.g. 443, postgres, ssh, web..."
+                  spellCheck={false}
+                  autoComplete="off"
+                />
+              </Field>
+              <div className={styles.chips} role="group" aria-label="Port category">
+                {PORT_CATEGORIES.map((category) => (
+                  <Button
+                    key={category}
+                    size="sm"
+                    variant={selectedPortCategory === category ? "primary" : undefined}
+                    aria-pressed={selectedPortCategory === category}
+                    onClick={() => setSelectedPortCategory(category)}
+                  >
+                    {category}
+                  </Button>
+                ))}
+              </div>
+              <DataTable
+                caption="Common ports directory"
+                columns={["Port", "Protocol", "Service", "Category", "Description"]}
+                rows={ports.map((port) => port.cells)}
+                empty="No ports match this search."
               />
             </div>
-          </div>
+          </Panel>
+        </ToolLayout>
+      );
+    }
 
-          <div className={styles.chipGroup}>
-            {["All", "Web", "Database", "Mail", "Remote Access", "Network & Infrastructure", "Dev & Cloud"].map((cat) => (
-              <button
-                key={cat}
-                type="button"
-                className={`${styles.chip} ${selectedPortCategory === cat ? styles.chipActive : ""}`}
-                onClick={() => setSelectedPortCategory(cat)}
-              >
-                {cat}
-              </button>
-            ))}
-          </div>
-
-          <div className={styles.tableWrapper}>
-            <table className={styles.table}>
-              <thead>
-                <tr>
-                  <th>Port</th>
-                  <th>Protocol</th>
-                  <th>Service</th>
-                  <th>Category</th>
-                  <th>Description</th>
-                </tr>
-              </thead>
-              <tbody>
-                {searchPorts(portQuery)
-                  .filter((p) => selectedPortCategory === "All" || p.category === selectedPortCategory)
-                  .map((p) => (
-                    <tr key={`${p.port}-${p.service}`}>
-                      <td><strong>{p.port}</strong></td>
-                      <td>{p.protocol}</td>
-                      <td>{p.service}</td>
-                      <td><span className={`${styles.badge} ${styles.badgeInfo}`}>{p.category}</span></td>
-                      <td>{p.description}</td>
-                    </tr>
-                  ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {/* 5. .gitignore Generator */}
-      {toolId === "gitignore-generator" && (
-        <div className={styles.panel}>
-          <div className={styles.headingRow}>
-            <span className={styles.panelTitle}>Presets Selection</span>
-            <div className={styles.buttonBar}>
-              <button
-                type="button"
-                className={styles.actionButton}
-                onClick={() => copyText(generateGitignore(selectedPresets), "gitignore")}
-              >
-                {copied === "gitignore" ? "✓ Copied" : "Copy .gitignore"}
-              </button>
-              <button
-                type="button"
-                className={styles.actionButton}
-                onClick={() => downloadText(generateGitignore(selectedPresets), ".gitignore")}
-              >
-                Download .gitignore
-              </button>
-            </div>
-          </div>
-
-          <div className={styles.chipGroup}>
-            {Object.keys(GITIGNORE_PRESETS).map((preset) => {
-              const active = selectedPresets.includes(preset);
-              return (
-                <button
-                  key={preset}
-                  type="button"
-                  className={`${styles.chip} ${active ? styles.chipActive : ""}`}
-                  onClick={() => {
-                    setSelectedPresets((prev) =>
-                      active ? prev.filter((p) => p !== preset) : [...prev, preset]
-                    );
-                  }}
-                >
-                  {preset} {active ? "✓" : "+"}
-                </button>
-              );
-            })}
-          </div>
-
-          <pre className={styles.codeBox} aria-label="Generated .gitignore">
-            <code>{generateGitignore(selectedPresets) || "# Select presets above to generate .gitignore"}</code>
-          </pre>
-        </div>
-      )}
-
-      {/* 6. Dockerfile Generator */}
-      {toolId === "dockerfile-generator" && (
-        <div className={styles.panel}>
-          <div className={styles.headingRow}>
-            <span className={styles.panelTitle}>Dockerfile Builder</span>
-            <div className={styles.buttonBar}>
-              <button
-                type="button"
-                className={styles.actionButton}
-                onClick={() =>
-                  copyText(
-                    generateDockerfile({
-                      language: dockerLang,
-                      version: dockerVersion,
-                      port: dockerPort,
-                      multiStage,
-                      nonRoot,
-                    }),
-                    "dockerfile"
-                  )
-                }
-              >
-                {copied === "dockerfile" ? "✓ Copied" : "Copy Dockerfile"}
-              </button>
-              <button
-                type="button"
-                className={styles.actionButton}
-                onClick={() =>
-                  downloadText(
-                    generateDockerfile({
-                      language: dockerLang,
-                      version: dockerVersion,
-                      port: dockerPort,
-                      multiStage,
-                      nonRoot,
-                    }),
-                    "Dockerfile"
-                  )
-                }
-              >
-                Download Dockerfile
-              </button>
-            </div>
-          </div>
-
-          <div className={styles.formGrid}>
-            <div className={styles.field}>
-              <label>Runtime / Language</label>
-              <select
-                className={styles.input}
-                value={dockerLang}
-                onChange={(e) => setDockerLang(e.target.value as any)}
-              >
-                <option value="node">Node.js</option>
-                <option value="python">Python</option>
-                <option value="go">Go (Golang)</option>
-                <option value="rust">Rust</option>
-                <option value="nginx">Static Nginx</option>
-              </select>
-            </div>
-            <div className={styles.field}>
-              <label>Base Version Tag</label>
-              <input
-                type="text"
-                className={styles.input}
-                value={dockerVersion}
-                onChange={(e) => setDockerVersion(e.target.value)}
-              />
-            </div>
-            <div className={styles.field}>
-              <label>Exposed Port</label>
-              <input
-                type="number"
-                className={styles.input}
-                value={dockerPort}
-                onChange={(e) => setDockerPort(parseInt(e.target.value, 10) || 3000)}
-              />
-            </div>
-          </div>
-
-          <div className={styles.chipGroup}>
-            <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.85rem", cursor: "pointer" }}>
-              <input
-                type="checkbox"
-                checked={multiStage}
-                onChange={(e) => setMultiStage(e.target.checked)}
-              />
-              Multi-Stage Build (Production Optimizations)
-            </label>
-            <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.85rem", cursor: "pointer", marginLeft: "1rem" }}>
-              <input
-                type="checkbox"
-                checked={nonRoot}
-                onChange={(e) => setNonRoot(e.target.checked)}
-              />
-              Non-Root Security User
-            </label>
-          </div>
-
-          <pre className={styles.codeBox} aria-label="Generated Dockerfile">
-            <code>
-              {generateDockerfile({
-                language: dockerLang,
-                version: dockerVersion,
-                port: dockerPort,
-                multiStage,
-                nonRoot,
+    // 5. .gitignore Generator
+    if (toolId === "gitignore-generator") {
+      const generated = generateGitignore(selectedPresets);
+      return (
+        <ToolLayout kind="form" className={styles.layout}>
+          <Panel title="Presets Selection" padded>
+            <div className={styles.chips} role="group" aria-label="Preset selection">
+              {Object.keys(GITIGNORE_PRESETS).map((preset) => {
+                const active = selectedPresets.includes(preset);
+                return (
+                  <Button
+                    key={preset}
+                    size="sm"
+                    variant={active ? "primary" : undefined}
+                    aria-pressed={active}
+                    onClick={() => {
+                      setSelectedPresets((previous) =>
+                        active ? previous.filter((item) => item !== preset) : [...previous, preset]
+                      );
+                    }}
+                  >
+                    {preset} {active ? "✓" : "+"}
+                  </Button>
+                );
               })}
-            </code>
-          </pre>
-        </div>
-      )}
-
-      {/* 7. Docker Run to Compose */}
-      {toolId === "docker-run-to-compose" && (
-        <div className={styles.panel}>
-          <div className={styles.headingRow}>
-            <span className={styles.panelTitle}>Docker Run to Compose</span>
-            <div className={styles.buttonBar}>
-              <button
-                type="button"
-                className={styles.actionButton}
-                onClick={() => copyText(dockerRunOutput, "compose")}
-                disabled={!dockerRunOutput}
-              >
-                {copied === "compose" ? "✓ Copied" : "Copy Compose"}
-              </button>
-              <button
-                type="button"
-                className={styles.actionButton}
-                onClick={() => downloadText(dockerRunOutput, "docker-compose.yml")}
-                disabled={!dockerRunOutput}
-              >
-                Download docker-compose.yml
-              </button>
             </div>
-          </div>
-
-          <div className={styles.field}>
-            <label htmlFor="docker-run-input">Docker Run Command</label>
-            <textarea
-              id="docker-run-input"
-              className={styles.textarea}
-              value={input}
-              onChange={(e) => handleDockerRunChange(e.target.value)}
-              placeholder="e.g. docker run -d --name web -p 8080:80 nginx:alpine"
-            />
-          </div>
-
-          {error && <div className={styles.errorBanner}>{error}</div>}
-
-          {dockerRunOutput && (
-            <pre className={styles.codeBox} aria-label="Generated Compose YAML">
-              <code>{dockerRunOutput}</code>
+          </Panel>
+          <Panel
+            title="Generated .gitignore"
+            padded
+            actions={<>
+              <Button size="sm" onClick={() => copyText(generated, "gitignore")}>
+                {copied === "gitignore" ? "✓ Copied" : "Copy .gitignore"}
+              </Button>
+              <Button size="sm" onClick={() => downloadText(generated, ".gitignore")}>Download .gitignore</Button>
+            </>}
+          >
+            <pre tabIndex={0} className={ui.output} aria-label="Generated .gitignore">
+              <code>{generated || "# Select presets above to generate .gitignore"}</code>
             </pre>
-          )}
-        </div>
-      )}
+          </Panel>
+        </ToolLayout>
+      );
+    }
 
-      {/* 8. SemVer Calculator */}
-      {toolId === "semver-calculator" && (
-        <div className={styles.panel}>
-          <div className={styles.headingRow}>
-            <span className={styles.panelTitle}>SemVer Inspector &amp; Comparator</span>
-          </div>
+    // 6. Dockerfile Generator
+    if (toolId === "dockerfile-generator") {
+      const generated = generateDockerfile({
+        language: dockerLang,
+        version: dockerVersion,
+        port: dockerPort,
+        multiStage,
+        nonRoot,
+      });
+      return (
+        <ToolLayout kind="form" className={styles.layout}>
+          <Panel title="Dockerfile Builder" padded>
+            <div className={styles.form}>
+              <Field id="docker-lang" label="Runtime / Language">
+                <Select
+                  id="docker-lang"
+                  value={dockerLang}
+                  onChange={(event) => setDockerLang(event.target.value as typeof dockerLang)}
+                >
+                  {DOCKER_LANGUAGES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                </Select>
+              </Field>
+              <Field id="docker-version" label="Base Version Tag">
+                <TextInput
+                  id="docker-version"
+                  type="text"
+                  value={dockerVersion}
+                  onChange={(event) => setDockerVersion(event.target.value)}
+                  spellCheck={false}
+                  autoComplete="off"
+                />
+              </Field>
+              <Field id="docker-port" label="Exposed Port">
+                <TextInput
+                  id="docker-port"
+                  type="number"
+                  value={dockerPort}
+                  onChange={(event) => setDockerPort(parseInt(event.target.value, 10) || 3000)}
+                />
+              </Field>
+              <div className={styles.options}>
+                <Checkbox
+                  id="docker-multistage"
+                  label="Multi-Stage Build (Production Optimizations)"
+                  checked={multiStage}
+                  onChange={(event) => setMultiStage(event.target.checked)}
+                />
+                <Checkbox
+                  id="docker-nonroot"
+                  label="Non-Root Security User"
+                  checked={nonRoot}
+                  onChange={(event) => setNonRoot(event.target.checked)}
+                />
+              </div>
+            </div>
+          </Panel>
+          <Panel
+            title="Generated Dockerfile"
+            padded
+            actions={<>
+              <Button size="sm" onClick={() => copyText(generated, "dockerfile")}>
+                {copied === "dockerfile" ? "✓ Copied" : "Copy Dockerfile"}
+              </Button>
+              <Button size="sm" onClick={() => downloadText(generated, "Dockerfile")}>Download Dockerfile</Button>
+            </>}
+          >
+            <pre tabIndex={0} className={ui.output} aria-label="Generated Dockerfile">
+              <code>{generated}</code>
+            </pre>
+          </Panel>
+        </ToolLayout>
+      );
+    }
 
-          <div className={styles.formGrid}>
-            <div className={styles.field}>
-              <label htmlFor="semver-v1">Version 1 (Target)</label>
-              <input
+    // 7. Docker Run to Compose
+    if (toolId === "docker-run-to-compose") {
+      return (
+        <ToolLayout kind="form" className={styles.layout}>
+          <Panel title="Docker Run to Compose" padded>
+            <div className={styles.form}>
+              <Field id="docker-run-input" label="Docker Run Command">
+                <Textarea
+                  id="docker-run-input"
+                  className={ui.mono}
+                  value={input}
+                  onChange={(event) => handleDockerRunChange(event.target.value)}
+                  placeholder="e.g. docker run -d --name web -p 8080:80 nginx:alpine"
+                  spellCheck={false}
+                  autoComplete="off"
+                />
+              </Field>
+              {error && <Callout kind="error" className={styles.alert}>{error}</Callout>}
+            </div>
+          </Panel>
+          <Panel
+            title="Generated Compose YAML"
+            padded
+            actions={<>
+              <Button size="sm" onClick={() => copyText(dockerRunOutput, "compose")} disabled={!dockerRunOutput}>
+                {copied === "compose" ? "✓ Copied" : "Copy Compose"}
+              </Button>
+              <Button size="sm" onClick={() => downloadText(dockerRunOutput, "docker-compose.yml")} disabled={!dockerRunOutput}>
+                Download docker-compose.yml
+              </Button>
+            </>}
+          >
+            {dockerRunOutput
+              ? <pre tabIndex={0} className={ui.output} aria-label="Generated Compose YAML">
+                <code>{dockerRunOutput}</code>
+              </pre>
+              : <EmptyState>Paste a docker run command to generate a docker-compose.yml file.</EmptyState>}
+          </Panel>
+        </ToolLayout>
+      );
+    }
+
+    // 8. SemVer Calculator
+    let rows: Row[] = [];
+    let semverError = "";
+    try {
+      const parsed = parseSemver(v1);
+      rows = [
+        ["Major.Minor.Patch", `${parsed.major}.${parsed.minor}.${parsed.patch}`],
+        ["Next Patch (+0.0.1)", parsed.nextPatch],
+        ["Next Minor (+0.1.0)", parsed.nextMinor],
+        ["Next Major (+1.0.0)", parsed.nextMajor],
+      ];
+      if (v2.trim()) {
+        const comparison = compareSemver(v1, v2);
+        rows.push(["Version Comparison", comparison === 0
+          ? `${v1} is equal to ${v2}`
+          : comparison > 0
+            ? `${v1} is greater than (newer than) ${v2}`
+            : `${v1} is less than (older than) ${v2}`]);
+      }
+    } catch (err) {
+      semverError = (err as Error).message;
+    }
+    return (
+      <ToolLayout kind="form" className={styles.layout}>
+        <Panel title="SemVer Inspector & Comparator" padded>
+          <div className={styles.form}>
+            <Field id="semver-v1" label="Version 1 (Target)">
+              <TextInput
                 id="semver-v1"
                 type="text"
-                className={styles.input}
                 value={v1}
-                onChange={(e) => setV1(e.target.value)}
+                onChange={(event) => setV1(event.target.value)}
                 placeholder="e.g. 1.2.3"
+                spellCheck={false}
+                autoComplete="off"
               />
-            </div>
-            <div className={styles.field}>
-              <label htmlFor="semver-v2">Version 2 (Comparison)</label>
-              <input
+            </Field>
+            <Field id="semver-v2" label="Version 2 (Comparison)">
+              <TextInput
                 id="semver-v2"
                 type="text"
-                className={styles.input}
                 value={v2}
-                onChange={(e) => setV2(e.target.value)}
+                onChange={(event) => setV2(event.target.value)}
                 placeholder="e.g. 2.0.0"
+                spellCheck={false}
+                autoComplete="off"
               />
-            </div>
+            </Field>
           </div>
+        </Panel>
+        <Panel title="Version Details" padded>
+          {semverError
+            ? <Callout kind="error">{semverError}</Callout>
+            : (
+              <dl className={styles.stats} aria-label="SemVer details">
+                {rows.map(([term, value]) => (
+                  <div className={term === "Version Comparison" ? `${styles.stat} ${styles.wide}` : styles.stat} key={term}>
+                    <dt className={styles.statLabel}>{term}</dt>
+                    <dd className={`${ui.mono} ${styles.statValue}`}>{value}</dd>
+                  </div>
+                ))}
+              </dl>
+            )}
+        </Panel>
+      </ToolLayout>
+    );
+  })();
 
-          {(() => {
-            try {
-              const p1 = parseSemver(v1);
-              let cmpText = "";
-              if (v2.trim()) {
-                const cmp = compareSemver(v1, v2);
-                if (cmp === 0) cmpText = `${v1} is equal to ${v2}`;
-                else if (cmp > 0) cmpText = `${v1} is greater than (newer than) ${v2}`;
-                else cmpText = `${v1} is less than (older than) ${v2}`;
-              }
-
-              return (
-                <div className={styles.resultsGrid}>
-                  <div className={styles.statCard}>
-                    <span className={styles.statLabel}>Major.Minor.Patch</span>
-                    <span className={styles.statValue}>
-                      {p1.major}.{p1.minor}.{p1.patch}
-                    </span>
-                  </div>
-                  <div className={styles.statCard}>
-                    <span className={styles.statLabel}>Next Patch (+0.0.1)</span>
-                    <span className={styles.statValue}>{p1.nextPatch}</span>
-                  </div>
-                  <div className={styles.statCard}>
-                    <span className={styles.statLabel}>Next Minor (+0.1.0)</span>
-                    <span className={styles.statValue}>{p1.nextMinor}</span>
-                  </div>
-                  <div className={styles.statCard}>
-                    <span className={styles.statLabel}>Next Major (+1.0.0)</span>
-                    <span className={styles.statValue}>{p1.nextMajor}</span>
-                  </div>
-                  {cmpText && (
-                    <div className={styles.statCard} style={{ gridColumn: "1 / -1" }}>
-                      <span className={styles.statLabel}>Version Comparison</span>
-                      <span className={styles.statValue}>{cmpText}</span>
-                    </div>
-                  )}
-                </div>
-              );
-            } catch (err) {
-              return <div className={styles.errorBanner}>{(err as Error).message}</div>;
-            }
-          })()}
-        </div>
-      )}
+  return (
+    <div className={styles.station}>
+      {station}
+      <StatusLine className={styles.status}>{copied ? "Copied to clipboard." : ""}</StatusLine>
     </div>
   );
 }

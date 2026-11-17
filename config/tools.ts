@@ -11,6 +11,7 @@ import { sqlTools, type SqlToolContract, type SqlToolId } from "./sql-tools";
 import { webTools, type WebToolContract, type WebToolId } from "./web-tools";
 import { apiTools, type ApiToolContract, type ApiToolId } from "./api-tools";
 import { imageTools, type ImageToolId } from "./image-tools";
+import { videoTools, isVideoToolId, type VideoToolId } from "./video-tools";
 import type { LocalContract } from "./local-contract";
 import { spreadsheetTools, type SpreadsheetToolId } from "./spreadsheet-tools";
 import { markdownTools, type MarkdownToolId } from "./markdown-tools";
@@ -28,10 +29,17 @@ import { compressionTools, type CompressionToolId } from "./compression-tools";
 import { cryptoPkiTools, isCryptoPkiToolId, type CryptoPkiToolId } from "./crypto-pki-tools";
 import { aiPromptsTools, isAiPromptsToolId, type AiPromptsToolId } from "./ai-prompts-tools";
 import { policyTools, isPolicyToolId, type PolicyToolId } from "./policy-tools";
+import { gitTools, isGitToolId, type GitToolId } from "./git-tools";
+import { financeTools, isFinanceToolId, type FinanceToolId } from "./finance-tools";
+import { productivityTools, isProductivityToolId, type ProductivityToolId } from "./productivity-tools";
 
 export { isCryptoPkiToolId, type CryptoPkiToolId } from "./crypto-pki-tools";
 export { isAiPromptsToolId, type AiPromptsToolId } from "./ai-prompts-tools";
 export { isPolicyToolId, type PolicyToolId } from "./policy-tools";
+export { isGitToolId, type GitToolId } from "./git-tools";
+export { isFinanceToolId, type FinanceToolId } from "./finance-tools";
+export { isProductivityToolId, type ProductivityToolId } from "./productivity-tools";
+export { isVideoToolId, type VideoToolId } from "./video-tools";
 
 /** Includes the legacy catalog plus typed station metadata; no browser code. */
 export type RegisteredToolId =
@@ -47,6 +55,7 @@ export type RegisteredToolId =
   | WebToolId
   | ApiToolId
   | ImageToolId
+  | VideoToolId
   | SpreadsheetToolId
   | MarkdownToolId
   | ColorToolId
@@ -62,7 +71,10 @@ export type RegisteredToolId =
   | CompressionToolId
   | CryptoPkiToolId
   | AiPromptsToolId
-  | PolicyToolId;
+  | PolicyToolId
+  | GitToolId
+  | FinanceToolId
+  | ProductivityToolId;
 export type ToolDefinition = { id: RegisteredToolId; slug: string; name: string; description: string; category: string; keywords: readonly string[]; featured?: boolean; pairId?: string; direction?: "forward" | "reverse"; pairedTool?: RegisteredToolId; inputFormat?: string; outputFormat?: string; inputType?: string; outputType?: string; dataContract?: DataToolContract; encodingContract?: EncodingToolContract; securityContract?: SecurityToolContract; regexContract?: RegexToolContract; dateTimeContract?: DateTimeToolContract; textContract?: TextToolContract; cronContract?: CronToolContract; sqlContract?: SqlToolContract; webContract?: WebToolContract; apiContract?: ApiToolContract; localContract?: LocalContract; relatedTools?: readonly string[]; seo?: { title?: string; description?: string }; };
 
 export const tools: ToolDefinition[] = [
@@ -77,6 +89,7 @@ export const tools: ToolDefinition[] = [
   ...webTools,
   ...apiTools,
   ...imageTools.filter(tool => tool.id !== "favicon-generator"),
+  ...(videoTools as unknown as ToolDefinition[]),
   ...spreadsheetTools,
   ...markdownTools,
   ...colorTools,
@@ -93,6 +106,9 @@ export const tools: ToolDefinition[] = [
   ...(cryptoPkiTools as unknown as ToolDefinition[]),
   ...(aiPromptsTools as unknown as ToolDefinition[]),
   ...(policyTools as unknown as ToolDefinition[]),
+  ...(gitTools as unknown as ToolDefinition[]),
+  ...(financeTools as unknown as ToolDefinition[]),
+  ...(productivityTools as unknown as ToolDefinition[]),
 ];
 
 export function getTool(slug: string) { return tools.find((tool) => tool.slug === slug); }
