@@ -16,6 +16,7 @@ import { cx } from "./ui/cx";
 import { StatusLine } from "./ui/StatusLine";
 import { ToolLayout } from "./ui/ToolLayout";
 import { useCopy } from "./ui/useCopy";
+import { useToolPermalink } from "./useToolPermalink";
 import ui from "./ui/ui.module.css";
 import styles from "./JsonDataStation.module.css";
 import { capabilityForRoute, capabilitiesFor } from "@/config/conversion-capabilities";
@@ -82,7 +83,66 @@ function Station({ definition }: { definition: JsonDataDefinition }) {
     setError(null);
     setNotice("");
     setActionError("");
+    clearLinkFeedback();
   }
+
+  async function executeWithInputs(targetInputs: DataInputs) {
+    const missing = contract.fields.filter((field) => field.required && !targetInputs[field.name]?.length);
+    if (missing.length) {
+      setError({ message: `Enter ${missing.map((field) => field.label.toLowerCase()).join(" and ")}.`, fields: missing.map((field) => field.name) });
+      document.getElementById(`${scope}-${missing[0].name}`)?.focus();
+      return;
+    }
+    const currentRevision = revision.current;
+    setBusy(true);
+    try {
+      const { runDataToolClient } = await import("@/lib/tools/json-data/client");
+      if (currentRevision !== revision.current) return;
+      processing.current = new AbortController();
+      const next = await runDataToolClient(definition.slug, { ...targetInputs }, processing.current.signal);
+      if (currentRevision !== revision.current) return;
+      setResult(next);
+      setNotice(next.invalid ? "Validation found errors. Review the result." : "Result ready.");
+    } catch (cause) {
+      if (currentRevision !== revision.current) return;
+      const field = cause && typeof cause === "object" && "field" in cause && typeof cause.field === "string" ? cause.field : undefined;
+      setError({
+        message: cause instanceof Error ? cause.message : "Could not process this input. Check the format and try again.",
+        fields: field && contract.fields.some((item) => item.name === field) ? [field] : contract.fields.map((item) => item.name),
+      });
+    } finally {
+      if (currentRevision === revision.current) setBusy(false);
+    }
+  }
+
+  const { copyLink, copiedLink, linkNotice, linkError, clearLinkFeedback } = useToolPermalink({
+    getState: () => {
+      const controls: Record<string, unknown> = {};
+      for (const [key, val] of Object.entries(inputs)) {
+        if (key !== "input") controls[key] = val;
+      }
+      return { input: inputs.input ?? "", controls };
+    },
+    getOutputText: () => result?.text ?? null,
+    onHydrate: (state) => {
+      const nextInputs: DataInputs = { ...defaults(definition) };
+      if (state.controls) {
+        for (const field of contract.fields) {
+          const val = state.controls[field.name];
+          if (typeof val === "string") nextInputs[field.name] = val;
+        }
+      }
+      if (typeof state.input === "string") {
+        nextInputs.input = state.input;
+      }
+      invalidate();
+      setInputs(nextInputs);
+      if (converterSource && nextInputs.input) {
+        session.set({ family: "json-data", format: converterSource, value: nextInputs.input });
+      }
+      void executeWithInputs(nextInputs);
+    },
+  });
 
   function edit(name: string, value: string) {
     invalidate();
@@ -112,32 +172,7 @@ function Station({ definition }: { definition: JsonDataDefinition }) {
     event.preventDefault();
     if (busy) return;
     invalidate();
-    const missing = contract.fields.filter((field) => field.required && !inputs[field.name]?.length);
-    if (missing.length) {
-      setError({ message: `Enter ${missing.map((field) => field.label.toLowerCase()).join(" and ")}.`, fields: missing.map((field) => field.name) });
-      document.getElementById(`${scope}-${missing[0].name}`)?.focus();
-      return;
-    }
-    const currentRevision = revision.current;
-    setBusy(true);
-    try {
-      const { runDataToolClient } = await import("@/lib/tools/json-data/client");
-      if (currentRevision !== revision.current) return;
-      processing.current = new AbortController();
-      const next = await runDataToolClient(definition.slug, { ...inputs }, processing.current.signal);
-      if (currentRevision !== revision.current) return;
-      setResult(next);
-      setNotice(next.invalid ? "Validation found errors. Review the result." : "Result ready.");
-    } catch (cause) {
-      if (currentRevision !== revision.current) return;
-      const field = cause && typeof cause === "object" && "field" in cause && typeof cause.field === "string" ? cause.field : undefined;
-      setError({
-        message: cause instanceof Error ? cause.message : "Could not process this input. Check the format and try again.",
-        fields: field && contract.fields.some((item) => item.name === field) ? [field] : contract.fields.map((item) => item.name),
-      });
-    } finally {
-      if (currentRevision === revision.current) setBusy(false);
-    }
+    await executeWithInputs(inputs);
   }
 
   async function copy() {
@@ -224,7 +259,9 @@ function Station({ definition }: { definition: JsonDataDefinition }) {
             <Button type="submit" variant="primary" disabled={busy} aria-busy={busy}>{busy ? "Processing…" : contract.action}</Button>
             <Button onClick={example}>Load example</Button>
             <Button onClick={clear}>Clear</Button>
+            <Button onClick={() => void copyLink()}>{copiedLink ? "Link copied" : "Copy Link"}</Button>
           </div>
+          {linkError && <Callout kind="error" className={styles.alert}>{linkError}</Callout>}
         </form>
       </Panel>
       <Panel
@@ -245,7 +282,7 @@ function Station({ definition }: { definition: JsonDataDefinition }) {
         {actionError && <Callout kind="error" className={styles.alert}>{actionError}</Callout>}
       </Panel>
     </ToolLayout>
-    <StatusLine>{notice}</StatusLine>
+    <StatusLine>{linkNotice || notice}</StatusLine>
     <PrivacyNote>Processed in your browser. Inputs stay in this page’s memory and are not uploaded or saved.</PrivacyNote>
     {contract.notes.length > 0 && <ul className={styles.notes}>{contract.notes.map((note) => <li key={note} className={ui.hint}>{note}</li>)}</ul>}
   </div>;

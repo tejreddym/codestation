@@ -17,15 +17,22 @@ for (const [location, record] of Object.entries(lock.packages ?? {})) {
   entries.push({ name: packageJson.name ?? location.slice("node_modules/".length), version: packageJson.version ?? record.version ?? "unknown", label: packageJson.license ?? record.license ?? "unspecified", text: licenseFile ? normalizeNotice(fs.readFileSync(path.join(packageDir, licenseFile), "utf8")) : undefined, file: licenseFile });
 }
 entries.sort((a, b) => `${a.name}@${a.version}`.localeCompare(`${b.name}@${b.version}`));
-const lines = ["# Third-Party Notices", "", "Generated from the production dependency closure in `package-lock.json` and installed package license files. Run `node scripts/generate-third-party-notices.mjs` after dependency changes.", "", "License labels are metadata; where an exact license file was not found, the entry is explicitly unresolved and requires owner review.", ""];
+const lines = ["# Third-Party Notices", "", "Generated at build time from the production dependency closure in `package-lock.json` and installed package license files. Run `npm run generate:notices` to regenerate locally.", "", "License labels are metadata; where an exact license file was not found, the entry is explicitly unresolved and requires owner review.", ""];
 for (const entry of entries) {
   lines.push(`## ${entry.name} ${entry.version}`, "", `Declared license: ${entry.label}`);
   if (entry.text) lines.push(`Source file: ${entry.file}`, "", "```text", entry.text, "```");
   else lines.push("", "**UNRESOLVED: no license text file was found in the installed package.**");
   lines.push("");
 }
-lines.push("## Project and asset gaps", "", "No root project license was found. The provenance and license of the illustrated theme toggle have not been verified. These are owner decisions, not inferred permissions.", "");
+const hasRootLicense = fs.existsSync(path.join(root, "LICENSE"));
+lines.push(
+  "## Project and asset notes",
+  "",
+  hasRootLicense
+    ? "Repository source code is licensed under the root `LICENSE` file (MIT). The provenance and license of the illustrated theme toggle have not been independently verified in third-party notice metadata."
+    : "No root project license was found. The provenance and license of the illustrated theme toggle have not been verified. These are owner decisions, not inferred permissions.",
+  ""
+);
 const output = `${lines.join("\n").replace(/\n+$/, "")}\n`;
-fs.writeFileSync(path.join(root, "THIRD_PARTY_NOTICES.md"), output);
 fs.mkdirSync(path.join(root, "public"), { recursive: true });
 fs.writeFileSync(path.join(root, "public", "THIRD_PARTY_NOTICES.md"), output);

@@ -440,7 +440,6 @@ describe("E2E Contract: Feature 2 - ToolEngine Interface", () => {
     const rawThrowEngine: ToolEngine = {
       validate: () => createValidationSuccess(),
       process: async () => {
-        // eslint-disable-next-line no-throw-literal
         throw "Unexpected string rejection";
       },
     };

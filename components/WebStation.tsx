@@ -71,14 +71,15 @@ function Station({ definition }: { definition: Definition }) {
   useToolHandoff(definition.slug, text => change(definition.slug === "url-parser" ? "url" : "input", text));
 
   useEffect(() => {
+    const urls = downloadUrls.current;
     mounted.current = true;
     return () => {
       mounted.current = false;
       revision.current += 1;
       file.current = null;
       releaseImage();
-      for (const url of downloadUrls.current) URL.revokeObjectURL(url);
-      downloadUrls.current.clear();
+      for (const url of urls) URL.revokeObjectURL(url);
+      urls.clear();
     };
   }, []);
 
@@ -235,6 +236,7 @@ function Station({ definition }: { definition: Definition }) {
         </div>}</div>
         {result || image ? <div className={styles.result}>
           {!!result?.warnings?.length && <div className={styles.warning} role="alert"><strong>Review before use</strong>{result.warnings.map((warning, index) => <p key={index}>{warning}</p>)}</div>}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           {image ? <figure className={styles.favicon}><img src={image.url} width={image.width} height={image.height} alt={`Generated ${image.width} by ${image.height} PNG favicon`} /><figcaption>{image.width} × {image.height} PNG · {image.blob.size} bytes</figcaption></figure>
             : result?.preview ? <article className={styles.preview} aria-label="Local Open Graph preview">
               <div className={styles.imagePlaceholder}><strong>Image placeholder</strong><p>Remote image loading is blocked by local privacy: no image request is sent.</p><span>{result.preview.imageUrl || "No image URL entered."}</span></div>

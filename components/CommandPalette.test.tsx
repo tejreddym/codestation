@@ -2,6 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import CommandPalette from "./CommandPalette";
+import { registerActiveToolBridge } from "@/lib/engine/tool-actions-bridge";
 
 const { pushMock } = vi.hoisted(() => ({ pushMock: vi.fn() }));
 
@@ -206,5 +207,94 @@ describe("CommandPalette", () => {
 
     fetchSpy.mockRestore();
     setItemSpy.mockRestore();
+  });
+
+  it("shows quick actions, toggles theme, and executes Copy current output / Copy share link", async () => {
+    const clipboardSpy = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText: clipboardSpy },
+    });
+
+    const unregister = registerActiveToolBridge({
+      getOutputText: () => '{"formatted":true}',
+      getShareUrl: async () => ({
+        ok: true,
+        url: "https://codestation.in/tools/json-formatter#state=p.eyJ2IjoxfQ",
+        hash: "#state=p.eyJ2IjoxfQ",
+      }),
+    });
+
+    try {
+      document.documentElement.dataset.theme = "light";
+      render(<CommandPalette />);
+
+      await openWithKeyboard();
+      expect(screen.getByRole("group", { name: "Quick actions" })).toBeDefined();
+      expect(screen.getByRole("option", { name: /Toggle theme/i })).toBeDefined();
+
+      fireEvent.click(screen.getByRole("option", { name: /Toggle theme/i }));
+      expect(document.documentElement.dataset.theme).toBe("dark");
+
+      await openWithKeyboard();
+      fireEvent.click(screen.getByRole("option", { name: /Copy current output/i }));
+      expect(clipboardSpy).toHaveBeenCalledWith('{"formatted":true}');
+
+      await openWithKeyboard();
+      fireEvent.click(screen.getByRole("option", { name: /Copy share link/i }));
+      await waitFor(() => {
+        expect(clipboardSpy).toHaveBeenCalledWith(
+          "https://codestation.in/tools/json-formatter#state=p.eyJ2IjoxfQ"
+        );
+      });
+    } finally {
+      unregister();
+      document.documentElement.removeAttribute("data-theme");
+    }
+  });
+
+  it("records activated tools and surfaces Recent tools from localStorage on reopen", async () => {
+    render(<CommandPalette />);
+    await openWithKeyboard();
+
+    fireEvent.change(screen.getByRole("combobox"), { target: { value: "base64 encoder" } });
+    fireEvent.click(screen.getByRole("option", { name: /Base64 Encoder/i }));
+    expect(pushMock).toHaveBeenCalledWith("/tools/base64-encoder");
+
+    await openWithKeyboard();
+    const recentGroup = await screen.findByRole("group", { name: "Recent tools" });
+    expect(recentGroup.textContent).toContain("Base64 Encoder");
+  });
+
+  it("opens keyboard shortcuts cheat-sheet with ? and ignores editable inputs", async () => {
+    const { container } = render(
+      <div>
+        <input aria-label="Editor field" />
+        <textarea aria-label="Editor area" />
+        <div contentEditable suppressContentEditableWarning data-testid="ce-box" />
+        <CommandPalette />
+      </div>
+    );
+
+    const input = screen.getByLabelText("Editor field");
+    const textarea = screen.getByLabelText("Editor area");
+    const editable = container.querySelector("[data-testid='ce-box']") as HTMLElement;
+
+    fireEvent.keyDown(input, { key: "?" });
+    expect(screen.queryByRole("dialog", { name: /Keyboard shortcuts/i })).toBeNull();
+
+    fireEvent.keyDown(textarea, { key: "?" });
+    expect(screen.queryByRole("dialog", { name: /Keyboard shortcuts/i })).toBeNull();
+
+    fireEvent.keyDown(editable, { key: "?" });
+    expect(screen.queryByRole("dialog", { name: /Keyboard shortcuts/i })).toBeNull();
+
+    fireEvent.keyDown(window, { key: "?" });
+    const modal = await screen.findByRole("dialog", { name: /Keyboard shortcuts/i });
+    expect(modal.getAttribute("aria-modal")).toBe("true");
+    expect(modal.textContent).toContain("Command palette");
+
+    fireEvent.keyDown(window, { key: "Escape" });
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: /Keyboard shortcuts/i })).toBeNull());
   });
 });

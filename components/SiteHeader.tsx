@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import ToolLauncher from "./ToolLauncher";
 import CommandPalette from "./CommandPalette";
+import PwaInstallPrompt from "./PwaInstallPrompt";
 import ThemeToggle from "./ThemeToggle";
 import StationMark from "./StationMark";
 
@@ -23,6 +24,7 @@ export default function SiteHeader() {
     </nav>
     <CommandPalette />
     <ToolLauncher />
+    <PwaInstallPrompt />
     <ThemeToggle />
   </div></header>;
 }

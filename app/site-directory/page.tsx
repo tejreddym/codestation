@@ -13,7 +13,7 @@ export default function SiteDirectoryPage() {
     <InformationalPage title="Site Directory" intro="Browse the public information pages, implemented stations, and canonical tool routes.">
       <h2>Information</h2>
       <ul className={informationalStyles.directory}>
-        {[["Workbench", "/workbench"], ["Workflows", "/workflows"], ["Batch Images", "/batch-images"], ["Settings", "/settings"], ["Feedback", "/feedback"], ["Offline Tools", "/offline"], ["About", "/about"], ["Privacy Notice", "/privacy"], ["Terms of Use", "/terms"], ["Licenses and Notices", "/licenses"]].map(([name, href]) => (
+        {[["Workbench", "/workbench"], ["Workflows", "/workflows"], ["Batch Images", "/batch-images"], ["Settings", "/settings"], ["Feedback", "/feedback"], ["Contact & Support", "/contact"], ["Accessibility", "/accessibility"], ["Offline Tools", "/offline"], ["About", "/about"], ["Privacy Notice", "/privacy"], ["Terms of Use", "/terms"], ["Licenses and Notices", "/licenses"]].map(([name, href]) => (
           <li key={href}><Link href={href}>{name}</Link></li>
         ))}
       </ul>

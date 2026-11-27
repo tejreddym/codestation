@@ -58,6 +58,8 @@ export default function SiteFooter() {
           <Link href="/about">About</Link>
           <Link href="/docs">Docs</Link>
           <Link href="/pro">Pro</Link>
+          <Link href="/contact">Contact</Link>
+          <Link href="/accessibility">Accessibility</Link>
           <Link href="/privacy">Privacy</Link>
           <Link href="/terms">Terms</Link>
           <Link href="/licenses">Licenses</Link>

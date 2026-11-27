@@ -152,7 +152,7 @@ export default function ToolLauncher() {
     window.addEventListener("focus", focus);
     return () => {
       window.removeEventListener("focus", focus);
-      revision.current++;
+      revision.current += 1;
     };
   }, [preferences.autoDetect, inspect]);
 

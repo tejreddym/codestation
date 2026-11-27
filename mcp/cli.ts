@@ -4,6 +4,9 @@ import { createMcpServer } from "./server";
 import { PRICING } from "./config";
 import { runAutoSetup } from "./setup";
 import { handleCliSubcommand } from "./cli-tools";
+import { checkForCliUpdate } from "./update-check";
+
+const CLI_VERSION = "1.3.0";
 
 const PRO_ASCII_BADGE = `
   ┌──────────────────────────────────────────────────────────┐
@@ -36,10 +39,16 @@ Terminal Subcommands:
   mock [template] [--count]     Generate realistic mock data (users, products, orders)
   conflict <file> [--strategy]  Parse & resolve Git merge conflicts (ours, theirs, both)
   uuid [count]                  Generate random RFC 4122 v4 UUIDs
+  ulid [count]                  Generate sortable ULIDs
+  nanoid [count] [--length N]   Generate URL-safe NanoIDs
   json "<raw_json>"             Validate & pretty-print JSON
+  json-diff '<a.json>' '<b.json>' Compute structural JSON diff
+  jsonpath "<json>" "<expr>"    Query JSON using JSONPath (e.g. $.users[*].name)
+  base64 "<text>" [--decode]    Encode or decode Base64 (--url-safe supported)
 
 Stdio Server Options (for AI Assistants):
   --key <license_key>           Activate Code Station Pro features
+  --no-update-check             Disable npm update check (or set CODESTATION_NO_UPDATE_CHECK=1)
   --help, -h                    Show this help message
   --version, -v                 Show version information
 
@@ -51,20 +60,34 @@ Pricing:
 \n`);
 }
 
+async function runCliUpdateCheck(args: string[]): Promise<void> {
+  await Promise.race([
+    checkForCliUpdate({
+      currentVersion: CLI_VERSION,
+      argv: args,
+      timeoutMs: 800,
+    }),
+    new Promise<void>((resolve) => setTimeout(resolve, 250)),
+  ]);
+}
+
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
+  const cleanArgs = args.filter((a) => a !== "--no-update-check");
 
-  if (args.includes("--version") || args.includes("-v")) {
-    process.stderr.write("codestation-mcp v1.2.1\n");
+  if (cleanArgs.includes("--version") || cleanArgs.includes("-v")) {
+    process.stderr.write(`codestation-mcp v${CLI_VERSION}\n`);
+    await runCliUpdateCheck(args);
     process.exit(0);
   }
 
   // 1. Auto-Setup command: npx codestation-mcp setup [--key <KEY>]
-  if (args[0] === "setup") {
+  if (cleanArgs[0] === "setup") {
+    const updatePromise = runCliUpdateCheck(args);
     let key: string | undefined;
-    const keyIdx = args.indexOf("--key");
-    if (keyIdx !== -1 && args[keyIdx + 1]) {
-      key = args[keyIdx + 1];
+    const keyIdx = cleanArgs.indexOf("--key");
+    if (keyIdx !== -1 && cleanArgs[keyIdx + 1]) {
+      key = cleanArgs[keyIdx + 1];
     }
 
     process.stdout.write("\n=== Code Station 1-Click AI Setup ===\n");
@@ -84,27 +107,31 @@ async function main(): Promise<void> {
     }
 
     process.stdout.write("\n✨ Setup complete! Restart your editor(s) to start using Code Station tools.\n\n");
+    await updatePromise;
     process.exit(0);
   }
 
   // 2. Terminal subcommands (status, curl-to-any-language, env-audit, mock-data, conflict-parse, etc.)
-  if (args.length > 0 && !args[0].startsWith("-")) {
-    const res = await handleCliSubcommand(args[0], args.slice(1));
+  if (cleanArgs.length > 0 && !cleanArgs[0].startsWith("-")) {
+    const updatePromise = runCliUpdateCheck(args);
+    const res = await handleCliSubcommand(cleanArgs[0], cleanArgs.slice(1));
     if (res.handled) {
+      await updatePromise;
       process.exit(res.exitCode);
     }
   }
 
-  if (args.includes("--help") || args.includes("-h")) {
+  if (cleanArgs.includes("--help") || cleanArgs.includes("-h")) {
     printHelp();
+    await runCliUpdateCheck(args);
     process.exit(0);
   }
 
-  // 3. Stdio MCP Server mode
+  // 3. Stdio MCP Server mode (never run update checks here so stdio JSON-RPC stays clean)
   let cliKey: string | undefined;
-  const keyIndex = args.indexOf("--key");
-  if (keyIndex !== -1 && args[keyIndex + 1]) {
-    cliKey = args[keyIndex + 1];
+  const keyIndex = cleanArgs.indexOf("--key");
+  if (keyIndex !== -1 && cleanArgs[keyIndex + 1]) {
+    cliKey = cleanArgs[keyIndex + 1];
   }
 
   const { server, license } = createMcpServer(cliKey);

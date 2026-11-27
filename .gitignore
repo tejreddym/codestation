@@ -17,8 +17,13 @@ dist/
 # Generated build metadata
 public/offline-assets.json
 public/pdfjs/
+public/THIRD_PARTY_NOTICES.md
+THIRD_PARTY_NOTICES.md
 cloudflare-env.d.ts
 tsconfig.tsbuildinfo
+.eslintcache
+playwright-report/
+test-results/
 
 # Local logs and editor/OS files
 *.log

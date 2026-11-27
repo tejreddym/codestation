@@ -5,7 +5,7 @@ export default defineConfig({
   resolve: { alias: { "@": fileURLToPath(new URL("./", import.meta.url)) } },
   esbuild: { jsx: "automatic" },
   test: {
-    exclude: ["**/node_modules/**", "**/.next/**"],
+    exclude: ["**/node_modules/**", "**/.next/**", "**/tests/playwright/**", "**/playwright-report/**", "**/test-results/**"],
     setupFiles: ["./vitest.setup.ts"],
   },
 });

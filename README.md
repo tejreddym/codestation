@@ -62,7 +62,7 @@ For full Date & Time conventions, see [`docs/DATE_TIME_STATION.md`](docs/DATE_TI
 - [`TODO.md`](TODO.md) — prioritized work
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — intended boundaries
 - [`docs/DECISIONS.md`](docs/DECISIONS.md) — recorded decisions
-- [`docs/SESSION_LOG.md`](docs/SESSION_LOG.md) — session history
+- [`docs/archive/HISTORICAL_LOGS.md`](docs/archive/HISTORICAL_LOGS.md) — archived session & milestone logs
 
 ## Environment
 

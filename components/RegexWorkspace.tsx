@@ -139,7 +139,7 @@ function Workspace({ definition }: { definition: RegexToolDefinition }) {
 
   useEffect(() => {
     mounted.current = true;
-    return () => { mounted.current = false; revision.current++; controller.current?.abort(); };
+    return () => { mounted.current = false; revision.current += 1; controller.current?.abort(); };
   }, []);
   useEffect(() => {
     if (error) document.getElementById(`${prefix}-${contract.fields[0].name}`)?.focus();

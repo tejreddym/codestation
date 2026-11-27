@@ -3,7 +3,25 @@
 import { useEffect, useState } from "react";
 
 const STORAGE_KEY = "code-station-theme";
+export const THEME_CHANGE_EVENT = "codestation-theme-change";
 type Theme = "light" | "dark";
+
+export function applyDocumentTheme(next: Theme): void {
+  document.documentElement.dataset.theme = next;
+  try {
+    window.localStorage.setItem(STORAGE_KEY, next);
+  } catch {
+    // Keep the user's in-memory choice when persistence is unavailable.
+  }
+  window.dispatchEvent(new CustomEvent<Theme>(THEME_CHANGE_EVENT, { detail: next }));
+}
+
+export function toggleDocumentTheme(): Theme {
+  const current: Theme = document.documentElement.dataset.theme === "dark" ? "dark" : "light";
+  const next: Theme = current === "dark" ? "light" : "dark";
+  applyDocumentTheme(next);
+  return next;
+}
 
 export default function ThemeToggle() {
   const [theme, setTheme] = useState<Theme>("light");
@@ -21,17 +39,21 @@ export default function ThemeToggle() {
     setTheme(next);
     document.documentElement.dataset.theme = next;
     setMounted(true);
+
+    const onThemeChange = (event: Event) => {
+      const detail = (event as CustomEvent<Theme>).detail;
+      if (detail === "light" || detail === "dark") {
+        setTheme(detail);
+      }
+    };
+    window.addEventListener(THEME_CHANGE_EVENT, onThemeChange);
+    return () => window.removeEventListener(THEME_CHANGE_EVENT, onThemeChange);
   }, []);
 
   const toggle = () => {
     const next = dark ? "light" : "dark";
     setTheme(next);
-    document.documentElement.dataset.theme = next;
-    try {
-      window.localStorage.setItem(STORAGE_KEY, next);
-    } catch {
-      // Keep the user's in-memory choice when persistence is unavailable.
-    }
+    applyDocumentTheme(next);
   };
 
   return <>

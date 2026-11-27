@@ -14,6 +14,7 @@ import { PrivacyNote } from "./ui/PrivacyNote";
 import { StatusLine } from "./ui/StatusLine";
 import { ToolLayout } from "./ui/ToolLayout";
 import { useCopy } from "./ui/useCopy";
+import { useToolPermalink } from "./useToolPermalink";
 import ui from "./ui/ui.module.css";
 import styles from "./EncodingStation.module.css";
 
@@ -47,7 +48,58 @@ function Station({ definition }: { definition: EncodingDefinition }) {
     setError(null);
     setNotice("");
     setCopyError("");
+    clearLinkFeedback();
   }
+
+  async function executeWithInputs(targetInputs: EncodingInputs) {
+    const currentRevision = revision.current;
+    const controller = new AbortController();
+    processing.current = controller;
+    setBusy(true);
+    setNotice("Processing your input locally…");
+    try {
+      const { runEncodingTool } = await import("@/lib/tools/encoding/client");
+      if (currentRevision !== revision.current) return;
+      const next = await runEncodingTool(definition.slug, { ...targetInputs }, controller.signal);
+      if (currentRevision !== revision.current) return;
+      setResult(next);
+      setNotice("Result ready.");
+    } catch (cause) {
+      if (currentRevision !== revision.current) return;
+      const field = cause && typeof cause === "object" && "field" in cause && typeof cause.field === "string" ? cause.field : undefined;
+      const fields = field && contract.fields.some((item) => item.name === field) ? [field] : contract.fields.map((item) => item.name);
+      setError({ message: cause instanceof Error ? cause.message : "Could not process this input. Check the format and try again.", fields });
+      setNotice("");
+      document.getElementById(`${scope}-${fields[0]}`)?.focus();
+    } finally {
+      if (currentRevision === revision.current) {
+        processing.current = null;
+        setBusy(false);
+      }
+    }
+  }
+
+  const { copyLink, copiedLink, linkNotice, linkError, clearLinkFeedback } = useToolPermalink({
+    getState: () => {
+      const controls: Record<string, unknown> = {};
+      if (inputs.mime) controls.mime = inputs.mime;
+      return { input: inputs.input ?? "", controls };
+    },
+    getOutputText: () => result?.text ?? null,
+    onHydrate: (state) => {
+      const nextInputs: EncodingInputs = {
+        input: typeof state.input === "string" ? state.input : "",
+        ...(contract.fields.some((field) => field.name === "mime")
+          ? { mime: typeof state.controls?.mime === "string" ? state.controls.mime : "" }
+          : {}),
+      };
+      invalidate();
+      setInputs(nextInputs);
+      if (nextInputs.input) {
+        void executeWithInputs(nextInputs);
+      }
+    },
+  });
 
   function edit(name: EncodingInputField["name"], value: string) {
     invalidate();
@@ -69,31 +121,7 @@ function Station({ definition }: { definition: EncodingDefinition }) {
     event.preventDefault();
     if (busy) return;
     invalidate();
-    const currentRevision = revision.current;
-    const controller = new AbortController();
-    processing.current = controller;
-    setBusy(true);
-    setNotice("Processing your input locally…");
-    try {
-      const { runEncodingTool } = await import("@/lib/tools/encoding/client");
-      if (currentRevision !== revision.current) return;
-      const next = await runEncodingTool(definition.slug, { ...inputs }, controller.signal);
-      if (currentRevision !== revision.current) return;
-      setResult(next);
-      setNotice("Result ready.");
-    } catch (cause) {
-      if (currentRevision !== revision.current) return;
-      const field = cause && typeof cause === "object" && "field" in cause && typeof cause.field === "string" ? cause.field : undefined;
-      const fields = field && contract.fields.some((item) => item.name === field) ? [field] : contract.fields.map((item) => item.name);
-      setError({ message: cause instanceof Error ? cause.message : "Could not process this input. Check the format and try again.", fields });
-      setNotice("");
-      document.getElementById(`${scope}-${fields[0]}`)?.focus();
-    } finally {
-      if (currentRevision === revision.current) {
-        processing.current = null;
-        setBusy(false);
-      }
-    }
+    await executeWithInputs(inputs);
   }
 
   async function copy(value: string, label: string) {
@@ -141,7 +169,9 @@ function Station({ definition }: { definition: EncodingDefinition }) {
             <Button type="submit" variant="primary" disabled={busy} aria-busy={busy}>{busy ? "Processing…" : contract.action}</Button>
             <Button onClick={example}>Load example</Button>
             <Button onClick={clear}>Clear</Button>
+            <Button onClick={() => void copyLink()}>{copiedLink ? "Link copied" : "Share Link"}</Button>
           </div>
+          {linkError && <Callout kind="error" className={styles.alert}>{linkError}</Callout>}
         </form>
       </Panel>
       <Panel
@@ -169,7 +199,7 @@ function Station({ definition }: { definition: EncodingDefinition }) {
         {copyError && <Callout kind="error" className={styles.alert}>{copyError}</Callout>}
       </Panel>
     </ToolLayout>
-    <StatusLine>{notice}</StatusLine>
+    <StatusLine>{linkNotice || notice}</StatusLine>
     <PrivacyNote>{contract.privacyMessage}</PrivacyNote>
     {contract.notes.length > 0 && <ul className={styles.notes}>{contract.notes.slice(isJwt ? 1 : 0).map((note) => <li key={note} className={ui.hint}>{note}</li>)}</ul>}
   </div>;

@@ -157,8 +157,6 @@ export default function CalendarPicker({
           value={typedValue}
           onChange={handleInputChange}
           placeholder="DD MM YYYY"
-          aria-haspopup="dialog"
-          aria-expanded={open}
           aria-describedby={hint ? `${id}-hint` : undefined}
           autoComplete="off"
           spellCheck={false}
@@ -169,6 +167,8 @@ export default function CalendarPicker({
             className={`${styles.pickerButton} ${open ? styles.pickerButtonActive : ""}`}
             onClick={() => setOpen(!open)}
             aria-label={`Open calendar for ${label}`}
+            aria-haspopup="dialog"
+            aria-expanded={open}
             tabIndex={-1}
           >
             <CalendarIcon size={15} />

@@ -58,7 +58,7 @@ function Station({ definition }: { definition: Definition }) {
   }
   useLayoutEffect(() => {
     mounted.current = true;
-    return () => { mounted.current = false; revision.current++; work.current?.abort(); inspection.current?.abort(); revokeDownloads(); };
+    return () => { mounted.current = false; revision.current += 1; work.current?.abort(); inspection.current?.abort(); revokeDownloads(); };
   }, []);
   useLayoutEffect(() => {
     if (!error) return;

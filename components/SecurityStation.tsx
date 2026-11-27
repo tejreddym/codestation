@@ -14,6 +14,7 @@ import { PrivacyNote } from "./ui/PrivacyNote";
 import { StatusLine } from "./ui/StatusLine";
 import { ToolLayout } from "./ui/ToolLayout";
 import { useCopy } from "./ui/useCopy";
+import { useToolPermalink } from "./useToolPermalink";
 import ui from "./ui/ui.module.css";
 import styles from "./SecurityStation.module.css";
 
@@ -67,7 +68,82 @@ function Station({ definition }: { definition: SecurityDefinition }) {
     setError(null);
     setNotice("");
     setCopyError("");
+    clearLinkFeedback();
   }
+
+  async function executeWithRequest(request: SecurityRequest) {
+    const currentRevision = revision.current;
+    const controller = new AbortController();
+    processing.current = controller;
+    releaseFile();
+    setBusy(true);
+    setNotice("Processing locally…");
+    try {
+      const { runSecurityTool } = await import("@/lib/tools/security/client");
+      if (currentRevision !== revision.current || controller.signal.aborted) return;
+      const next = await runSecurityTool(definition.slug, request, controller.signal);
+      if (currentRevision !== revision.current || controller.signal.aborted) return;
+      setResult(next);
+      setNotice(definition.id === "file-hash-generator" ? "Result ready. File selection released; reselect a file to run again." : "Result ready.");
+    } catch (cause) {
+      if (currentRevision !== revision.current || controller.signal.aborted) return;
+      const field = cause && typeof cause === "object" && "field" in cause && typeof cause.field === "string" ? cause.field : undefined;
+      const fields = field && contract.fields.some(item => item.name === field) ? [field] : contract.fields.map(item => item.name);
+      setError({ message: cause instanceof Error ? cause.message : "Could not process the input. Check the fields and try again.", fields });
+      setNotice("");
+    } finally {
+      delete request.file;
+      if (currentRevision === revision.current) {
+        processing.current = null;
+        setBusy(false);
+        releaseFile();
+      }
+    }
+  }
+
+  const { copyLink, copiedLink, linkNotice, linkError, clearLinkFeedback } = useToolPermalink({
+    getState: () => {
+      const controls: Record<string, unknown> = {};
+      for (const field of contract.fields) {
+        if (field.control === "file" || field.name === "input") continue;
+        if (values[field.name] !== undefined) {
+          controls[field.name] = values[field.name];
+        }
+      }
+      return {
+        input: typeof values.input === "string" ? values.input : undefined,
+        controls,
+      };
+    },
+    getOutputText: () => {
+      if (!result) return null;
+      if (result.parts?.length) {
+        return result.parts.map(part => `${part.label}: ${part.value}`).join("\n");
+      }
+      return result.text;
+    },
+    onHydrate: (state) => {
+      const nextValues: SecurityValues = { ...contract.defaults };
+      if (state.controls) {
+        for (const field of contract.fields) {
+          if (field.control === "file") continue;
+          const val = state.controls[field.name];
+          if (typeof val === "string" || typeof val === "boolean") {
+            nextValues[field.name] = val;
+          }
+        }
+      }
+      if (typeof state.input === "string") {
+        nextValues.input = state.input;
+      }
+      invalidate();
+      releaseFile();
+      setValues(nextValues);
+      if (definition.id !== "file-hash-generator") {
+        void executeWithRequest({ values: nextValues });
+      }
+    },
+  });
 
   function edit(name: string, value: string | boolean) {
     invalidate();
@@ -93,35 +169,7 @@ function Station({ definition }: { definition: SecurityDefinition }) {
     if (processing.current) return;
     const request: SecurityRequest = { values: { ...values }, ...(file ? { file } : {}) };
     invalidate();
-    const currentRevision = revision.current;
-    const controller = new AbortController();
-    processing.current = controller;
-    // The request alone owns the selected File during processing. The control and
-    // component state release it immediately, including on cancellation/failure.
-    releaseFile();
-    setBusy(true);
-    setNotice("Processing locally…");
-    try {
-      const { runSecurityTool } = await import("@/lib/tools/security/client");
-      if (currentRevision !== revision.current || controller.signal.aborted) return;
-      const next = await runSecurityTool(definition.slug, request, controller.signal);
-      if (currentRevision !== revision.current || controller.signal.aborted) return;
-      setResult(next);
-      setNotice(definition.id === "file-hash-generator" ? "Result ready. File selection released; reselect a file to run again." : "Result ready.");
-    } catch (cause) {
-      if (currentRevision !== revision.current || controller.signal.aborted) return;
-      const field = cause && typeof cause === "object" && "field" in cause && typeof cause.field === "string" ? cause.field : undefined;
-      const fields = field && contract.fields.some(item => item.name === field) ? [field] : contract.fields.map(item => item.name);
-      setError({ message: cause instanceof Error ? cause.message : "Could not process the input. Check the fields and try again.", fields });
-      setNotice("");
-    } finally {
-      delete request.file;
-      if (currentRevision === revision.current) {
-        processing.current = null;
-        setBusy(false);
-        releaseFile();
-      }
-    }
+    await executeWithRequest(request);
   }
 
   async function copy(value: string, label: string) {
@@ -190,7 +238,9 @@ function Station({ definition }: { definition: SecurityDefinition }) {
               <Button id={`${scope}-submit`} type="submit" variant="primary" disabled={busy} aria-busy={busy}>{busy ? "Processing…" : contract.action}</Button>
               {contract.example && <Button onClick={example}>Load example</Button>}
               <Button onClick={clear}>Clear</Button>
+              {definition.id !== "file-hash-generator" && <Button onClick={() => void copyLink()}>{copiedLink ? "Link copied" : "Share Link"}</Button>}
             </div>
+            {linkError && <Callout kind="error">{linkError}</Callout>}
           </form>
         </Panel>
         <Panel
@@ -219,7 +269,7 @@ function Station({ definition }: { definition: SecurityDefinition }) {
           {copyError && <Callout kind="error">{copyError}</Callout>}
         </Panel>
       </ToolLayout>
-      <StatusLine className={styles.status}>{notice}</StatusLine>
+      <StatusLine className={styles.status}>{linkNotice || notice}</StatusLine>
       <PrivacyNote className={styles.privacy}>{contract.privacyMessage}</PrivacyNote>
       {notices.length > 0 && <ul className={styles.notes}>{notices.map(item => <li key={item} className={ui.hint}>{item}</li>)}</ul>}
     </div>

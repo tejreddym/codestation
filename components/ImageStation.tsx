@@ -77,7 +77,7 @@ function Station({ definition }: { definition: Definition }) {
 
   useEffect(() => {
     mounted.current = true;
-    return () => { mounted.current = false; revision.current++; fileRevision.current++; selectedFile.current = null; revokeSource(); revokeResult(); revokeDownloads(); };
+    return () => { mounted.current = false; revision.current += 1; fileRevision.current += 1; selectedFile.current = null; revokeSource(); revokeResult(); revokeDownloads(); };
   }, []);
 
   useEffect(() => {

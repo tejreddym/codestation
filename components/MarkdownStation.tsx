@@ -44,7 +44,6 @@ function SafePreview({ html }: { html: string }) {
 function Station({ definition }: { definition: Def }) {
   const c = definition.localContract;
   const id = `markdown-${definition.id}`;
-  const [values, setValues] = useState<Record<string, unknown>>({ ...c.defaults });
   const [result, setResult] = useState<MarkdownResult | null>(null);
   const [error, setError] = useState<MarkdownError | null>(null);
   const [notice, setNotice] = useState("");
@@ -61,14 +60,16 @@ function Station({ definition }: { definition: Def }) {
   const converterSource = converter?.family === "markdown" ? converter.source : undefined;
   const saved = converterSource ? session.get("markdown") : undefined;
   const sourceField = c.fields.find(field => field.name === "source" || field.name === "html")?.name;
+  const [values, setValues] = useState<Record<string, unknown>>(() => (
+    saved?.value && sourceField && typeof saved.value === "string"
+      ? { ...c.defaults, [sourceField]: saved.value }
+      : { ...c.defaults }
+  ));
 
   useEffect(() => {
     mounted.current = true;
-    return () => { mounted.current = false; rev.current++; };
+    return () => { mounted.current = false; rev.current += 1; };
   }, []);
-  useEffect(() => {
-    if (saved?.value && sourceField && typeof saved.value === "string") setValues(v => ({ ...v, [sourceField]: saved.value }));
-  }, [definition.id]);
   useEffect(() => {
     if (error) {
       const el = form.current?.querySelector(`[data-field="${error.field}"]`) as HTMLElement | null;

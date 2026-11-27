@@ -23,6 +23,7 @@ export const PRO_TOOLS = new Set([
   "codestation_jwt_decode",
   "codestation_format_sql",
   "codestation_cron_explain",
+  "codestation_cron_next_runs",
   "codestation_timezone_convert",
   "codestation_business_days",
   "codestation_regex_test",

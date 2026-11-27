@@ -28,6 +28,7 @@ var PRO_TOOLS = /* @__PURE__ */ new Set([
   "codestation_jwt_decode",
   "codestation_format_sql",
   "codestation_cron_explain",
+  "codestation_cron_next_runs",
   "codestation_timezone_convert",
   "codestation_business_days",
   "codestation_regex_test",
@@ -1250,6 +1251,7 @@ function formatEnvAuditReport(result) {
 // lib/tools/mock-data.ts
 var Prng = class {
   constructor(seed) {
+    this.isDeterministic = seed !== void 0;
     this.state = seed !== void 0 ? seed >>> 0 || 1 : Math.floor(Math.random() * 2147483647) || 1;
   }
   next() {
@@ -1501,7 +1503,8 @@ function generateValue(col, prng, rowIndex, usedUnique, context) {
         break;
       case "date": {
         const pastDays = prng.int(1, 180);
-        const d = new Date(Date.now() - pastDays * 864e5);
+        const baseTime = prng.isDeterministic ? 17672256e5 : Date.now();
+        const d = new Date(baseTime - pastDays * 864e5);
         val = d.toISOString();
         break;
       }
@@ -1872,6 +1875,64 @@ function jsonToYaml(value) {
 function yamlToJson(value) {
   return JSON.stringify(parseYaml(value), null, 2);
 }
+function csvEscape(value) {
+  const text2 = value == null ? "" : typeof value === "object" ? JSON.stringify(value) : String(value);
+  return /[",\n\r]/.test(text2) ? `"${text2.replace(/"/g, '""')}"` : text2;
+}
+function jsonToCsv(value) {
+  const rows = JSON.parse(value);
+  if (!Array.isArray(rows) || rows.some((row) => !row || typeof row !== "object" || Array.isArray(row))) throw new Error("Expected a JSON array of objects.");
+  const keys = [...new Set(rows.flatMap((row) => Object.keys(row)))];
+  return [keys.join(","), ...rows.map((row) => keys.map((key) => csvEscape(row[key])).join(","))].join("\n");
+}
+function csvToJson(value) {
+  const rows = parseCsv(value);
+  if (rows.length < 1 || rows[0].length === 0) throw new Error("Add a CSV header row before converting.");
+  const headers = rows[0];
+  return JSON.stringify(rows.slice(1).filter((row) => row.some(Boolean)).map((row) => Object.fromEntries(headers.map((header, index) => [header, row[index] ?? ""]))), null, 2);
+}
+function parseCsv(value) {
+  const rows = [];
+  let row = [];
+  let cell = "";
+  let quoted = false;
+  for (let i = 0; i < value.length; i += 1) {
+    const char = value[i];
+    if (char === '"' && quoted && value[i + 1] === '"') {
+      cell += '"';
+      i += 1;
+    } else if (char === '"') quoted = !quoted;
+    else if (char === "," && !quoted) {
+      row.push(cell);
+      cell = "";
+    } else if ((char === "\n" || char === "\r") && !quoted) {
+      if (char === "\r" && value[i + 1] === "\n") i += 1;
+      row.push(cell);
+      rows.push(row);
+      row = [];
+      cell = "";
+    } else cell += char;
+  }
+  if (cell || row.length) {
+    row.push(cell);
+    rows.push(row);
+  }
+  if (quoted) throw new Error("CSV contains an unclosed quoted field.");
+  return rows;
+}
+function jsonDiff(left, right) {
+  const a = JSON.parse(left);
+  const b = JSON.parse(right);
+  return JSON.stringify(diffValue(a, b), null, 2);
+}
+function diffValue(a, b) {
+  if (JSON.stringify(a) === JSON.stringify(b)) return { status: "unchanged", value: a };
+  if (a && b && typeof a === "object" && typeof b === "object" && !Array.isArray(a) && !Array.isArray(b)) {
+    const keys = [.../* @__PURE__ */ new Set([...Object.keys(a), ...Object.keys(b)])].sort();
+    return Object.fromEntries(keys.map((key) => [key, diffValue(a[key], b[key])]));
+  }
+  return { status: a === void 0 ? "added" : b === void 0 ? "removed" : "changed", before: a, after: b };
+}
 function generateJsonSchema(value) {
   const sample = JSON.parse(value);
   const infer = (node) => {
@@ -1885,6 +1946,30 @@ function generateJsonSchema(value) {
   };
   return JSON.stringify({ $schema: "https://json-schema.org/draft/2020-12/schema", ...infer(sample) }, null, 2);
 }
+function testJsonPath(value, expression) {
+  const root = JSON.parse(value);
+  const query = expression.trim();
+  if (!query.startsWith("$")) throw new Error("JSONPath must start with $.");
+  const tokens = query.slice(1).match(/(?:\.([A-Za-z_$][\w$-]*)|\[([0-9]+|\*)\])/g) ?? [];
+  if (tokens.join("") !== query.slice(1)) throw new Error("Supported JSONPath syntax: $.property, $[0], and $[*].");
+  let current = [root];
+  for (const token of tokens) {
+    const next = [];
+    for (const item of current) {
+      if (token.startsWith(".")) {
+        const key = token.slice(1);
+        if (item && typeof item === "object" && !Array.isArray(item) && key in item) next.push(item[key]);
+      } else {
+        const selector = token.slice(1, -1);
+        if (!Array.isArray(item)) continue;
+        if (selector === "*") next.push(...item);
+        else if (item[Number(selector)] !== void 0) next.push(item[Number(selector)]);
+      }
+    }
+    current = next;
+  }
+  return JSON.stringify({ expression: query, count: current.length, matches: current }, null, 2);
+}
 function decodeBase64Url2(value) {
   return decodeBase64(value.replace(/-/g, "+").replace(/_/g, "/") + "=".repeat((4 - value.length % 4) % 4));
 }
@@ -1896,6 +1981,14 @@ function decodeJwt(value) {
   } catch {
     throw new Error("JWT header and payload must contain valid Base64URL-encoded JSON.");
   }
+}
+var htmlEntities = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
+function encodeHtml(value) {
+  return value.replace(/[&<>"']/g, (character) => htmlEntities[character]);
+}
+function decodeHtml(value) {
+  const named = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'" };
+  return value.replace(/&(#x[\da-f]+|#\d+|\w+);/gi, (_, entity) => entity.startsWith("#x") ? String.fromCodePoint(parseInt(entity.slice(2), 16)) : entity.startsWith("#") ? String.fromCodePoint(parseInt(entity.slice(1), 10)) : named[entity.toLowerCase()] ?? `&${entity};`);
 }
 function testRegex(pattern, flags, text2) {
   let regex;
@@ -2071,909 +2164,30 @@ function crc32(input) {
   }
   return ((crc ^ 4294967295) >>> 0).toString(16).padStart(8, "0");
 }
-
-// lib/tools/json-to-types.ts
-function toPascalCase(str) {
-  const clean = str.replace(/[^a-zA-Z0-9]/g, " ");
-  return clean.split(/\s+/).filter(Boolean).map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join("") || "NestedType";
+function randomBytes(length) {
+  if (!Number.isInteger(length) || length < 0 || length > 65536) throw new RangeError("Length must be an integer between 0 and 65536.");
+  const crypto2 = requireCrypto();
+  const result = new Uint8Array(length);
+  for (let offset = 0; offset < length; offset += 65536) crypto2.getRandomValues(result.subarray(offset, Math.min(offset + 65536, length)));
+  return result;
 }
-function isValidIdentifier(name) {
-  return /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(name);
+function secureRandomToken(length = 32, alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-.") {
+  if (!Number.isInteger(length) || length < 0 || !alphabet) throw new RangeError("Length must be non-negative and alphabet must not be empty.");
+  return Array.from(randomBytes(length), (byte) => alphabet[byte % alphabet.length]).join("");
 }
-function formatKey(key) {
-  return isValidIdentifier(key) ? key : JSON.stringify(key);
+function ulid() {
+  const alphabet = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
+  let time = Date.now();
+  let result = "";
+  for (let i = 9; i >= 0; i--) {
+    result = alphabet[time % 32] + result;
+    time = Math.floor(time / 32);
+  }
+  return result + secureRandomToken(16, alphabet);
 }
-function jsonToTypescript(jsonInput, rootName = "Root") {
-  let parsed;
-  try {
-    parsed = JSON.parse(jsonInput);
-  } catch (err) {
-    throw new Error(`Invalid JSON: ${err instanceof Error ? err.message : String(err)}`);
-  }
-  const interfaces = [];
-  const createdNames = /* @__PURE__ */ new Set();
-  function getUniqueName(base) {
-    let name = toPascalCase(base);
-    let counter = 1;
-    while (createdNames.has(name)) {
-      counter += 1;
-      name = `${toPascalCase(base)}${counter}`;
-    }
-    createdNames.add(name);
-    return name;
-  }
-  function resolveType(val, keyHint) {
-    if (val === null) return "null";
-    if (val === void 0) return "undefined";
-    const type = typeof val;
-    if (type === "string" || type === "number" || type === "boolean") {
-      return type;
-    }
-    if (Array.isArray(val)) {
-      if (val.length === 0) return "unknown[]";
-      const itemTypes = /* @__PURE__ */ new Set();
-      const sampleObjects = [];
-      for (const item of val) {
-        if (item && typeof item === "object" && !Array.isArray(item)) {
-          sampleObjects.push(item);
-        } else {
-          itemTypes.add(resolveType(item, `${keyHint}Item`));
-        }
-      }
-      if (sampleObjects.length > 0) {
-        const merged = {};
-        for (const obj of sampleObjects) {
-          for (const [k, v] of Object.entries(obj)) {
-            if (!merged[k]) merged[k] = { types: /* @__PURE__ */ new Set(), count: 0 };
-            merged[k].count += 1;
-            merged[k].types.add(resolveType(v, k));
-          }
-        }
-        const lines = [];
-        for (const [k, meta] of Object.entries(merged)) {
-          const isOptional = meta.count < sampleObjects.length;
-          const typeStr = Array.from(meta.types).join(" | ") || "unknown";
-          const formattedKey = formatKey(k) + (isOptional ? "?" : "");
-          lines.push(`  ${formattedKey}: ${typeStr};`);
-        }
-        const interfaceName = getUniqueName(`${keyHint}Item`);
-        interfaces.unshift({
-          name: interfaceName,
-          body: `export interface ${interfaceName} {
-${lines.join("\n")}
-}`
-        });
-        itemTypes.add(interfaceName);
-      }
-      const union = Array.from(itemTypes).join(" | ");
-      return union.includes(" | ") ? `(${union})[]` : `${union}[]`;
-    }
-    if (type === "object") {
-      const obj = val;
-      const lines = [];
-      for (const [k, v] of Object.entries(obj)) {
-        const typeStr = resolveType(v, k);
-        lines.push(`  ${formatKey(k)}: ${typeStr};`);
-      }
-      const interfaceName = getUniqueName(keyHint);
-      interfaces.unshift({
-        name: interfaceName,
-        body: `export interface ${interfaceName} {
-${lines.join("\n")}
-}`
-      });
-      return interfaceName;
-    }
-    return "unknown";
-  }
-  const rootTypeName = toPascalCase(rootName) || "Root";
-  if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
-    const rootType = resolveType(parsed, rootTypeName);
-    const found = interfaces.find((i) => i.name === rootType);
-    if (found) {
-      found.name = rootTypeName;
-      found.body = found.body.replace(`export interface ${rootType}`, `export interface ${rootTypeName}`);
-    }
-    return interfaces.map((i) => i.body).join("\n\n");
-  } else if (Array.isArray(parsed)) {
-    const itemType = resolveType(parsed, rootTypeName);
-    return `${interfaces.map((i) => i.body).join("\n\n")}
-
-export type ${rootTypeName} = ${itemType};`.trim();
-  } else {
-    const primitiveType = resolveType(parsed, rootTypeName);
-    return `export type ${rootTypeName} = ${primitiveType};`;
-  }
+function nanoid(length = 21) {
+  return secureRandomToken(length, "_-0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ");
 }
-function jsonToZod(jsonInput, rootName = "rootSchema") {
-  let parsed;
-  try {
-    parsed = JSON.parse(jsonInput);
-  } catch (err) {
-    throw new Error(`Invalid JSON: ${err instanceof Error ? err.message : String(err)}`);
-  }
-  const schemas = [];
-  const createdNames = /* @__PURE__ */ new Set();
-  function getUniqueName(base) {
-    let name = base.endsWith("Schema") ? base : `${base}Schema`;
-    let counter = 1;
-    while (createdNames.has(name)) {
-      counter += 1;
-      name = `${base}${counter}Schema`;
-    }
-    createdNames.add(name);
-    return name;
-  }
-  function resolveZod(val, keyHint) {
-    if (val === null) return "z.null()";
-    if (val === void 0) return "z.undefined()";
-    if (typeof val === "string") return "z.string()";
-    if (typeof val === "number") return Number.isInteger(val) ? "z.number().int()" : "z.number()";
-    if (typeof val === "boolean") return "z.boolean()";
-    if (Array.isArray(val)) {
-      if (val.length === 0) return "z.array(z.unknown())";
-      const sampleObjects = [];
-      const itemSchemas = /* @__PURE__ */ new Set();
-      for (const item of val) {
-        if (item && typeof item === "object" && !Array.isArray(item)) {
-          sampleObjects.push(item);
-        } else {
-          itemSchemas.add(resolveZod(item, `${keyHint}Item`));
-        }
-      }
-      if (sampleObjects.length > 0) {
-        const merged = {};
-        for (const obj of sampleObjects) {
-          for (const [k, v] of Object.entries(obj)) {
-            if (!merged[k]) merged[k] = { schemas: /* @__PURE__ */ new Set(), count: 0 };
-            merged[k].count += 1;
-            merged[k].schemas.add(resolveZod(v, k));
-          }
-        }
-        const lines = [];
-        for (const [k, meta] of Object.entries(merged)) {
-          const isOptional = meta.count < sampleObjects.length;
-          let schemaStr = Array.from(meta.schemas)[0] || "z.unknown()";
-          if (meta.schemas.size > 1) {
-            schemaStr = `z.union([${Array.from(meta.schemas).join(", ")}])`;
-          }
-          if (isOptional) {
-            schemaStr += ".optional()";
-          }
-          lines.push(`  ${formatKey(k)}: ${schemaStr},`);
-        }
-        const schemaName = getUniqueName(`${keyHint}Item`);
-        schemas.unshift({
-          name: schemaName,
-          body: `export const ${schemaName} = z.object({
-${lines.join("\n")}
-});`
-        });
-        itemSchemas.add(schemaName);
-      }
-      const union = Array.from(itemSchemas);
-      if (union.length === 1) return `z.array(${union[0]})`;
-      return `z.array(z.union([${union.join(", ")}]))`;
-    }
-    if (typeof val === "object") {
-      const obj = val;
-      const lines = [];
-      for (const [k, v] of Object.entries(obj)) {
-        lines.push(`  ${formatKey(k)}: ${resolveZod(v, k)},`);
-      }
-      const schemaName = getUniqueName(keyHint);
-      schemas.unshift({
-        name: schemaName,
-        body: `export const ${schemaName} = z.object({
-${lines.join("\n")}
-});`
-      });
-      return schemaName;
-    }
-    return "z.unknown()";
-  }
-  const safeRootName = rootName.endsWith("Schema") ? rootName : `${rootName}Schema`;
-  const typeName = toPascalCase(rootName.replace(/Schema$/i, "")) || "Root";
-  const rootResult = resolveZod(parsed, safeRootName);
-  const found = schemas.find((s) => s.name === rootResult);
-  if (found) {
-    found.name = safeRootName;
-    found.body = found.body.replace(`export const ${rootResult}`, `export const ${safeRootName}`);
-  }
-  const header = `import { z } from "zod";
-
-`;
-  const schemaDeclarations = schemas.map((s) => s.body).join("\n\n");
-  const typeExport = `
-
-export type ${typeName} = z.infer<typeof ${safeRootName}>;`;
-  return header + (schemaDeclarations ? `${schemaDeclarations}${typeExport}` : `export const ${safeRootName} = ${rootResult};${typeExport}`);
-}
-
-// lib/tools/cron/parser.ts
-var MONTH_NAMES = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
-var WEEKDAY_NAMES = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
-var SPECS = [
-  { name: "second", label: "Second", min: 0, max: 59 },
-  { name: "minute", label: "Minute", min: 0, max: 59 },
-  { name: "hour", label: "Hour", min: 0, max: 23 },
-  { name: "dayOfMonth", label: "Day of month", min: 1, max: 31 },
-  { name: "month", label: "Month", min: 1, max: 12 },
-  { name: "dayOfWeek", label: "Day of week", min: 0, max: 7 }
-];
-function parseField(expression, spec) {
-  const fail2 = (message) => {
-    throw new Error(`${spec.label}: ${message}`);
-  };
-  if (expression.length > 128) fail2("field exceeds the 128-character limit.");
-  if (!expression) fail2("field cannot be empty.");
-  const endpoint = (text2) => {
-    let value;
-    if (/^\d+$/.test(text2)) value = Number(text2);
-    else if (spec.name === "month" && MONTH_NAMES.includes(text2.toUpperCase())) value = MONTH_NAMES.indexOf(text2.toUpperCase()) + 1;
-    else if (spec.name === "dayOfWeek" && WEEKDAY_NAMES.includes(text2.toUpperCase())) value = WEEKDAY_NAMES.indexOf(text2.toUpperCase());
-    else return fail2("use integer values, permitted month/weekday names, *, ranges, lists or steps.");
-    if (!Number.isSafeInteger(value) || value < spec.min || value > spec.max) fail2(`value must be between ${spec.min} and ${spec.max}.`);
-    return value;
-  };
-  const selected = /* @__PURE__ */ new Set();
-  for (const item of expression.split(",")) {
-    if (!item) fail2("lists cannot contain empty items.");
-    const pieces = item.split("/");
-    if (pieces.length > 2 || !pieces[0]) fail2("malformed step notation.");
-    let step = 1;
-    if (pieces.length === 2) {
-      if (!/^\d+$/.test(pieces[1])) fail2("step must be a positive integer.");
-      step = Number(pieces[1]);
-      if (!Number.isSafeInteger(step) || step < 1 || step > spec.max - spec.min + 1) fail2(`step must be between 1 and ${spec.max - spec.min + 1}.`);
-    }
-    const base = pieces[0];
-    let first;
-    let last;
-    if (base === "*") {
-      first = spec.min;
-      last = spec.max;
-    } else {
-      const range = base.split("-");
-      if (range.length > 2 || range.some((value) => !value)) fail2("malformed range; negative values are not supported.");
-      first = endpoint(range[0]);
-      last = range.length === 2 ? endpoint(range[1]) : pieces.length === 2 ? spec.max : first;
-      if (last < first) fail2("descending or wrapping ranges are not supported.");
-    }
-    for (let value = first; value <= last; value += step) selected.add(spec.name === "dayOfWeek" && value === 7 ? 0 : value);
-  }
-  return { ...spec, expression, values: [...selected].sort((a, b) => a - b), wildcard: expression.startsWith("*") };
-}
-function parseCron(expression) {
-  if (typeof expression !== "string" || !expression.trim()) throw new Error("Enter a cron expression.");
-  if (expression.length > 1024) throw new Error("Cron expression exceeds the 1,024-character limit.");
-  if (/[?#]/.test(expression) || /(?:^|[\s,/-])(?:L|LW|\d+[LW]|W|H(?:\([^)]*\))?)(?=$|[\s,/-])/i.test(expression) || /\b(?:cron|rate)\s*\(/i.test(expression)) {
-    throw new Error("Quartz, AWS and Jenkins extensions (?, L, W, # and H) are not supported; use Unix numeric cron notation.");
-  }
-  if (expression.includes("@")) throw new Error("Cron macros are not supported; enter five Unix fields or six seconds-first fields.");
-  const tokens = expression.trim().split(/\s+/);
-  if (tokens.length !== 5 && tokens.length !== 6) throw new Error("Expected five Unix fields or six seconds-first fields; years, commands, comments and environment assignments are not supported.");
-  const hasSeconds = tokens.length === 6;
-  const fields = tokens.map((token, index) => parseField(token, SPECS[index + (hasSeconds ? 0 : 1)]));
-  const second = hasSeconds ? fields[0] : parseField("0", SPECS[0]);
-  const [minute, hour, dayOfMonth, month, dayOfWeek] = fields.slice(hasSeconds ? 1 : 0);
-  return { expression, hasSeconds, fields, second, minute, hour, dayOfMonth, month, dayOfWeek, dayMode: dayOfMonth.wildcard || dayOfWeek.wildcard ? "and" : "or" };
-}
-function matchesCronDate(cron, year, month, day) {
-  if (!cron.month.values.includes(month)) return false;
-  const dom = cron.dayOfMonth.values.includes(day);
-  const dow = cron.dayOfWeek.values.includes(new Date(Date.UTC(year, month - 1, day)).getUTCDay());
-  return cron.dayMode === "and" ? dom && dow : dom || dow;
-}
-
-// lib/tools/cron/explain.ts
-var FULL_MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-var FULL_WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-var pad = (value) => String(value).padStart(2, "0");
-function explainCron(cron) {
-  let timing;
-  if (cron.hour.values.length === 1 && cron.minute.values.length === 1 && cron.second.values.length === 1) {
-    timing = `At ${pad(cron.hour.values[0])}:${pad(cron.minute.values[0])}${cron.hasSeconds ? `:${pad(cron.second.values[0])}` : ""}`;
-  } else if (cron.hasSeconds && cron.hour.expression === "*" && cron.minute.expression === "*" && cron.second.expression === "*") timing = "Every second";
-  else if (cron.hour.expression === "*" && cron.minute.expression === "*" && !cron.hasSeconds) timing = "Every minute (at second 0)";
-  else if (cron.hour.expression === "*" && /^\*\/\d+$/.test(cron.minute.expression) && !cron.hasSeconds) timing = `Every ${Number(cron.minute.expression.slice(2))} minutes within each hour (at second 0)`;
-  else if (cron.hour.expression === "*" && cron.minute.values.length === 1 && cron.second.values.length === 1) timing = `Every hour at minute ${cron.minute.values[0]}, second ${cron.second.values[0]}`;
-  else timing = `${cron.hasSeconds ? "Seconds-first schedule" : "Unix schedule (at second 0)"}: hours ${cron.hour.expression === "*" ? "every hour" : cron.hour.values.map(pad).join(", ")}; minutes ${cron.minute.expression === "*" ? "every minute" : cron.minute.values.map(pad).join(", ")}${cron.hasSeconds ? `; seconds ${cron.second.expression === "*" ? "every second" : cron.second.values.map(pad).join(", ")}` : ""}`;
-  const months = cron.month.values.length === 12 ? "" : `; in ${cron.month.values.map((value) => FULL_MONTHS[value - 1]).join(", ")}`;
-  const dom = cron.dayOfMonth.values.length === 31 ? "every day of month" : `day of month ${cron.dayOfMonth.values.join(", ")}`;
-  const dow = cron.dayOfWeek.values.length === 7 ? "every weekday (Sunday\u2013Saturday)" : cron.dayOfWeek.values.map((value) => FULL_WEEKDAYS[value]).join(", ");
-  const days = cron.dayMode === "or" ? `when either ${dom} OR weekday ${dow} matches` : cron.dayOfMonth.values.length === 31 && cron.dayOfWeek.values.length === 7 ? "every day" : cron.dayOfMonth.values.length === 31 ? `on ${dow}` : cron.dayOfWeek.values.length === 7 ? `on ${dom}` : `when both ${dom} AND weekday ${dow} match`;
-  return `${timing}; ${days}${months}.`;
-}
-
-// config/shared-registry.ts
-function checkToolAccess(toolId, license) {
-  const tool = SHARED_TOOLS.find(
-    (t) => t.id === toolId || t.mcpMetadata.toolName === toolId || t.cliMetadata.command === toolId || t.cliMetadata.aliases.includes(toolId)
-  );
-  if (!tool) {
-    return {
-      allowed: false,
-      status: "denied",
-      reason: `Tool "${toolId}" is not registered in Code Station registry.`
-    };
-  }
-  if (tool.accessLevel === "free" || tool.accessLevel === "local-only") {
-    return { allowed: true, status: "granted" };
-  }
-  if (tool.accessLevel === "pro") {
-    if (license?.isPro) {
-      return { allowed: true, status: "granted" };
-    }
-    return {
-      allowed: false,
-      status: "denied",
-      requiredTier: "pro",
-      reason: `Tool "${tool.name}" requires Code Station Pro. Upgrade at https://codestation.in/pro or launch with --key CS-PRO-YOURKEY.`
-    };
-  }
-  if (tool.accessLevel === "paid-key") {
-    if (license?.isPro) {
-      return { allowed: true, status: "granted" };
-    }
-    return {
-      allowed: false,
-      status: "denied",
-      requiredTier: "paid-key",
-      reason: `Tool "${tool.name}" requires a valid paid key.`
-    };
-  }
-  return { allowed: true, status: "granted" };
-}
-var SHARED_TOOLS = [
-  // 1. cURL to Any Language Generator
-  {
-    id: "curl-to-any-language",
-    name: "cURL to Any Language Generator",
-    description: "Convert literal cURL commands into idiomatic TypeScript (fetch/axios), Python (requests), or Go (net/http).",
-    version: "1.2.0",
-    accessLevel: "pro",
-    privacyClassification: "memory-only",
-    category: "API",
-    keywords: ["curl", "fetch", "axios", "python", "go", "generator", "api", "converter"],
-    inputSchema: {
-      type: "object",
-      properties: {
-        curl: { type: "string", description: "cURL command string to convert" },
-        target: {
-          type: "string",
-          enum: ["fetch", "axios", "python", "go"],
-          default: "fetch",
-          description: "Target programming language/library"
-        }
-      },
-      required: ["curl"]
-    },
-    outputSchema: {
-      type: "object",
-      properties: {
-        code: { type: "string" },
-        language: { type: "string" },
-        target: { type: "string" },
-        warnings: { type: "array", items: { type: "string" } }
-      }
-    },
-    cliMetadata: {
-      command: "curl-to-any-language",
-      aliases: ["curl", "curl-to-code"],
-      description: "Convert cURL commands to TypeScript, Python, or Go code",
-      examples: [
-        'codestation curl-to-any-language "curl https://api.example.com" --target fetch',
-        `codestation curl "curl -X POST https://api.example.com -d '{\\"name\\":\\"test\\"}'" --target python`
-      ]
-    },
-    mcpMetadata: {
-      toolName: "codestation_curl_to_code",
-      description: "Convert cURL commands to TypeScript fetch/axios, Python requests, or Go net/http. [Pro Tier]"
-    },
-    routeMetadata: {
-      route: "/tools/curl-to-any-language",
-      slug: "curl-to-any-language"
-    },
-    execute: async (input) => {
-      const target = input.target || "fetch";
-      return await curlToCode(input.curl, target);
-    }
-  },
-  // 2. Environment & Secret Leak Scanner
-  {
-    id: "env-audit",
-    name: "Environment & Secret Leak Scanner",
-    description: "Audit .env and configuration files for exposed live secrets (Stripe, AWS, OpenAI, GitHub PAT, private keys) and diff against .env.example.",
-    version: "1.2.0",
-    accessLevel: "pro",
-    privacyClassification: "local-only",
-    category: "Security & Crypto",
-    keywords: ["env", "audit", "secrets", "scanner", "leak", "security", "credentials"],
-    inputSchema: {
-      type: "object",
-      properties: {
-        env: { type: "string", description: "Content of environment or configuration file" },
-        example: { type: "string", description: "Optional content of .env.example to compare against" },
-        format: { type: "string", enum: ["report", "json"], default: "report" }
-      },
-      required: ["env"]
-    },
-    outputSchema: {
-      type: "object",
-      properties: {
-        totalVariables: { type: "integer" },
-        findings: { type: "array" },
-        isSecure: { type: "boolean" },
-        summary: { type: "string" }
-      }
-    },
-    cliMetadata: {
-      command: "env-audit",
-      aliases: ["env", "audit-env"],
-      description: "Scan .env files for leaked secrets and diff against .env.example",
-      examples: [
-        "codestation env-audit .env --example .env.example",
-        "codestation env .env --json"
-      ]
-    },
-    mcpMetadata: {
-      toolName: "codestation_env_audit",
-      description: "Scan environment variables for secret leaks and validate against .env.example. [Pro Tier]"
-    },
-    routeMetadata: {
-      route: "/tools/env-audit",
-      slug: "env-audit"
-    },
-    execute: async (input) => {
-      const res = auditEnv(input.env, input.example);
-      if (input.format === "json") return res;
-      return { report: formatEnvAuditReport(res), ...res };
-    }
-  },
-  // 3. Realistic Mock Data & SQL Seeder
-  {
-    id: "mock-data",
-    name: "Realistic Mock Data & SQL Seeder",
-    description: "Generate realistic mock data records and SQL INSERT seed statements with deterministic seeds.",
-    version: "1.2.0",
-    accessLevel: "pro",
-    privacyClassification: "memory-only",
-    category: "JSON & Data",
-    keywords: ["mock", "data", "seed", "sql", "faker", "testing", "fixtures"],
-    inputSchema: {
-      type: "object",
-      properties: {
-        template: { type: "string", enum: ["users", "products", "orders", "custom"], default: "users" },
-        count: { type: "integer", minimum: 1, maximum: 1e3, default: 10 },
-        format: { type: "string", enum: ["json", "sql", "csv"], default: "json" },
-        tableName: { type: "string", description: "Table name for SQL output" },
-        seed: { type: "integer", description: "Deterministic random seed" },
-        customSchema: { type: "object", description: "Custom field mapping" }
-      }
-    },
-    outputSchema: {
-      type: "object",
-      properties: {
-        count: { type: "integer" },
-        data: { type: "array" },
-        json: { type: "string" },
-        sql: { type: "string" }
-      }
-    },
-    cliMetadata: {
-      command: "mock-data",
-      aliases: ["mock", "seeder"],
-      description: "Generate realistic mock data in JSON or SQL format",
-      examples: [
-        "codestation mock-data users --count 10",
-        "codestation mock products --count 5 --sql --table catalog"
-      ]
-    },
-    mcpMetadata: {
-      toolName: "codestation_mock_data",
-      description: "Generate realistic mock data and SQL seeders for users, products, orders, or custom schemas. [Pro Tier]"
-    },
-    routeMetadata: {
-      route: "/tools/mock-data",
-      slug: "mock-data"
-    },
-    execute: async (options) => {
-      return generateMockDataset(options);
-    }
-  },
-  // 4. Git Merge Conflict Resolver
-  {
-    id: "conflict-parse",
-    name: "Git Merge Conflict Resolver",
-    description: "Parse and resolve standard or diff3 Git merge conflict markers (<<<<<<< HEAD, =======, >>>>>>>).",
-    version: "1.2.0",
-    accessLevel: "pro",
-    privacyClassification: "local-only",
-    category: "Text",
-    keywords: ["git", "conflict", "merge", "resolver", "diff3", "ours", "theirs"],
-    inputSchema: {
-      type: "object",
-      properties: {
-        content: { type: "string", description: "File content containing conflict markers" },
-        strategy: { type: "string", enum: ["analyze", "ours", "theirs", "both"], default: "analyze" }
-      },
-      required: ["content"]
-    },
-    outputSchema: {
-      type: "object",
-      properties: {
-        hasConflicts: { type: "boolean" },
-        conflictCount: { type: "integer" },
-        hunks: { type: "array" },
-        resolvedContent: { type: "string" },
-        summary: { type: "string" }
-      }
-    },
-    cliMetadata: {
-      command: "conflict-parse",
-      aliases: ["conflict", "git-conflict"],
-      description: "Parse and resolve Git merge conflict markers",
-      examples: [
-        "codestation conflict-parse path/to/file.ts --strategy analyze",
-        "codestation conflict path/to/file.ts --strategy ours"
-      ]
-    },
-    mcpMetadata: {
-      toolName: "codestation_git_conflict",
-      description: "Parse and resolve Git merge conflict markers (<<<<<<< HEAD, =======, >>>>>>>). [Pro Tier]"
-    },
-    routeMetadata: {
-      route: "/tools/conflict-parse",
-      slug: "conflict-parse"
-    },
-    execute: async (input) => {
-      const strategy = input.strategy || "analyze";
-      const res = parseAndResolveGitConflicts(input.content, strategy);
-      if (strategy === "analyze") {
-        return { report: formatConflictReport(res), ...res };
-      }
-      return res;
-    }
-  },
-  // 5. JSON to TypeScript Interfaces
-  {
-    id: "json-to-typescript",
-    name: "JSON to TypeScript",
-    description: "Generate type-safe TypeScript interfaces and types from sample JSON data.",
-    version: "1.2.0",
-    accessLevel: "pro",
-    privacyClassification: "memory-only",
-    category: "JSON & Data",
-    keywords: ["json", "typescript", "interfaces", "types", "generator"],
-    inputSchema: {
-      type: "object",
-      properties: {
-        json: { type: "string", description: "Sample JSON string or payload" },
-        rootName: { type: "string", default: "Root", description: "Name of root interface" }
-      },
-      required: ["json"]
-    },
-    outputSchema: {
-      type: "object",
-      properties: { code: { type: "string" } }
-    },
-    cliMetadata: {
-      command: "ts",
-      aliases: ["types", "json-to-ts"],
-      description: "Generate clean TypeScript interfaces from JSON",
-      examples: [`codestation ts '{"id":1,"name":"Ada"}' User`]
-    },
-    mcpMetadata: {
-      toolName: "codestation_json_to_typescript",
-      description: "Generate clean TypeScript interfaces and types from sample JSON data. [Pro Tier]"
-    },
-    routeMetadata: {
-      route: "/tools/json-to-typescript",
-      slug: "json-to-typescript"
-    },
-    execute: async (input) => {
-      return jsonToTypescript(input.json, input.rootName || "Root");
-    }
-  },
-  // 6. JSON to Zod Validation Schema
-  {
-    id: "json-to-zod",
-    name: "JSON to Zod",
-    description: "Generate production-ready Zod validation schemas and inferred types from sample JSON.",
-    version: "1.2.0",
-    accessLevel: "pro",
-    privacyClassification: "memory-only",
-    category: "JSON & Data",
-    keywords: ["json", "zod", "schema", "validation", "generator"],
-    inputSchema: {
-      type: "object",
-      properties: {
-        json: { type: "string", description: "Sample JSON string or payload" },
-        rootName: { type: "string", default: "rootSchema", description: "Name of root schema" }
-      },
-      required: ["json"]
-    },
-    outputSchema: {
-      type: "object",
-      properties: { code: { type: "string" } }
-    },
-    cliMetadata: {
-      command: "zod",
-      aliases: ["json-to-zod"],
-      description: "Generate production-ready Zod schema from JSON",
-      examples: [`codestation zod '{"id":1,"name":"Ada"}' userSchema`]
-    },
-    mcpMetadata: {
-      toolName: "codestation_json_to_zod",
-      description: "Generate production-ready Zod validation schema and inferred types from sample JSON data. [Pro Tier]"
-    },
-    routeMetadata: {
-      route: "/tools/json-to-zod",
-      slug: "json-to-zod"
-    },
-    execute: async (input) => {
-      return jsonToZod(input.json, input.rootName || "rootSchema");
-    }
-  },
-  // 7. JWT Decoder
-  {
-    id: "jwt-decoder",
-    name: "JWT Decoder",
-    description: "Inspect claims, header, and expiry of JSON Web Tokens in local memory.",
-    version: "1.2.0",
-    accessLevel: "pro",
-    privacyClassification: "local-only",
-    category: "Security & Crypto",
-    keywords: ["jwt", "token", "decode", "claims", "header", "auth"],
-    inputSchema: {
-      type: "object",
-      properties: { token: { type: "string", description: "JWT string" } },
-      required: ["token"]
-    },
-    outputSchema: {
-      type: "object",
-      properties: { header: { type: "object" }, payload: { type: "object" } }
-    },
-    cliMetadata: {
-      command: "jwt",
-      aliases: ["jwt-decode"],
-      description: "Decode & inspect JWT header, payload, and expiry",
-      examples: ["codestation jwt eyJhbGci..."]
-    },
-    mcpMetadata: {
-      toolName: "codestation_jwt_decode",
-      description: "Inspect & decode JSON Web Token (JWT) header, payload claims, and signature in local memory. [Pro Tier]"
-    },
-    routeMetadata: {
-      route: "/tools/jwt-decoder",
-      slug: "jwt-decoder"
-    },
-    execute: async (input) => {
-      return JSON.parse(decodeJwt(input.token));
-    }
-  },
-  // 8. SQL Formatter
-  {
-    id: "sql-formatter",
-    name: "SQL Formatter",
-    description: "Beautify, indent, and format SQL queries across PostgreSQL, MySQL, SQLite, and Transact-SQL.",
-    version: "1.2.0",
-    accessLevel: "pro",
-    privacyClassification: "memory-only",
-    category: "SQL & Database",
-    keywords: ["sql", "format", "beautify", "postgres", "mysql", "sqlite"],
-    inputSchema: {
-      type: "object",
-      properties: {
-        sql: { type: "string", description: "SQL query string" },
-        dialect: { type: "string", default: "postgresql", description: "SQL dialect" }
-      },
-      required: ["sql"]
-    },
-    outputSchema: {
-      type: "object",
-      properties: { formatted: { type: "string" } }
-    },
-    cliMetadata: {
-      command: "sql",
-      aliases: ["format-sql"],
-      description: "Format SQL query across dialects",
-      examples: ['codestation sql "SELECT id, name FROM users WHERE active = true;" --dialect postgresql']
-    },
-    mcpMetadata: {
-      toolName: "codestation_format_sql",
-      description: "Format, beautify, and indent SQL queries across PostgreSQL, MySQL, SQLite, and standard SQL. [Pro Tier]"
-    },
-    routeMetadata: {
-      route: "/tools/sql-formatter",
-      slug: "sql-formatter"
-    },
-    execute: async (input) => {
-      const { format } = await import("sql-formatter");
-      const dialectMap = {
-        postgresql: "postgresql",
-        postgres: "postgresql",
-        mysql: "mysql",
-        sqlite: "sqlite",
-        sqlserver: "transactsql"
-      };
-      const lang = dialectMap[(input.dialect || "postgresql").toLowerCase()] || "sql";
-      return format(input.sql, { language: lang, tabWidth: 2 });
-    }
-  },
-  // 9. Cron Explainer
-  {
-    id: "cron-explain",
-    name: "Cron Schedule Explainer",
-    description: "Translate 5-field Unix cron expressions into human-readable English and calculate upcoming runtimes.",
-    version: "1.2.0",
-    accessLevel: "pro",
-    privacyClassification: "memory-only",
-    category: "Cron",
-    keywords: ["cron", "schedule", "explain", "next-run", "unix"],
-    inputSchema: {
-      type: "object",
-      properties: {
-        expression: { type: "string", description: "5-field cron expression, e.g. 0 9 * * 1-5" }
-      },
-      required: ["expression"]
-    },
-    outputSchema: {
-      type: "object",
-      properties: {
-        expression: { type: "string" },
-        explanation: { type: "string" }
-      }
-    },
-    cliMetadata: {
-      command: "cron",
-      aliases: ["cron-explain"],
-      description: "Explain cron schedule and project next 5 runtimes",
-      examples: ['codestation cron "0 9 * * 1-5"']
-    },
-    mcpMetadata: {
-      toolName: "codestation_cron_explain",
-      description: "Parse and explain 5-field Unix cron expressions in clear plain English. [Pro Tier]"
-    },
-    routeMetadata: {
-      route: "/tools/cron-expression-explainer",
-      slug: "cron-expression-explainer"
-    },
-    execute: async (input) => {
-      const parsed = parseCron(input.expression);
-      return {
-        expression: input.expression,
-        explanation: explainCron(parsed)
-      };
-    }
-  },
-  // 10. Cryptographic Hasher
-  {
-    id: "hash-generator",
-    name: "Cryptographic Digest Engine",
-    description: "Compute deterministic cryptographic digests (SHA-256, SHA-512, MD5, SHA-1, CRC-32).",
-    version: "1.2.0",
-    accessLevel: "pro",
-    privacyClassification: "local-only",
-    category: "Security & Crypto",
-    keywords: ["hash", "sha256", "sha512", "md5", "sha1", "crc32", "digest"],
-    inputSchema: {
-      type: "object",
-      properties: {
-        text: { type: "string", description: "Input text" },
-        algorithm: { type: "string", enum: ["sha256", "sha512", "md5", "sha1", "crc32"], default: "sha256" }
-      },
-      required: ["text"]
-    },
-    outputSchema: {
-      type: "object",
-      properties: { hash: { type: "string" } }
-    },
-    cliMetadata: {
-      command: "hash",
-      aliases: ["digest"],
-      description: "Compute cryptographic digest (sha256, sha512, md5, sha1, crc32)",
-      examples: ['codestation hash "sample text" --alg sha256']
-    },
-    mcpMetadata: {
-      toolName: "codestation_hash",
-      description: "Compute deterministic cryptographic hashes (SHA-256, SHA-512, MD5, SHA-1, CRC-32). [Pro Tier]"
-    },
-    routeMetadata: {
-      route: "/tools/sha-256",
-      slug: "sha-256"
-    },
-    execute: async (input) => {
-      const alg = (input.algorithm || "sha256").toLowerCase();
-      if (alg === "sha256" || alg === "sha-256") return await sha256(input.text);
-      if (alg === "sha512" || alg === "sha-512") return await sha512(input.text);
-      if (alg === "md5") return md5(input.text);
-      if (alg === "sha1" || alg === "sha-1") return sha1(input.text);
-      if (alg === "crc32") return crc32(input.text);
-      return await sha256(input.text);
-    }
-  },
-  // 11. UUID Generator (Free Tier)
-  {
-    id: "uuid-generator",
-    name: "UUID v4 Generator",
-    description: "Generate RFC 4122 v4 cryptographically secure random UUIDs.",
-    version: "1.2.0",
-    accessLevel: "free",
-    privacyClassification: "local-only",
-    category: "Security & Crypto",
-    keywords: ["uuid", "random", "guid", "v4"],
-    inputSchema: {
-      type: "object",
-      properties: {
-        count: { type: "integer", minimum: 1, maximum: 50, default: 1 }
-      }
-    },
-    outputSchema: {
-      type: "object",
-      properties: { uuids: { type: "array", items: { type: "string" } } }
-    },
-    cliMetadata: {
-      command: "uuid",
-      aliases: ["guid"],
-      description: "Generate random RFC 4122 v4 UUIDs",
-      examples: ["codestation uuid 5"]
-    },
-    mcpMetadata: {
-      toolName: "codestation_uuid",
-      description: "Generate cryptographically secure v4 UUIDs. [Free Tier]"
-    },
-    routeMetadata: {
-      route: "/tools/uuid-generator",
-      slug: "uuid-generator"
-    },
-    execute: async (input) => {
-      const count = Math.min(Math.max(input.count || 1, 1), 50);
-      return Array.from({ length: count }, () => crypto.randomUUID());
-    }
-  },
-  // 12. JSON Formatter & Minifier (Free Tier)
-  {
-    id: "json-formatter",
-    name: "JSON Formatter & Validator",
-    description: "Validate, beautify, indent, or compact raw JSON strings.",
-    version: "1.2.0",
-    accessLevel: "free",
-    privacyClassification: "memory-only",
-    category: "JSON & Data",
-    keywords: ["json", "format", "validate", "minify", "beautify"],
-    inputSchema: {
-      type: "object",
-      properties: {
-        json: { type: "string", description: "Raw JSON string" },
-        indent: { type: "integer", default: 2 }
-      },
-      required: ["json"]
-    },
-    outputSchema: {
-      type: "object",
-      properties: { formatted: { type: "string" } }
-    },
-    cliMetadata: {
-      command: "json",
-      aliases: ["format-json"],
-      description: "Validate and pretty-print JSON",
-      examples: [`codestation json '{"k":"v"}'`]
-    },
-    mcpMetadata: {
-      toolName: "codestation_format_json",
-      description: "Format, validate, and pretty-print raw JSON with indentation. [Free Tier]"
-    },
-    routeMetadata: {
-      route: "/tools/json-formatter",
-      slug: "json-formatter"
-    },
-    execute: async (input) => {
-      return formatJson(input.json, input.indent ?? 2);
-    }
-  }
-];
 
 // lib/tools/text-station.ts
 var MAX_TEXT_LENGTH = 1e6;
@@ -3195,6 +2409,224 @@ function slugify(value, separator = "-") {
   return value.normalize("NFKD").replace(/[\u0300-\u036f]/gu, "").toLocaleLowerCase().replace(/[^\p{L}\p{N}]+/gu, separator).replace(new RegExp(`(?:${escapeRegex(separator)})+`, "g"), separator).replace(new RegExp(`^${escapeRegex(separator)}|${escapeRegex(separator)}$`, "g"), "");
 }
 
+// lib/tools/json-to-types.ts
+function toPascalCase(str) {
+  const clean = str.replace(/[^a-zA-Z0-9]/g, " ");
+  return clean.split(/\s+/).filter(Boolean).map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join("") || "NestedType";
+}
+function isValidIdentifier(name) {
+  return /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(name);
+}
+function formatKey(key) {
+  return isValidIdentifier(key) ? key : JSON.stringify(key);
+}
+function jsonToTypescript(jsonInput, rootName = "Root") {
+  let parsed;
+  try {
+    parsed = JSON.parse(jsonInput);
+  } catch (err) {
+    throw new Error(`Invalid JSON: ${err instanceof Error ? err.message : String(err)}`);
+  }
+  const interfaces = [];
+  const createdNames = /* @__PURE__ */ new Set();
+  function getUniqueName(base) {
+    let name = toPascalCase(base);
+    let counter = 1;
+    while (createdNames.has(name)) {
+      counter += 1;
+      name = `${toPascalCase(base)}${counter}`;
+    }
+    createdNames.add(name);
+    return name;
+  }
+  function resolveType(val, keyHint) {
+    if (val === null) return "null";
+    if (val === void 0) return "undefined";
+    const type = typeof val;
+    if (type === "string" || type === "number" || type === "boolean") {
+      return type;
+    }
+    if (Array.isArray(val)) {
+      if (val.length === 0) return "unknown[]";
+      const itemTypes = /* @__PURE__ */ new Set();
+      const sampleObjects = [];
+      for (const item of val) {
+        if (item && typeof item === "object" && !Array.isArray(item)) {
+          sampleObjects.push(item);
+        } else {
+          itemTypes.add(resolveType(item, `${keyHint}Item`));
+        }
+      }
+      if (sampleObjects.length > 0) {
+        const merged = {};
+        for (const obj of sampleObjects) {
+          for (const [k, v] of Object.entries(obj)) {
+            if (!merged[k]) merged[k] = { types: /* @__PURE__ */ new Set(), count: 0 };
+            merged[k].count += 1;
+            merged[k].types.add(resolveType(v, k));
+          }
+        }
+        const lines = [];
+        for (const [k, meta] of Object.entries(merged)) {
+          const isOptional = meta.count < sampleObjects.length;
+          const typeStr = Array.from(meta.types).join(" | ") || "unknown";
+          const formattedKey = formatKey(k) + (isOptional ? "?" : "");
+          lines.push(`  ${formattedKey}: ${typeStr};`);
+        }
+        const interfaceName = getUniqueName(`${keyHint}Item`);
+        interfaces.unshift({
+          name: interfaceName,
+          body: `export interface ${interfaceName} {
+${lines.join("\n")}
+}`
+        });
+        itemTypes.add(interfaceName);
+      }
+      const union = Array.from(itemTypes).join(" | ");
+      return union.includes(" | ") ? `(${union})[]` : `${union}[]`;
+    }
+    if (type === "object") {
+      const obj = val;
+      const lines = [];
+      for (const [k, v] of Object.entries(obj)) {
+        const typeStr = resolveType(v, k);
+        lines.push(`  ${formatKey(k)}: ${typeStr};`);
+      }
+      const interfaceName = getUniqueName(keyHint);
+      interfaces.unshift({
+        name: interfaceName,
+        body: `export interface ${interfaceName} {
+${lines.join("\n")}
+}`
+      });
+      return interfaceName;
+    }
+    return "unknown";
+  }
+  const rootTypeName = toPascalCase(rootName) || "Root";
+  if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+    const rootType = resolveType(parsed, rootTypeName);
+    const found = interfaces.find((i) => i.name === rootType);
+    if (found) {
+      found.name = rootTypeName;
+      found.body = found.body.replace(`export interface ${rootType}`, `export interface ${rootTypeName}`);
+    }
+    return interfaces.map((i) => i.body).join("\n\n");
+  } else if (Array.isArray(parsed)) {
+    const itemType = resolveType(parsed, rootTypeName);
+    return `${interfaces.map((i) => i.body).join("\n\n")}
+
+export type ${rootTypeName} = ${itemType};`.trim();
+  } else {
+    const primitiveType = resolveType(parsed, rootTypeName);
+    return `export type ${rootTypeName} = ${primitiveType};`;
+  }
+}
+function jsonToZod(jsonInput, rootName = "rootSchema") {
+  let parsed;
+  try {
+    parsed = JSON.parse(jsonInput);
+  } catch (err) {
+    throw new Error(`Invalid JSON: ${err instanceof Error ? err.message : String(err)}`);
+  }
+  const schemas = [];
+  const createdNames = /* @__PURE__ */ new Set();
+  function getUniqueName(base) {
+    let name = base.endsWith("Schema") ? base : `${base}Schema`;
+    let counter = 1;
+    while (createdNames.has(name)) {
+      counter += 1;
+      name = `${base}${counter}Schema`;
+    }
+    createdNames.add(name);
+    return name;
+  }
+  function resolveZod(val, keyHint) {
+    if (val === null) return "z.null()";
+    if (val === void 0) return "z.undefined()";
+    if (typeof val === "string") return "z.string()";
+    if (typeof val === "number") return Number.isInteger(val) ? "z.number().int()" : "z.number()";
+    if (typeof val === "boolean") return "z.boolean()";
+    if (Array.isArray(val)) {
+      if (val.length === 0) return "z.array(z.unknown())";
+      const sampleObjects = [];
+      const itemSchemas = /* @__PURE__ */ new Set();
+      for (const item of val) {
+        if (item && typeof item === "object" && !Array.isArray(item)) {
+          sampleObjects.push(item);
+        } else {
+          itemSchemas.add(resolveZod(item, `${keyHint}Item`));
+        }
+      }
+      if (sampleObjects.length > 0) {
+        const merged = {};
+        for (const obj of sampleObjects) {
+          for (const [k, v] of Object.entries(obj)) {
+            if (!merged[k]) merged[k] = { schemas: /* @__PURE__ */ new Set(), count: 0 };
+            merged[k].count += 1;
+            merged[k].schemas.add(resolveZod(v, k));
+          }
+        }
+        const lines = [];
+        for (const [k, meta] of Object.entries(merged)) {
+          const isOptional = meta.count < sampleObjects.length;
+          let schemaStr = Array.from(meta.schemas)[0] || "z.unknown()";
+          if (meta.schemas.size > 1) {
+            schemaStr = `z.union([${Array.from(meta.schemas).join(", ")}])`;
+          }
+          if (isOptional) {
+            schemaStr += ".optional()";
+          }
+          lines.push(`  ${formatKey(k)}: ${schemaStr},`);
+        }
+        const schemaName = getUniqueName(`${keyHint}Item`);
+        schemas.unshift({
+          name: schemaName,
+          body: `export const ${schemaName} = z.object({
+${lines.join("\n")}
+});`
+        });
+        itemSchemas.add(schemaName);
+      }
+      const union = Array.from(itemSchemas);
+      if (union.length === 1) return `z.array(${union[0]})`;
+      return `z.array(z.union([${union.join(", ")}]))`;
+    }
+    if (typeof val === "object") {
+      const obj = val;
+      const lines = [];
+      for (const [k, v] of Object.entries(obj)) {
+        lines.push(`  ${formatKey(k)}: ${resolveZod(v, k)},`);
+      }
+      const schemaName = getUniqueName(keyHint);
+      schemas.unshift({
+        name: schemaName,
+        body: `export const ${schemaName} = z.object({
+${lines.join("\n")}
+});`
+      });
+      return schemaName;
+    }
+    return "z.unknown()";
+  }
+  const safeRootName = rootName.endsWith("Schema") ? rootName : `${rootName}Schema`;
+  const typeName = toPascalCase(rootName.replace(/Schema$/i, "")) || "Root";
+  const rootResult = resolveZod(parsed, safeRootName);
+  const found = schemas.find((s) => s.name === rootResult);
+  if (found) {
+    found.name = safeRootName;
+    found.body = found.body.replace(`export const ${rootResult}`, `export const ${safeRootName}`);
+  }
+  const header = `import { z } from "zod";
+
+`;
+  const schemaDeclarations = schemas.map((s) => s.body).join("\n\n");
+  const typeExport = `
+
+export type ${typeName} = z.infer<typeof ${safeRootName}>;`;
+  return header + (schemaDeclarations ? `${schemaDeclarations}${typeExport}` : `export const ${safeRootName} = ${rootResult};${typeExport}`);
+}
+
 // lib/tools/date-time-station.ts
 var SECOND = 1e3;
 var MINUTE = 60 * SECOND;
@@ -3347,14 +2779,14 @@ function parseDateTime(value, options = {}) {
     millisecond: Number((match[7] ?? "").padEnd(3, "0"))
   }, match[8], options);
 }
-function pad2(value, length = 2) {
+function pad(value, length = 2) {
   return String(value).padStart(length, "0");
 }
 function calendarText(parts) {
-  return `${pad2(parts.year, 4)}-${pad2(parts.month)}-${pad2(parts.day)}`;
+  return `${pad(parts.year, 4)}-${pad(parts.month)}-${pad(parts.day)}`;
 }
 function clockText(parts) {
-  return `${pad2(parts.hour)}:${pad2(parts.minute)}:${pad2(parts.second)}.${pad2(parts.millisecond, 3)}`;
+  return `${pad(parts.hour)}:${pad(parts.minute)}:${pad(parts.second)}.${pad(parts.millisecond, 3)}`;
 }
 function offsetText(milliseconds) {
   if (!milliseconds) return "Z";
@@ -3362,7 +2794,7 @@ function offsetText(milliseconds) {
   const hours = Math.floor(seconds / 3600);
   const minutes = Math.floor(seconds % 3600 / 60);
   const remainder = seconds % 60;
-  return `${milliseconds < 0 ? "-" : "+"}${pad2(hours)}:${pad2(minutes)}${remainder ? `:${pad2(remainder)}` : ""}`;
+  return `${milliseconds < 0 ? "-" : "+"}${pad(hours)}:${pad(minutes)}${remainder ? `:${pad(remainder)}` : ""}`;
 }
 function getZonedDateTime(value, timeZone = "UTC", options = {}) {
   const date = parseDateTime(value, options);
@@ -3450,6 +2882,1222 @@ function businessDaysBetween(start, end, options = {}) {
   if (first > last) return 0;
   return direction * weekdaysInclusive(calendarFromDayNumber(first), calendarFromDayNumber(last));
 }
+
+// lib/tools/cron/parser.ts
+var MONTH_NAMES = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+var WEEKDAY_NAMES = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+var SPECS = [
+  { name: "second", label: "Second", min: 0, max: 59 },
+  { name: "minute", label: "Minute", min: 0, max: 59 },
+  { name: "hour", label: "Hour", min: 0, max: 23 },
+  { name: "dayOfMonth", label: "Day of month", min: 1, max: 31 },
+  { name: "month", label: "Month", min: 1, max: 12 },
+  { name: "dayOfWeek", label: "Day of week", min: 0, max: 7 }
+];
+function parseField(expression, spec) {
+  const fail2 = (message) => {
+    throw new Error(`${spec.label}: ${message}`);
+  };
+  if (expression.length > 128) fail2("field exceeds the 128-character limit.");
+  if (!expression) fail2("field cannot be empty.");
+  const endpoint = (text2) => {
+    let value;
+    if (/^\d+$/.test(text2)) value = Number(text2);
+    else if (spec.name === "month" && MONTH_NAMES.includes(text2.toUpperCase())) value = MONTH_NAMES.indexOf(text2.toUpperCase()) + 1;
+    else if (spec.name === "dayOfWeek" && WEEKDAY_NAMES.includes(text2.toUpperCase())) value = WEEKDAY_NAMES.indexOf(text2.toUpperCase());
+    else return fail2("use integer values, permitted month/weekday names, *, ranges, lists or steps.");
+    if (!Number.isSafeInteger(value) || value < spec.min || value > spec.max) fail2(`value must be between ${spec.min} and ${spec.max}.`);
+    return value;
+  };
+  const selected = /* @__PURE__ */ new Set();
+  for (const item of expression.split(",")) {
+    if (!item) fail2("lists cannot contain empty items.");
+    const pieces = item.split("/");
+    if (pieces.length > 2 || !pieces[0]) fail2("malformed step notation.");
+    let step = 1;
+    if (pieces.length === 2) {
+      if (!/^\d+$/.test(pieces[1])) fail2("step must be a positive integer.");
+      step = Number(pieces[1]);
+      if (!Number.isSafeInteger(step) || step < 1 || step > spec.max - spec.min + 1) fail2(`step must be between 1 and ${spec.max - spec.min + 1}.`);
+    }
+    const base = pieces[0];
+    let first;
+    let last;
+    if (base === "*") {
+      first = spec.min;
+      last = spec.max;
+    } else {
+      const range = base.split("-");
+      if (range.length > 2 || range.some((value) => !value)) fail2("malformed range; negative values are not supported.");
+      first = endpoint(range[0]);
+      last = range.length === 2 ? endpoint(range[1]) : pieces.length === 2 ? spec.max : first;
+      if (last < first) fail2("descending or wrapping ranges are not supported.");
+    }
+    for (let value = first; value <= last; value += step) selected.add(spec.name === "dayOfWeek" && value === 7 ? 0 : value);
+  }
+  return { ...spec, expression, values: [...selected].sort((a, b) => a - b), wildcard: expression.startsWith("*") };
+}
+function parseCron(expression) {
+  if (typeof expression !== "string" || !expression.trim()) throw new Error("Enter a cron expression.");
+  if (expression.length > 1024) throw new Error("Cron expression exceeds the 1,024-character limit.");
+  if (/[?#]/.test(expression) || /(?:^|[\s,/-])(?:L|LW|\d+[LW]|W|H(?:\([^)]*\))?)(?=$|[\s,/-])/i.test(expression) || /\b(?:cron|rate)\s*\(/i.test(expression)) {
+    throw new Error("Quartz, AWS and Jenkins extensions (?, L, W, # and H) are not supported; use Unix numeric cron notation.");
+  }
+  if (expression.includes("@")) throw new Error("Cron macros are not supported; enter five Unix fields or six seconds-first fields.");
+  const tokens = expression.trim().split(/\s+/);
+  if (tokens.length !== 5 && tokens.length !== 6) throw new Error("Expected five Unix fields or six seconds-first fields; years, commands, comments and environment assignments are not supported.");
+  const hasSeconds = tokens.length === 6;
+  const fields = tokens.map((token, index) => parseField(token, SPECS[index + (hasSeconds ? 0 : 1)]));
+  const second = hasSeconds ? fields[0] : parseField("0", SPECS[0]);
+  const [minute, hour, dayOfMonth, month, dayOfWeek] = fields.slice(hasSeconds ? 1 : 0);
+  return { expression, hasSeconds, fields, second, minute, hour, dayOfMonth, month, dayOfWeek, dayMode: dayOfMonth.wildcard || dayOfWeek.wildcard ? "and" : "or" };
+}
+function matchesCronDate(cron, year, month, day) {
+  if (!cron.month.values.includes(month)) return false;
+  const dom = cron.dayOfMonth.values.includes(day);
+  const dow = cron.dayOfWeek.values.includes(new Date(Date.UTC(year, month - 1, day)).getUTCDay());
+  return cron.dayMode === "and" ? dom && dow : dom || dow;
+}
+
+// lib/tools/cron/explain.ts
+var FULL_MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+var FULL_WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+var pad2 = (value) => String(value).padStart(2, "0");
+function explainCron(cron) {
+  let timing;
+  if (cron.hour.values.length === 1 && cron.minute.values.length === 1 && cron.second.values.length === 1) {
+    timing = `At ${pad2(cron.hour.values[0])}:${pad2(cron.minute.values[0])}${cron.hasSeconds ? `:${pad2(cron.second.values[0])}` : ""}`;
+  } else if (cron.hasSeconds && cron.hour.expression === "*" && cron.minute.expression === "*" && cron.second.expression === "*") timing = "Every second";
+  else if (cron.hour.expression === "*" && cron.minute.expression === "*" && !cron.hasSeconds) timing = "Every minute (at second 0)";
+  else if (cron.hour.expression === "*" && /^\*\/\d+$/.test(cron.minute.expression) && !cron.hasSeconds) timing = `Every ${Number(cron.minute.expression.slice(2))} minutes within each hour (at second 0)`;
+  else if (cron.hour.expression === "*" && cron.minute.values.length === 1 && cron.second.values.length === 1) timing = `Every hour at minute ${cron.minute.values[0]}, second ${cron.second.values[0]}`;
+  else timing = `${cron.hasSeconds ? "Seconds-first schedule" : "Unix schedule (at second 0)"}: hours ${cron.hour.expression === "*" ? "every hour" : cron.hour.values.map(pad2).join(", ")}; minutes ${cron.minute.expression === "*" ? "every minute" : cron.minute.values.map(pad2).join(", ")}${cron.hasSeconds ? `; seconds ${cron.second.expression === "*" ? "every second" : cron.second.values.map(pad2).join(", ")}` : ""}`;
+  const months = cron.month.values.length === 12 ? "" : `; in ${cron.month.values.map((value) => FULL_MONTHS[value - 1]).join(", ")}`;
+  const dom = cron.dayOfMonth.values.length === 31 ? "every day of month" : `day of month ${cron.dayOfMonth.values.join(", ")}`;
+  const dow = cron.dayOfWeek.values.length === 7 ? "every weekday (Sunday\u2013Saturday)" : cron.dayOfWeek.values.map((value) => FULL_WEEKDAYS[value]).join(", ");
+  const days = cron.dayMode === "or" ? `when either ${dom} OR weekday ${dow} matches` : cron.dayOfMonth.values.length === 31 && cron.dayOfWeek.values.length === 7 ? "every day" : cron.dayOfMonth.values.length === 31 ? `on ${dow}` : cron.dayOfWeek.values.length === 7 ? `on ${dom}` : `when both ${dom} AND weekday ${dow} match`;
+  return `${timing}; ${days}${months}.`;
+}
+
+// lib/tools/cron/next-run.ts
+var DAY2 = 864e5;
+var SIX_HOURS = 6 * 36e5;
+var pad3 = (value, width = 2) => String(value).padStart(width, "0");
+function parseCronReference(reference) {
+  if (reference.length > 64) throw new Error("Reference exceeds the 64-character limit.");
+  const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2})(?:\.(\d{1,3}))?)?(Z|[+-]\d{2}:\d{2})$/.exec(reference);
+  if (!match) throw new Error("Reference must be an absolute ISO date/time: YYYY-MM-DDTHH:mm[:ss[.sss]] followed by Z or \xB1HH:mm.");
+  const [year, month, day, hour, minute, second] = [match[1], match[2], match[3], match[4], match[5], match[6] ?? "0"].map(Number);
+  if (year < 1970 || year > 2099) throw new Error("Reference years must be between 1970 and 2099.");
+  const days = new Date(Date.UTC(year, month, 0)).getUTCDate();
+  if (month < 1 || month > 12 || day < 1 || day > days || hour > 23 || minute > 59 || second > 59) throw new Error("Reference contains an impossible calendar date or time.");
+  const milliseconds = Number((match[7] ?? "").padEnd(3, "0"));
+  let offset = 0;
+  if (match[8] !== "Z") {
+    const offsetHour = Number(match[8].slice(1, 3));
+    const offsetMinute = Number(match[8].slice(4, 6));
+    if (offsetMinute > 59 || offsetHour > 14 || offsetHour === 14 && offsetMinute !== 0) throw new Error("Reference offset must be within \xB114:00, with valid minutes.");
+    offset = (offsetHour * 60 + offsetMinute) * 6e4 * (match[8][0] === "-" ? -1 : 1);
+  }
+  const instant = Date.UTC(year, month - 1, day, hour, minute, second, milliseconds) - offset;
+  const utcYear = new Date(instant).getUTCFullYear();
+  if (utcYear < 1970 || utcYear > 2099) throw new Error("Reference instant must fall within UTC years 1970\u20132099.");
+  return instant;
+}
+function zoneFormatter2(timezone) {
+  if (!timezone || timezone !== timezone.trim()) throw new Error("Select a nonempty IANA timezone.");
+  if (timezone.length > 128 || !/^[A-Za-z][A-Za-z0-9_+\-/]*$/.test(timezone)) throw new Error("Enter a valid IANA timezone name; numeric offsets are not timezone names.");
+  try {
+    return new Intl.DateTimeFormat("en-GB-u-ca-gregory-nu-latn", {
+      timeZone: timezone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hourCycle: "h23"
+    });
+  } catch {
+    throw new Error("Timezone is not a recognized IANA timezone in this runtime.");
+  }
+}
+function wallTime(formatter, instant) {
+  const parts = formatter.formatToParts(instant);
+  const get = (name) => Number(parts.find((part) => part.type === name)?.value);
+  return { year: get("year"), month: get("month"), day: get("day"), hour: get("hour"), minute: get("minute"), second: get("second") };
+}
+function offsetAt(formatter, instant) {
+  const wholeSecond = Math.floor(instant / 1e3) * 1e3;
+  const wall = wallTime(formatter, wholeSecond);
+  return Date.UTC(wall.year, wall.month - 1, wall.day, wall.hour, wall.minute, wall.second) - wholeSecond;
+}
+function offsetIntervals(formatter, midnight) {
+  const start = midnight - 2 * DAY2;
+  const end = midnight + 3 * DAY2;
+  const intervals = [];
+  let intervalStart = start;
+  let priorOffset = offsetAt(formatter, start);
+  for (let probe = start + SIX_HOURS; probe <= end; probe += SIX_HOURS) {
+    const nextOffset = offsetAt(formatter, probe);
+    if (nextOffset !== priorOffset) {
+      let low = probe - SIX_HOURS;
+      let high = probe;
+      while (high - low > 1e3) {
+        const middle = Math.floor((low + high) / 2e3) * 1e3;
+        if (offsetAt(formatter, middle) === priorOffset) low = middle;
+        else high = middle;
+      }
+      intervals.push({ start: intervalStart, end: high, offset: priorOffset });
+      intervalStart = high;
+      priorOffset = nextOffset;
+    }
+  }
+  intervals.push({ start: intervalStart, end, offset: priorOffset });
+  return intervals;
+}
+function selectedSecond(cron, lower, upper) {
+  if (lower >= upper || lower >= 86400) return void 0;
+  lower = Math.max(0, Math.ceil(lower));
+  const firstHour = Math.floor(lower / 3600);
+  for (const hour of cron.hour.values) {
+    if (hour < firstHour) continue;
+    const firstMinute = hour === firstHour ? Math.floor(lower % 3600 / 60) : 0;
+    for (const minute of cron.minute.values) {
+      if (minute < firstMinute) continue;
+      const base = hour * 3600 + minute * 60;
+      if (base >= upper) return void 0;
+      const second = cron.second.values.find((value) => base + value >= lower);
+      if (second !== void 0) return base + second < upper ? base + second : void 0;
+    }
+  }
+  return void 0;
+}
+function formatCronDuration(milliseconds) {
+  if (!Number.isSafeInteger(milliseconds)) throw new Error("Duration is outside supported integer precision.");
+  const sign = milliseconds < 0 ? "-" : "+";
+  let remainder = Math.abs(milliseconds);
+  const pieces = [];
+  for (const [size, name] of [[DAY2, "day"], [36e5, "hour"], [6e4, "minute"], [1e3, "second"], [1, "millisecond"]]) {
+    const count = Math.floor(remainder / size);
+    remainder %= size;
+    if (count) pieces.push(`${count} ${name}${count === 1 ? "" : "s"}`);
+  }
+  return sign + (pieces.join(", ") || "0 seconds");
+}
+function nextCronRun(expression, reference, timezone) {
+  const cron = typeof expression === "string" ? parseCron(expression) : expression;
+  const instant = parseCronReference(reference);
+  const formatter = zoneFormatter2(timezone);
+  const referenceWall = wallTime(formatter, instant);
+  if (referenceWall.year < 1970 || referenceWall.year > 2099) throw new Error("Reference in the selected timezone must fall within years 1970\u20132099.");
+  const referenceDay = Date.UTC(referenceWall.year, referenceWall.month - 1, referenceWall.day);
+  const firstDay = Math.max(Date.UTC(1970, 0, 1), referenceDay - 2 * DAY2);
+  const searchEnd = Math.min(Date.UTC(2100, 0, 1), Date.UTC(referenceWall.year + 8, referenceWall.month - 1, referenceWall.day + 1));
+  const utcReference = new Date(instant);
+  const eightYearLimit = Date.UTC(utcReference.getUTCFullYear() + 8, utcReference.getUTCMonth(), utcReference.getUTCDate(), utcReference.getUTCHours(), utcReference.getUTCMinutes(), utcReference.getUTCSeconds(), utcReference.getUTCMilliseconds());
+  const absoluteEnd = Math.min(Date.UTC(2100, 0, 1), eightYearLimit + 1);
+  let best;
+  let bestOffset = 0;
+  for (let midnight = firstDay; midnight < searchEnd; midnight += DAY2) {
+    if (best !== void 0 && midnight - DAY2 > best) break;
+    const date = new Date(midnight);
+    const year = date.getUTCFullYear();
+    const month = date.getUTCMonth() + 1;
+    const day = date.getUTCDate();
+    if (!matchesCronDate(cron, year, month, day)) continue;
+    for (const interval of offsetIntervals(formatter, midnight)) {
+      const lowerUtc = Math.max(interval.start, instant + 1, midnight - interval.offset, Date.UTC(1970, 0, 1));
+      const upperUtc = Math.min(interval.end, midnight + DAY2 - interval.offset, absoluteEnd, best ?? Infinity);
+      const second = selectedSecond(cron, (lowerUtc + interval.offset - midnight) / 1e3, (upperUtc + interval.offset - midnight) / 1e3);
+      if (second === void 0) continue;
+      const candidate = midnight + second * 1e3 - interval.offset;
+      const actual = wallTime(formatter, candidate);
+      if (actual.year !== year || actual.month !== month || actual.day !== day || actual.hour !== Math.floor(second / 3600) || actual.minute !== Math.floor(second % 3600 / 60) || actual.second !== second % 60) continue;
+      if (candidate > instant && (best === void 0 || candidate < best)) {
+        best = candidate;
+        bestOffset = interval.offset;
+      }
+    }
+  }
+  if (best === void 0) throw new Error("No occurrence found within eight calendar years after the reference, ending no later than 2099. The expression may select impossible calendar dates.");
+  if (bestOffset % 6e4 !== 0) throw new Error("This historical timezone offset includes seconds and cannot be represented by an RFC 3339 \xB1HH:mm offset; choose a reference after the zone adopted minute-based offsets.");
+  const wall = wallTime(formatter, best);
+  const offsetMinutes = Math.abs(bestOffset / 6e4);
+  const offset = `${bestOffset < 0 ? "-" : "+"}${pad3(Math.floor(offsetMinutes / 60))}:${pad3(offsetMinutes % 60)}`;
+  const dateTime = `${pad3(wall.year, 4)}-${pad3(wall.month)}-${pad3(wall.day)}T${pad3(wall.hour)}:${pad3(wall.minute)}:${pad3(wall.second)}${offset}[${timezone}]`;
+  const durationMilliseconds = best - instant;
+  return { instant: best, dateTime, timezone, durationMilliseconds, duration: formatCronDuration(durationMilliseconds) };
+}
+
+// config/shared-registry.ts
+function checkToolAccess(toolId, license) {
+  const tool = SHARED_TOOLS.find(
+    (t) => t.id === toolId || t.mcpMetadata.toolName === toolId || t.cliMetadata.command === toolId || t.cliMetadata.aliases.includes(toolId)
+  );
+  if (!tool) {
+    return {
+      allowed: false,
+      status: "denied",
+      reason: `Tool "${toolId}" is not registered in Code Station registry.`
+    };
+  }
+  if (tool.accessLevel === "free" || tool.accessLevel === "local-only") {
+    return { allowed: true, status: "granted" };
+  }
+  if (tool.accessLevel === "pro") {
+    if (license?.isPro) {
+      return { allowed: true, status: "granted" };
+    }
+    return {
+      allowed: false,
+      status: "denied",
+      requiredTier: "pro",
+      reason: `Tool "${tool.name}" requires Code Station Pro. Upgrade at https://codestation.in/pro or launch with --key CS-PRO-YOURKEY.`
+    };
+  }
+  if (tool.accessLevel === "paid-key") {
+    if (license?.isPro) {
+      return { allowed: true, status: "granted" };
+    }
+    return {
+      allowed: false,
+      status: "denied",
+      requiredTier: "paid-key",
+      reason: `Tool "${tool.name}" requires a valid paid key.`
+    };
+  }
+  return { allowed: true, status: "granted" };
+}
+var SHARED_TOOLS = [
+  // 1. cURL to Any Language Generator
+  {
+    id: "curl-to-any-language",
+    name: "cURL to Any Language Generator",
+    description: "Convert literal cURL commands into idiomatic TypeScript (fetch/axios), Python (requests), or Go (net/http).",
+    version: "1.2.0",
+    accessLevel: "pro",
+    privacyClassification: "memory-only",
+    category: "API",
+    keywords: ["curl", "fetch", "axios", "python", "go", "generator", "api", "converter"],
+    inputSchema: {
+      type: "object",
+      properties: {
+        curl: { type: "string", description: "cURL command string to convert" },
+        target: {
+          type: "string",
+          enum: ["fetch", "axios", "python", "go"],
+          default: "fetch",
+          description: "Target programming language/library"
+        }
+      },
+      required: ["curl"]
+    },
+    outputSchema: {
+      type: "object",
+      properties: {
+        code: { type: "string" },
+        language: { type: "string" },
+        target: { type: "string" },
+        warnings: { type: "array", items: { type: "string" } }
+      }
+    },
+    cliMetadata: {
+      command: "curl-to-any-language",
+      aliases: ["curl", "curl-to-code"],
+      description: "Convert cURL commands to TypeScript, Python, or Go code",
+      examples: [
+        'codestation curl-to-any-language "curl https://api.example.com" --target fetch',
+        `codestation curl "curl -X POST https://api.example.com -d '{\\"name\\":\\"test\\"}'" --target python`
+      ]
+    },
+    mcpMetadata: {
+      toolName: "codestation_curl_to_code",
+      description: "Convert cURL commands to TypeScript fetch/axios, Python requests, or Go net/http. [Pro Tier]"
+    },
+    routeMetadata: {
+      route: "/tools/curl-to-any-language",
+      slug: "curl-to-any-language"
+    },
+    execute: async (input) => {
+      const target = input.target || "fetch";
+      return await curlToCode(input.curl, target);
+    }
+  },
+  // 2. Environment & Secret Leak Scanner
+  {
+    id: "env-audit",
+    name: "Environment & Secret Leak Scanner",
+    description: "Audit .env and configuration files for exposed live secrets (Stripe, AWS, OpenAI, GitHub PAT, private keys) and diff against .env.example.",
+    version: "1.2.0",
+    accessLevel: "pro",
+    privacyClassification: "local-only",
+    category: "Security",
+    keywords: ["env", "audit", "secrets", "scanner", "leak", "security", "credentials"],
+    inputSchema: {
+      type: "object",
+      properties: {
+        env: { type: "string", description: "Content of environment or configuration file" },
+        example: { type: "string", description: "Optional content of .env.example to compare against" },
+        format: { type: "string", enum: ["report", "json"], default: "report" }
+      },
+      required: ["env"]
+    },
+    outputSchema: {
+      type: "object",
+      properties: {
+        totalVariables: { type: "integer" },
+        findings: { type: "array" },
+        isSecure: { type: "boolean" },
+        summary: { type: "string" }
+      }
+    },
+    cliMetadata: {
+      command: "env-audit",
+      aliases: ["env", "audit-env"],
+      description: "Scan .env files for leaked secrets and diff against .env.example",
+      examples: [
+        "codestation env-audit .env --example .env.example",
+        "codestation env .env --json"
+      ]
+    },
+    mcpMetadata: {
+      toolName: "codestation_env_audit",
+      description: "Scan environment variables for secret leaks and validate against .env.example. [Pro Tier]"
+    },
+    routeMetadata: {
+      route: "/tools/env-audit",
+      slug: "env-audit"
+    },
+    execute: async (input) => {
+      const res = auditEnv(input.env, input.example);
+      if (input.format === "json") return res;
+      return { report: formatEnvAuditReport(res), ...res };
+    }
+  },
+  // 3. Realistic Mock Data & SQL Seeder
+  {
+    id: "mock-data",
+    name: "Realistic Mock Data & SQL Seeder",
+    description: "Generate realistic mock data records and SQL INSERT seed statements with deterministic seeds.",
+    version: "1.2.0",
+    accessLevel: "pro",
+    privacyClassification: "memory-only",
+    category: "JSON & Data",
+    keywords: ["mock", "data", "seed", "sql", "faker", "testing", "fixtures"],
+    inputSchema: {
+      type: "object",
+      properties: {
+        template: { type: "string", enum: ["users", "products", "orders", "custom"], default: "users" },
+        count: { type: "integer", minimum: 1, maximum: 1e3, default: 10 },
+        format: { type: "string", enum: ["json", "sql", "csv"], default: "json" },
+        tableName: { type: "string", description: "Table name for SQL output" },
+        seed: { type: "integer", description: "Deterministic random seed" },
+        customSchema: { type: "object", description: "Custom field mapping" }
+      }
+    },
+    outputSchema: {
+      type: "object",
+      properties: {
+        count: { type: "integer" },
+        data: { type: "array" },
+        json: { type: "string" },
+        sql: { type: "string" }
+      }
+    },
+    cliMetadata: {
+      command: "mock-data",
+      aliases: ["mock", "seeder"],
+      description: "Generate realistic mock data in JSON or SQL format",
+      examples: [
+        "codestation mock-data users --count 10",
+        "codestation mock products --count 5 --sql --table catalog"
+      ]
+    },
+    mcpMetadata: {
+      toolName: "codestation_mock_data",
+      description: "Generate realistic mock data and SQL seeders for users, products, orders, or custom schemas. [Pro Tier]"
+    },
+    routeMetadata: {
+      route: "/tools/mock-data",
+      slug: "mock-data"
+    },
+    execute: async (options) => {
+      return generateMockDataset(options);
+    }
+  },
+  // 4. Git Merge Conflict Resolver
+  {
+    id: "conflict-parse",
+    name: "Git Merge Conflict Resolver",
+    description: "Parse and resolve standard or diff3 Git merge conflict markers (<<<<<<< HEAD, =======, >>>>>>>).",
+    version: "1.2.0",
+    accessLevel: "pro",
+    privacyClassification: "local-only",
+    category: "Git & Version Control",
+    keywords: ["git", "conflict", "merge", "resolver", "diff3", "ours", "theirs"],
+    inputSchema: {
+      type: "object",
+      properties: {
+        content: { type: "string", description: "File content containing conflict markers" },
+        strategy: { type: "string", enum: ["analyze", "ours", "theirs", "both"], default: "analyze" }
+      },
+      required: ["content"]
+    },
+    outputSchema: {
+      type: "object",
+      properties: {
+        hasConflicts: { type: "boolean" },
+        conflictCount: { type: "integer" },
+        hunks: { type: "array" },
+        resolvedContent: { type: "string" },
+        summary: { type: "string" }
+      }
+    },
+    cliMetadata: {
+      command: "conflict-parse",
+      aliases: ["conflict", "git-conflict"],
+      description: "Parse and resolve Git merge conflict markers",
+      examples: [
+        "codestation conflict-parse path/to/file.ts --strategy analyze",
+        "codestation conflict path/to/file.ts --strategy ours"
+      ]
+    },
+    mcpMetadata: {
+      toolName: "codestation_git_conflict",
+      description: "Parse and resolve Git merge conflict markers (<<<<<<< HEAD, =======, >>>>>>>). [Pro Tier]"
+    },
+    routeMetadata: {
+      route: "/tools/conflict-parse",
+      slug: "conflict-parse"
+    },
+    execute: async (input) => {
+      const strategy = input.strategy || "analyze";
+      const res = parseAndResolveGitConflicts(input.content, strategy);
+      if (strategy === "analyze") {
+        return { report: formatConflictReport(res), ...res };
+      }
+      return res;
+    }
+  },
+  // 5. JSON to TypeScript Interfaces
+  {
+    id: "json-to-typescript",
+    name: "JSON to TypeScript",
+    description: "Generate type-safe TypeScript interfaces and types from sample JSON data.",
+    version: "1.2.0",
+    accessLevel: "pro",
+    privacyClassification: "memory-only",
+    category: "JSON & Data",
+    keywords: ["json", "typescript", "interfaces", "types", "generator"],
+    inputSchema: {
+      type: "object",
+      properties: {
+        json: { type: "string", description: "Sample JSON string or payload" },
+        rootName: { type: "string", default: "Root", description: "Name of root interface" }
+      },
+      required: ["json"]
+    },
+    outputSchema: {
+      type: "object",
+      properties: { code: { type: "string" } }
+    },
+    cliMetadata: {
+      command: "ts",
+      aliases: ["types", "json-to-ts"],
+      description: "Generate clean TypeScript interfaces from JSON",
+      examples: [`codestation ts '{"id":1,"name":"Ada"}' User`]
+    },
+    mcpMetadata: {
+      toolName: "codestation_json_to_typescript",
+      description: "Generate clean TypeScript interfaces and types from sample JSON data. [Pro Tier]"
+    },
+    routeMetadata: {
+      route: "/tools/json-to-typescript",
+      slug: "json-to-typescript"
+    },
+    execute: async (input) => {
+      return jsonToTypescript(input.json, input.rootName || "Root");
+    }
+  },
+  // 6. JSON to Zod Validation Schema
+  {
+    id: "json-to-zod",
+    name: "JSON to Zod",
+    description: "Generate production-ready Zod validation schemas and inferred types from sample JSON.",
+    version: "1.2.0",
+    accessLevel: "pro",
+    privacyClassification: "memory-only",
+    category: "JSON & Data",
+    keywords: ["json", "zod", "schema", "validation", "generator"],
+    inputSchema: {
+      type: "object",
+      properties: {
+        json: { type: "string", description: "Sample JSON string or payload" },
+        rootName: { type: "string", default: "rootSchema", description: "Name of root schema" }
+      },
+      required: ["json"]
+    },
+    outputSchema: {
+      type: "object",
+      properties: { code: { type: "string" } }
+    },
+    cliMetadata: {
+      command: "zod",
+      aliases: ["json-to-zod"],
+      description: "Generate production-ready Zod schema from JSON",
+      examples: [`codestation zod '{"id":1,"name":"Ada"}' userSchema`]
+    },
+    mcpMetadata: {
+      toolName: "codestation_json_to_zod",
+      description: "Generate production-ready Zod validation schema and inferred types from sample JSON data. [Pro Tier]"
+    },
+    routeMetadata: {
+      route: "/tools/json-to-zod",
+      slug: "json-to-zod"
+    },
+    execute: async (input) => {
+      return jsonToZod(input.json, input.rootName || "rootSchema");
+    }
+  },
+  // 7. JWT Decoder
+  {
+    id: "jwt-decoder",
+    name: "JWT Decoder",
+    description: "Inspect claims, header, and expiry of JSON Web Tokens in local memory.",
+    version: "1.2.0",
+    accessLevel: "pro",
+    privacyClassification: "local-only",
+    category: "Security",
+    keywords: ["jwt", "token", "decode", "claims", "header", "auth"],
+    inputSchema: {
+      type: "object",
+      properties: { token: { type: "string", description: "JWT string" } },
+      required: ["token"]
+    },
+    outputSchema: {
+      type: "object",
+      properties: { header: { type: "object" }, payload: { type: "object" } }
+    },
+    cliMetadata: {
+      command: "jwt",
+      aliases: ["jwt-decode"],
+      description: "Decode & inspect JWT header, payload, and expiry",
+      examples: ["codestation jwt eyJhbGci..."]
+    },
+    mcpMetadata: {
+      toolName: "codestation_jwt_decode",
+      description: "Inspect & decode JSON Web Token (JWT) header, payload claims, and signature in local memory. [Pro Tier]"
+    },
+    routeMetadata: {
+      route: "/tools/jwt-decoder",
+      slug: "jwt-decoder"
+    },
+    execute: async (input) => {
+      return JSON.parse(decodeJwt(input.token));
+    }
+  },
+  // 8. SQL Formatter
+  {
+    id: "sql-formatter",
+    name: "SQL Formatter",
+    description: "Beautify, indent, and format SQL queries across PostgreSQL, MySQL, SQLite, and Transact-SQL.",
+    version: "1.2.0",
+    accessLevel: "pro",
+    privacyClassification: "memory-only",
+    category: "SQL & Database",
+    keywords: ["sql", "format", "beautify", "postgres", "mysql", "sqlite"],
+    inputSchema: {
+      type: "object",
+      properties: {
+        sql: { type: "string", description: "SQL query string" },
+        dialect: { type: "string", default: "postgresql", description: "SQL dialect" }
+      },
+      required: ["sql"]
+    },
+    outputSchema: {
+      type: "object",
+      properties: { formatted: { type: "string" } }
+    },
+    cliMetadata: {
+      command: "sql",
+      aliases: ["format-sql"],
+      description: "Format SQL query across dialects",
+      examples: ['codestation sql "SELECT id, name FROM users WHERE active = true;" --dialect postgresql']
+    },
+    mcpMetadata: {
+      toolName: "codestation_format_sql",
+      description: "Format, beautify, and indent SQL queries across PostgreSQL, MySQL, SQLite, and standard SQL. [Pro Tier]"
+    },
+    routeMetadata: {
+      route: "/tools/sql-formatter",
+      slug: "sql-formatter"
+    },
+    execute: async (input) => {
+      const { format } = await import("sql-formatter");
+      const dialectMap = {
+        postgresql: "postgresql",
+        postgres: "postgresql",
+        mysql: "mysql",
+        sqlite: "sqlite",
+        sqlserver: "transactsql"
+      };
+      const lang = dialectMap[(input.dialect || "postgresql").toLowerCase()] || "sql";
+      return format(input.sql, { language: lang, tabWidth: 2 });
+    }
+  },
+  // 9. Cron Explainer
+  {
+    id: "cron-explain",
+    name: "Cron Schedule Explainer",
+    description: "Translate 5-field Unix cron expressions into human-readable English and calculate upcoming runtimes.",
+    version: "1.2.0",
+    accessLevel: "pro",
+    privacyClassification: "memory-only",
+    category: "Cron",
+    keywords: ["cron", "schedule", "explain", "next-run", "unix"],
+    inputSchema: {
+      type: "object",
+      properties: {
+        expression: { type: "string", description: "5-field cron expression, e.g. 0 9 * * 1-5" }
+      },
+      required: ["expression"]
+    },
+    outputSchema: {
+      type: "object",
+      properties: {
+        expression: { type: "string" },
+        explanation: { type: "string" }
+      }
+    },
+    cliMetadata: {
+      command: "cron",
+      aliases: ["cron-explain"],
+      description: "Explain cron schedule and project next 5 runtimes",
+      examples: ['codestation cron "0 9 * * 1-5"']
+    },
+    mcpMetadata: {
+      toolName: "codestation_cron_explain",
+      description: "Parse and explain 5-field Unix cron expressions in clear plain English. [Pro Tier]"
+    },
+    routeMetadata: {
+      route: "/tools/cron-expression-explainer",
+      slug: "cron-expression-explainer"
+    },
+    execute: async (input) => {
+      const parsed = parseCron(input.expression);
+      return {
+        expression: input.expression,
+        explanation: explainCron(parsed)
+      };
+    }
+  },
+  // 10. Cryptographic Hasher
+  {
+    id: "hash-generator",
+    name: "Cryptographic Digest Engine",
+    description: "Compute deterministic cryptographic digests (SHA-256, SHA-512, MD5, SHA-1, CRC-32).",
+    version: "1.2.0",
+    accessLevel: "pro",
+    privacyClassification: "local-only",
+    category: "Security",
+    keywords: ["hash", "sha256", "sha512", "md5", "sha1", "crc32", "digest"],
+    inputSchema: {
+      type: "object",
+      properties: {
+        text: { type: "string", description: "Input text" },
+        algorithm: { type: "string", enum: ["sha256", "sha512", "md5", "sha1", "crc32"], default: "sha256" }
+      },
+      required: ["text"]
+    },
+    outputSchema: {
+      type: "object",
+      properties: { hash: { type: "string" } }
+    },
+    cliMetadata: {
+      command: "hash",
+      aliases: ["digest"],
+      description: "Compute cryptographic digest (sha256, sha512, md5, sha1, crc32)",
+      examples: ['codestation hash "sample text" --alg sha256']
+    },
+    mcpMetadata: {
+      toolName: "codestation_hash",
+      description: "Compute deterministic cryptographic hashes (SHA-256, SHA-512, MD5, SHA-1, CRC-32). [Pro Tier]"
+    },
+    routeMetadata: {
+      route: "/tools/sha-256",
+      slug: "sha-256"
+    },
+    execute: async (input) => {
+      const alg = (input.algorithm || "sha256").toLowerCase();
+      if (alg === "sha256" || alg === "sha-256") return await sha256(input.text);
+      if (alg === "sha512" || alg === "sha-512") return await sha512(input.text);
+      if (alg === "md5") return md5(input.text);
+      if (alg === "sha1" || alg === "sha-1") return sha1(input.text);
+      if (alg === "crc32") return crc32(input.text);
+      return await sha256(input.text);
+    }
+  },
+  // 11. UUID Generator (Free Tier)
+  {
+    id: "uuid-generator",
+    name: "UUID v4 Generator",
+    description: "Generate RFC 4122 v4 cryptographically secure random UUIDs.",
+    version: "1.2.0",
+    accessLevel: "free",
+    privacyClassification: "local-only",
+    category: "Security",
+    keywords: ["uuid", "random", "guid", "v4"],
+    inputSchema: {
+      type: "object",
+      properties: {
+        count: { type: "integer", minimum: 1, maximum: 50, default: 1 }
+      }
+    },
+    outputSchema: {
+      type: "object",
+      properties: { uuids: { type: "array", items: { type: "string" } } }
+    },
+    cliMetadata: {
+      command: "uuid",
+      aliases: ["guid"],
+      description: "Generate random RFC 4122 v4 UUIDs",
+      examples: ["codestation uuid 5"]
+    },
+    mcpMetadata: {
+      toolName: "codestation_uuid",
+      description: "Generate cryptographically secure v4 UUIDs. [Free Tier]"
+    },
+    routeMetadata: {
+      route: "/tools/uuid-generator",
+      slug: "uuid-generator"
+    },
+    execute: async (input) => {
+      const count = Math.min(Math.max(input.count || 1, 1), 50);
+      return Array.from({ length: count }, () => crypto.randomUUID());
+    }
+  },
+  // 12. JSON Formatter & Minifier (Free Tier)
+  {
+    id: "json-formatter",
+    name: "JSON Formatter & Validator",
+    description: "Validate, beautify, indent, or compact raw JSON strings.",
+    version: "1.2.0",
+    accessLevel: "free",
+    privacyClassification: "memory-only",
+    category: "JSON & Data",
+    keywords: ["json", "format", "validate", "minify", "beautify"],
+    inputSchema: {
+      type: "object",
+      properties: {
+        json: { type: "string", description: "Raw JSON string" },
+        indent: { type: "integer", default: 2 }
+      },
+      required: ["json"]
+    },
+    outputSchema: {
+      type: "object",
+      properties: { formatted: { type: "string" } }
+    },
+    cliMetadata: {
+      command: "json",
+      aliases: ["format-json"],
+      description: "Validate and pretty-print JSON",
+      examples: [`codestation json '{"k":"v"}'`]
+    },
+    mcpMetadata: {
+      toolName: "codestation_format_json",
+      description: "Format, validate, and pretty-print raw JSON with indentation. [Free Tier]"
+    },
+    routeMetadata: {
+      route: "/tools/json-formatter",
+      slug: "json-formatter"
+    },
+    execute: async (input) => {
+      return formatJson(input.json, input.indent ?? 2);
+    }
+  },
+  // 13. Base64 Encode / Decode (Free Tier)
+  {
+    id: "base64-encoder",
+    name: "Base64 Encode / Decode",
+    description: "Encode UTF-8 text to Base64 or URL-safe Base64 and decode back.",
+    version: "1.2.0",
+    accessLevel: "free",
+    privacyClassification: "memory-only",
+    category: "Encoding",
+    keywords: ["base64", "encode", "decode", "base64url"],
+    inputSchema: {
+      type: "object",
+      properties: { text: { type: "string" }, action: { type: "string", enum: ["encode", "decode"] }, urlSafe: { type: "boolean" } },
+      required: ["text", "action"]
+    },
+    outputSchema: { type: "object", properties: { output: { type: "string" } } },
+    cliMetadata: {
+      command: "base64",
+      aliases: ["b64"],
+      description: "Encode or decode Base64 text",
+      examples: ['codestation base64 "hello"']
+    },
+    mcpMetadata: {
+      toolName: "codestation_base64",
+      description: "Encode or decode Base64 and URL-safe Base64 strings. [Free Tier]"
+    },
+    routeMetadata: { route: "/tools/base64-encoder", slug: "base64-encoder" },
+    execute: async (input) => input.action === "encode" ? input.urlSafe ? encodeBase64Url(input.text) : Buffer.from(input.text, "utf-8").toString("base64") : input.urlSafe ? decodeBase64Url(input.text) : Buffer.from(input.text, "base64").toString("utf-8")
+  },
+  // 14. URL Codec (Free Tier)
+  {
+    id: "url-encoder",
+    name: "URL Component Codec",
+    description: "Encode or decode URI string components locally.",
+    version: "1.2.0",
+    accessLevel: "free",
+    privacyClassification: "memory-only",
+    category: "Encoding",
+    keywords: ["url", "uri", "percent-encode"],
+    inputSchema: { type: "object", properties: { text: { type: "string" }, action: { type: "string", enum: ["encode", "decode"] } }, required: ["text", "action"] },
+    outputSchema: { type: "object", properties: { output: { type: "string" } } },
+    cliMetadata: { command: "url-codec", aliases: [], description: "URL encode or decode strings", examples: [] },
+    mcpMetadata: { toolName: "codestation_url_codec", description: "URL encode or decode string components. [Free Tier]" },
+    routeMetadata: { route: "/tools/url-encoder", slug: "url-encoder" },
+    execute: async (input) => input.action === "encode" ? encodeUrlComponent(input.text) : decodeUrlComponent(input.text)
+  },
+  // 15. Hexadecimal Codec (Free Tier)
+  {
+    id: "hexadecimal-encoder",
+    name: "Hexadecimal Codec",
+    description: "Encode UTF-8 text to hexadecimal byte pairs or decode hex back to text.",
+    version: "1.2.0",
+    accessLevel: "free",
+    privacyClassification: "memory-only",
+    category: "Encoding",
+    keywords: ["hex", "hexadecimal", "bytes"],
+    inputSchema: { type: "object", properties: { text: { type: "string" }, action: { type: "string", enum: ["encode", "decode"] } }, required: ["text", "action"] },
+    outputSchema: { type: "object", properties: { output: { type: "string" } } },
+    cliMetadata: { command: "hex-codec", aliases: [], description: "Hex encode or decode text", examples: [] },
+    mcpMetadata: { toolName: "codestation_hex_codec", description: "Encode UTF-8 string to hexadecimal byte pairs or decode hex to text. [Free Tier]" },
+    routeMetadata: { route: "/tools/hexadecimal-encoder", slug: "hexadecimal-encoder" },
+    execute: async (input) => input.action === "encode" ? encodeHexadecimal(input.text) : decodeHexadecimal(input.text)
+  },
+  // 16. JSON Minifier (Free Tier)
+  {
+    id: "json-minifier",
+    name: "JSON Minifier",
+    description: "Minify JSON by stripping all whitespace.",
+    version: "1.2.0",
+    accessLevel: "free",
+    privacyClassification: "memory-only",
+    category: "JSON & Data",
+    keywords: ["json", "minify", "compact"],
+    inputSchema: { type: "object", properties: { json: { type: "string" } }, required: ["json"] },
+    outputSchema: { type: "object", properties: { output: { type: "string" } } },
+    cliMetadata: { command: "minify-json", aliases: [], description: "Minify JSON", examples: [] },
+    mcpMetadata: { toolName: "codestation_minify_json", description: "Minify JSON by stripping all whitespace. [Free Tier]" },
+    routeMetadata: { route: "/tools/json-minifier", slug: "json-minifier" },
+    execute: async (input) => minifyJson(input.json)
+  },
+  // 17. JSON to YAML (Free Tier)
+  {
+    id: "json-to-yaml",
+    name: "JSON to YAML Converter",
+    description: "Convert JSON to clean YAML format.",
+    version: "1.2.0",
+    accessLevel: "free",
+    privacyClassification: "memory-only",
+    category: "JSON & Data",
+    keywords: ["json", "yaml", "convert"],
+    inputSchema: { type: "object", properties: { json: { type: "string" } }, required: ["json"] },
+    outputSchema: { type: "object", properties: { output: { type: "string" } } },
+    cliMetadata: { command: "json-to-yaml", aliases: [], description: "Convert JSON to YAML", examples: [] },
+    mcpMetadata: { toolName: "codestation_json_to_yaml", description: "Convert JSON to clean YAML format. [Free Tier]" },
+    routeMetadata: { route: "/tools/json-to-yaml", slug: "json-to-yaml" },
+    execute: async (input) => jsonToYaml(input.json)
+  },
+  // 18. YAML to JSON (Free Tier)
+  {
+    id: "yaml-to-json",
+    name: "YAML to JSON Converter",
+    description: "Convert YAML formatted text to JSON.",
+    version: "1.2.0",
+    accessLevel: "free",
+    privacyClassification: "memory-only",
+    category: "JSON & Data",
+    keywords: ["yaml", "json", "convert"],
+    inputSchema: { type: "object", properties: { yaml: { type: "string" } }, required: ["yaml"] },
+    outputSchema: { type: "object", properties: { output: { type: "string" } } },
+    cliMetadata: { command: "yaml-to-json", aliases: [], description: "Convert YAML to JSON", examples: [] },
+    mcpMetadata: { toolName: "codestation_yaml_to_json", description: "Convert YAML formatted text to JSON. [Free Tier]" },
+    routeMetadata: { route: "/tools/yaml-to-json", slug: "yaml-to-json" },
+    execute: async (input) => yamlToJson(input.yaml)
+  },
+  // 19. Case Converter (Free Tier)
+  {
+    id: "text-case-converter",
+    name: "Case Converter",
+    description: "Convert text between camelCase, snake_case, kebab-case, PascalCase, and CONSTANT_CASE.",
+    version: "1.2.0",
+    accessLevel: "free",
+    privacyClassification: "memory-only",
+    category: "Text",
+    keywords: ["case", "camel", "snake", "kebab", "pascal"],
+    inputSchema: { type: "object", properties: { text: { type: "string" }, targetCase: { type: "string" } }, required: ["text", "targetCase"] },
+    outputSchema: { type: "object", properties: { output: { type: "string" } } },
+    cliMetadata: { command: "case-convert", aliases: [], description: "Convert naming conventions", examples: [] },
+    mcpMetadata: { toolName: "codestation_case_convert", description: "Convert text into different naming conventions. [Free Tier]" },
+    routeMetadata: { route: "/tools/text-case-converter", slug: "text-case-converter" },
+    execute: async (input) => convertCase(input.text, input.targetCase)
+  },
+  // 20. Unified Text Diff (Free Tier)
+  {
+    id: "text-diff",
+    name: "Unified Text Diff",
+    description: "Generate a clean line-by-line unified diff between original and modified text.",
+    version: "1.2.0",
+    accessLevel: "free",
+    privacyClassification: "memory-only",
+    category: "Text",
+    keywords: ["diff", "compare", "unified", "patch"],
+    inputSchema: { type: "object", properties: { original: { type: "string" }, modified: { type: "string" } }, required: ["original", "modified"] },
+    outputSchema: { type: "object", properties: { diff: { type: "string" } } },
+    cliMetadata: { command: "diff", aliases: ["text-diff"], description: "Compute unified line diff", examples: [] },
+    mcpMetadata: { toolName: "codestation_text_diff", description: "Generate a clean line-by-line unified diff between original and modified text. [Free Tier]" },
+    routeMetadata: { route: "/tools/text-diff", slug: "text-diff" },
+    execute: async (input) => diffText(input.original, input.modified)
+  },
+  // 21. Slugify (Free Tier)
+  {
+    id: "slug-generator",
+    name: "Slug Generator",
+    description: "Convert strings to clean URL slugs.",
+    version: "1.2.0",
+    accessLevel: "free",
+    privacyClassification: "memory-only",
+    category: "Text",
+    keywords: ["slug", "url", "kebab"],
+    inputSchema: { type: "object", properties: { text: { type: "string" }, separator: { type: "string" } }, required: ["text"] },
+    outputSchema: { type: "object", properties: { slug: { type: "string" } } },
+    cliMetadata: { command: "slugify", aliases: [], description: "Generate URL-safe slugs", examples: [] },
+    mcpMetadata: { toolName: "codestation_slugify", description: "Convert strings to clean, SEO-friendly URL slugs. [Free Tier]" },
+    routeMetadata: { route: "/tools/slug-generator", slug: "slug-generator" },
+    execute: async (input) => slugify(input.text, input.separator ?? "-")
+  },
+  // 22. Structural JSON Diff (Free Tier)
+  {
+    id: "json-diff",
+    name: "JSON Diff",
+    description: "Compute a structural key-by-key diff between two JSON documents.",
+    version: "1.3.0",
+    accessLevel: "free",
+    privacyClassification: "memory-only",
+    category: "JSON & Data",
+    keywords: ["json", "diff", "compare", "structural"],
+    inputSchema: { type: "object", properties: { left: { type: "string" }, right: { type: "string" } }, required: ["left", "right"] },
+    outputSchema: { type: "object", properties: { diff: { type: "string" } } },
+    cliMetadata: { command: "json-diff", aliases: ["jdiff"], description: "Compare two JSON documents structurally", examples: [`codestation json-diff '{"a":1}' '{"a":2}'`] },
+    mcpMetadata: { toolName: "codestation_json_diff", description: "Compute a structural key-by-key diff between two JSON documents. [Free Tier]" },
+    routeMetadata: { route: "/tools/json-diff", slug: "json-diff" },
+    execute: async (input) => jsonDiff(input.left, input.right)
+  },
+  // 23. JSONPath Query Extractor (Free Tier)
+  {
+    id: "jsonpath-tester",
+    name: "JSONPath Query Extractor",
+    description: "Evaluate JSONPath expressions ($.property, $[0], $[*]) against JSON payloads.",
+    version: "1.3.0",
+    accessLevel: "free",
+    privacyClassification: "memory-only",
+    category: "JSON & Data",
+    keywords: ["jsonpath", "query", "extract", "json"],
+    inputSchema: { type: "object", properties: { json: { type: "string" }, expression: { type: "string" } }, required: ["json", "expression"] },
+    outputSchema: { type: "object", properties: { matches: { type: "string" } } },
+    cliMetadata: { command: "jsonpath", aliases: ["json-path"], description: "Extract values using JSONPath", examples: [`codestation jsonpath '{"users":[{"name":"Ada"}]}' "$.users[*].name"`] },
+    mcpMetadata: { toolName: "codestation_json_path", description: "Query and extract values from JSON using JSONPath expressions ($.field, $[0], $[*]). [Free Tier]" },
+    routeMetadata: { route: "/tools/jsonpath-tester", slug: "jsonpath-tester" },
+    execute: async (input) => testJsonPath(input.json, input.expression)
+  },
+  // 24. ULID Generator (Free Tier)
+  {
+    id: "ulid-generator",
+    name: "ULID Generator",
+    description: "Generate Crockford Base32 lexicographically sortable ULIDs.",
+    version: "1.3.0",
+    accessLevel: "free",
+    privacyClassification: "local-only",
+    category: "Security",
+    keywords: ["ulid", "id", "sortable", "unique"],
+    inputSchema: { type: "object", properties: { count: { type: "integer", minimum: 1, maximum: 50 } } },
+    outputSchema: { type: "object", properties: { ulids: { type: "string" } } },
+    cliMetadata: { command: "ulid", aliases: [], description: "Generate sortable ULIDs", examples: ["codestation ulid 5"] },
+    mcpMetadata: { toolName: "codestation_ulid", description: "Generate lexicographically sortable ULID identifiers. [Free Tier]" },
+    routeMetadata: { route: "/tools/ulid-generator", slug: "ulid-generator" },
+    execute: async (input) => Array.from({ length: Math.min(Math.max(input.count ?? 1, 1), 50) }, () => ulid()).join("\n")
+  },
+  // 25. NanoID Generator (Free Tier)
+  {
+    id: "nanoid-generator",
+    name: "NanoID Generator",
+    description: "Generate URL-safe cryptographic NanoID strings.",
+    version: "1.3.0",
+    accessLevel: "free",
+    privacyClassification: "local-only",
+    category: "Security",
+    keywords: ["nanoid", "id", "token"],
+    inputSchema: { type: "object", properties: { length: { type: "integer" }, count: { type: "integer" } } },
+    outputSchema: { type: "object", properties: { ids: { type: "string" } } },
+    cliMetadata: { command: "nanoid", aliases: [], description: "Generate compact NanoIDs", examples: ["codestation nanoid --length 16"] },
+    mcpMetadata: { toolName: "codestation_nanoid", description: "Generate URL-safe cryptographic NanoID strings with custom length. [Free Tier]" },
+    routeMetadata: { route: "/tools/nanoid-generator", slug: "nanoid-generator" },
+    execute: async (input) => Array.from({ length: input.count ?? 1 }, () => nanoid(input.length ?? 21)).join("\n")
+  },
+  // 26. HTML Entity Codec (Free Tier)
+  {
+    id: "html-entity-encoder",
+    name: "HTML Entity Codec",
+    description: "Escape or unescape HTML entities (&lt;, &gt;, &amp;, numeric codes).",
+    version: "1.3.0",
+    accessLevel: "free",
+    privacyClassification: "memory-only",
+    category: "Encoding",
+    keywords: ["html", "entity", "escape", "unescape"],
+    inputSchema: { type: "object", properties: { text: { type: "string" }, action: { type: "string", enum: ["encode", "decode"] } }, required: ["text", "action"] },
+    outputSchema: { type: "object", properties: { output: { type: "string" } } },
+    cliMetadata: { command: "html-codec", aliases: [], description: "Encode or decode HTML entities", examples: [] },
+    mcpMetadata: { toolName: "codestation_html_codec", description: "Encode or decode HTML character entities safely. [Free Tier]" },
+    routeMetadata: { route: "/tools/html-entity-encoder", slug: "html-entity-encoder" },
+    execute: async (input) => input.action === "encode" ? encodeHtml(input.text) : decodeHtml(input.text)
+  },
+  // 27. CSV <-> JSON Converter (Free Tier)
+  {
+    id: "csv-to-json",
+    name: "CSV <-> JSON Converter",
+    description: "Convert CSV tables with header rows to JSON arrays or JSON arrays to CSV.",
+    version: "1.3.0",
+    accessLevel: "free",
+    privacyClassification: "memory-only",
+    category: "JSON & Data",
+    keywords: ["csv", "json", "table", "convert"],
+    inputSchema: { type: "object", properties: { input: { type: "string" }, direction: { type: "string", enum: ["csv-to-json", "json-to-csv"] } }, required: ["input", "direction"] },
+    outputSchema: { type: "object", properties: { output: { type: "string" } } },
+    cliMetadata: { command: "csv-json", aliases: [], description: "Convert between CSV and JSON", examples: [] },
+    mcpMetadata: { toolName: "codestation_csv_json", description: "Convert CSV tables to JSON or JSON arrays of objects to CSV. [Free Tier]" },
+    routeMetadata: { route: "/tools/csv-to-json", slug: "csv-to-json" },
+    execute: async (input) => input.direction === "csv-to-json" ? csvToJson(input.input) : jsonToCsv(input.input)
+  },
+  // 28. HMAC Signature Generator (Pro Tier)
+  {
+    id: "hmac-generator",
+    name: "HMAC Signature Generator",
+    description: "Compute HMAC-SHA256 or HMAC-SHA512 message signatures.",
+    version: "1.2.0",
+    accessLevel: "pro",
+    privacyClassification: "memory-only",
+    category: "Security",
+    keywords: ["hmac", "signature", "sha256", "sha512"],
+    inputSchema: { type: "object", properties: { text: { type: "string" }, secret: { type: "string" }, algorithm: { type: "string" } }, required: ["text", "secret"] },
+    outputSchema: { type: "object", properties: { signature: { type: "string" } } },
+    cliMetadata: { command: "hmac", aliases: [], description: "Compute HMAC signature", examples: [] },
+    mcpMetadata: { toolName: "codestation_hmac", description: "Compute HMAC signatures using Web Crypto. [Pro Tier: \u20B9199/mo or $2.99/mo]" },
+    routeMetadata: { route: "/tools/hmac-generator", slug: "hmac-generator" },
+    execute: async (input) => input.algorithm?.toUpperCase() === "SHA-512" ? hmacSha512(input.text, input.secret) : hmacSha256(input.text, input.secret)
+  },
+  // 29. IANA Timezone Converter (Pro Tier)
+  {
+    id: "timezone-converter",
+    name: "IANA Timezone Converter",
+    description: "Convert timestamps across runtime IANA timezones.",
+    version: "1.2.0",
+    accessLevel: "pro",
+    privacyClassification: "memory-only",
+    category: "Date & Time",
+    keywords: ["timezone", "iana", "dst", "date"],
+    inputSchema: { type: "object", properties: { dateTime: { type: "string" }, sourceTimeZone: { type: "string" }, targetTimeZone: { type: "string" } }, required: ["dateTime", "sourceTimeZone", "targetTimeZone"] },
+    outputSchema: { type: "object", properties: { converted: { type: "string" } } },
+    cliMetadata: { command: "tz", aliases: [], description: "Convert IANA timezones", examples: [] },
+    mcpMetadata: { toolName: "codestation_timezone_convert", description: "Convert a date/time string between IANA timezones. [Pro Tier: \u20B9199/mo or $2.99/mo]" },
+    routeMetadata: { route: "/tools/timezone-converter", slug: "timezone-converter" },
+    execute: async (input) => convertBetweenTimeZones(input.dateTime, input.sourceTimeZone, input.targetTimeZone)
+  },
+  // 30. Business Days Calculator (Pro Tier)
+  {
+    id: "business-days-calculator",
+    name: "Business Days Calculator",
+    description: "Calculate working days between two dates.",
+    version: "1.2.0",
+    accessLevel: "pro",
+    privacyClassification: "memory-only",
+    category: "Date & Time",
+    keywords: ["business days", "weekends", "date"],
+    inputSchema: { type: "object", properties: { startDate: { type: "string" }, endDate: { type: "string" } }, required: ["startDate", "endDate"] },
+    outputSchema: { type: "object", properties: { days: { type: "number" } } },
+    cliMetadata: { command: "business-days", aliases: [], description: "Count working days between dates", examples: [] },
+    mcpMetadata: { toolName: "codestation_business_days", description: "Calculate exact working/business days between two dates. [Pro Tier: \u20B9199/mo or $2.99/mo]" },
+    routeMetadata: { route: "/tools/business-days-calculator", slug: "business-days-calculator" },
+    execute: async (input) => businessDaysBetween(input.startDate, input.endDate)
+  },
+  // 31. Regex Tester (Pro Tier)
+  {
+    id: "regex-match-inspector",
+    name: "Regex Match Tester",
+    description: "Test JavaScript regular expressions and inspect match groups.",
+    version: "1.2.0",
+    accessLevel: "pro",
+    privacyClassification: "memory-only",
+    category: "Regex",
+    keywords: ["regex", "regexp", "match", "groups"],
+    inputSchema: { type: "object", properties: { pattern: { type: "string" }, text: { type: "string" }, flags: { type: "string" } }, required: ["pattern", "text"] },
+    outputSchema: { type: "object", properties: { matches: { type: "string" } } },
+    cliMetadata: { command: "regex", aliases: [], description: "Test regex against text", examples: [] },
+    mcpMetadata: { toolName: "codestation_regex_test", description: "Test regular expressions and return structured match groups. [Pro Tier: \u20B9199/mo or $2.99/mo]" },
+    routeMetadata: { route: "/tools/regex-match-inspector", slug: "regex-match-inspector" },
+    execute: async (input) => testRegex(input.pattern, input.flags ?? "g", input.text)
+  },
+  // 32. JSON Schema Generator (Pro Tier)
+  {
+    id: "json-schema-generator",
+    name: "JSON Schema Generator",
+    description: "Infer Draft 2020-12 JSON Schema from sample JSON.",
+    version: "1.2.0",
+    accessLevel: "pro",
+    privacyClassification: "memory-only",
+    category: "JSON & Data",
+    keywords: ["json schema", "draft 2020-12", "infer"],
+    inputSchema: { type: "object", properties: { json: { type: "string" } }, required: ["json"] },
+    outputSchema: { type: "object", properties: { schema: { type: "string" } } },
+    cliMetadata: { command: "json-schema", aliases: [], description: "Infer JSON Schema", examples: [] },
+    mcpMetadata: { toolName: "codestation_json_schema", description: "Infer a Draft 2020-12 JSON Schema structure from sample JSON. [Pro Tier: \u20B9199/mo or $2.99/mo]" },
+    routeMetadata: { route: "/tools/json-schema-generator", slug: "json-schema-generator" },
+    execute: async (input) => generateJsonSchema(input.json)
+  },
+  // 33. Cron Next Run Calculator (Pro Tier)
+  {
+    id: "cron-next-run",
+    name: "Cron Next Run Calculator",
+    description: "Compute upcoming cron execution timestamps in any IANA timezone.",
+    version: "1.3.0",
+    accessLevel: "pro",
+    privacyClassification: "memory-only",
+    category: "Cron",
+    keywords: ["cron", "schedule", "next run", "timezone"],
+    inputSchema: { type: "object", properties: { expression: { type: "string" }, count: { type: "integer" }, timeZone: { type: "string" }, startFrom: { type: "string" } }, required: ["expression"] },
+    outputSchema: { type: "object", properties: { runs: { type: "array" } } },
+    cliMetadata: { command: "cron-next", aliases: [], description: "List next cron execution times", examples: ['codestation cron "0 9 * * 1-5"'] },
+    mcpMetadata: { toolName: "codestation_cron_next_runs", description: "Calculate upcoming cron run timestamps in a chosen IANA timezone. [Pro Tier: \u20B9199/mo or $2.99/mo]" },
+    routeMetadata: { route: "/tools/cron-next-run", slug: "cron-next-run" },
+    execute: async (input) => {
+      const parsed = parseCron(input.expression);
+      let cursor = input.startFrom ?? (/* @__PURE__ */ new Date()).toISOString();
+      const runs = [];
+      const limit = Math.min(Math.max(input.count ?? 5, 1), 20);
+      for (let i = 0; i < limit; i += 1) {
+        const next = nextCronRun(parsed, cursor, input.timeZone ?? "UTC");
+        runs.push(next.dateTime);
+        cursor = new Date(next.instant).toISOString();
+      }
+      return runs;
+    }
+  }
+];
 
 // mcp/server.ts
 var MCP_TOOLS = [
@@ -3611,6 +4259,98 @@ var MCP_TOOLS = [
       required: ["text"]
     }
   },
+  {
+    name: "codestation_ulid",
+    description: "Generate lexicographically sortable ULID identifiers (Crockford Base32). [Free Tier]",
+    inputSchema: {
+      type: "object",
+      properties: {
+        count: {
+          type: "integer",
+          description: "Number of ULIDs to generate (1 to 50, default: 1)",
+          minimum: 1,
+          maximum: 50
+        }
+      }
+    }
+  },
+  {
+    name: "codestation_nanoid",
+    description: "Generate compact URL-safe cryptographic NanoIDs with customizable length. [Free Tier]",
+    inputSchema: {
+      type: "object",
+      properties: {
+        length: {
+          type: "integer",
+          description: "Character length (2 to 128, default: 21)",
+          minimum: 2,
+          maximum: 128
+        },
+        count: {
+          type: "integer",
+          description: "Number of IDs to generate (1 to 50, default: 1)",
+          minimum: 1,
+          maximum: 50
+        }
+      }
+    }
+  },
+  {
+    name: "codestation_json_diff",
+    description: "Compute a structural key-by-key diff between two JSON documents. [Free Tier]",
+    inputSchema: {
+      type: "object",
+      properties: {
+        left: { type: "string", description: "Original JSON document" },
+        right: { type: "string", description: "Updated JSON document" }
+      },
+      required: ["left", "right"]
+    }
+  },
+  {
+    name: "codestation_json_path",
+    description: "Query and extract matching nodes from JSON using JSONPath (e.g. $.users[*].name, $[0].id). [Free Tier]",
+    inputSchema: {
+      type: "object",
+      properties: {
+        json: { type: "string", description: "Valid JSON payload to query" },
+        expression: { type: "string", description: "JSONPath expression starting with $" }
+      },
+      required: ["json", "expression"]
+    }
+  },
+  {
+    name: "codestation_html_codec",
+    description: "Encode or decode HTML entities (&lt;, &gt;, &amp;, numeric character references). [Free Tier]",
+    inputSchema: {
+      type: "object",
+      properties: {
+        text: { type: "string", description: "Text or HTML entity string" },
+        action: {
+          type: "string",
+          enum: ["encode", "decode"],
+          description: "Whether to encode or decode HTML entities"
+        }
+      },
+      required: ["text", "action"]
+    }
+  },
+  {
+    name: "codestation_csv_json",
+    description: "Convert CSV tables (with header row) to JSON arrays or JSON arrays of objects to CSV. [Free Tier]",
+    inputSchema: {
+      type: "object",
+      properties: {
+        input: { type: "string", description: "CSV or JSON input text" },
+        direction: {
+          type: "string",
+          enum: ["csv-to-json", "json-to-csv"],
+          description: "Conversion direction"
+        }
+      },
+      required: ["input", "direction"]
+    }
+  },
   // ----------------- PRO TOOLS (₹199 / $2.99) -----------------
   {
     name: "codestation_hash",
@@ -3681,6 +4421,34 @@ var MCP_TOOLS = [
         expression: {
           type: "string",
           description: "5-field cron expression, e.g. '*/15 9-17 * * 1-5'"
+        }
+      },
+      required: ["expression"]
+    }
+  },
+  {
+    name: "codestation_cron_next_runs",
+    description: "Calculate upcoming execution timestamps for a cron expression in any IANA timezone. [Pro Tier: \u20B9199/mo or $2.99/mo]",
+    inputSchema: {
+      type: "object",
+      properties: {
+        expression: {
+          type: "string",
+          description: "5-field (or 6-field seconds-first) cron expression"
+        },
+        count: {
+          type: "integer",
+          description: "Number of upcoming runs to return (1 to 20, default: 5)",
+          minimum: 1,
+          maximum: 20
+        },
+        timeZone: {
+          type: "string",
+          description: "IANA timezone (default: 'UTC')"
+        },
+        startFrom: {
+          type: "string",
+          description: "Optional ISO 8601 reference timestamp (e.g. '2026-10-09T14:30:00Z')"
         }
       },
       required: ["expression"]
@@ -3881,6 +4649,9 @@ async function executeMcpTool(name, args = {}, license) {
         const text2 = String(args.text ?? "");
         const action = String(args.action ?? "encode");
         const urlSafe = Boolean(args.urlSafe);
+        if (action !== "encode" && action !== "decode") {
+          throw new Error(`Invalid Base64 action "${action}". Expected "encode" or "decode".`);
+        }
         if (action === "encode") {
           if (urlSafe) {
             outputText = encodeBase64Url(text2);
@@ -3891,7 +4662,11 @@ async function executeMcpTool(name, args = {}, license) {
           if (urlSafe) {
             outputText = decodeBase64Url(text2);
           } else {
-            outputText = Buffer.from(text2, "base64").toString("utf-8");
+            const cleaned = text2.replace(/\s+/g, "");
+            if (!/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(cleaned)) {
+              throw new Error("Invalid standard Base64 input.");
+            }
+            outputText = Buffer.from(cleaned, "base64").toString("utf-8");
           }
         }
         break;
@@ -3938,6 +4713,76 @@ async function executeMcpTool(name, args = {}, license) {
       }
       case "codestation_slugify": {
         outputText = slugify(String(args.text ?? ""), String(args.separator ?? "-"));
+        break;
+      }
+      case "codestation_ulid": {
+        const count = args.count === void 0 ? 1 : Number(args.count);
+        if (!Number.isInteger(count) || count < 1 || count > 50) {
+          throw new RangeError("count must be an integer between 1 and 50.");
+        }
+        const ulids = Array.from({ length: count }, () => ulid());
+        outputText = count === 1 ? ulids[0] : ulids.join("\n");
+        break;
+      }
+      case "codestation_nanoid": {
+        const length = args.length === void 0 ? 21 : Number(args.length);
+        const count = args.count === void 0 ? 1 : Number(args.count);
+        if (!Number.isInteger(length) || length < 2 || length > 128) {
+          throw new RangeError("length must be an integer between 2 and 128.");
+        }
+        if (!Number.isInteger(count) || count < 1 || count > 50) {
+          throw new RangeError("count must be an integer between 1 and 50.");
+        }
+        const ids = Array.from({ length: count }, () => nanoid(length));
+        outputText = count === 1 ? ids[0] : ids.join("\n");
+        break;
+      }
+      case "codestation_json_diff": {
+        const left = args.left;
+        const right = args.right;
+        if (typeof left !== "string" || typeof right !== "string" || !left.trim() || !right.trim()) {
+          throw new Error("Both left and right JSON strings are required.");
+        }
+        outputText = jsonDiff(left, right);
+        break;
+      }
+      case "codestation_json_path": {
+        const json = args.json;
+        const expression = args.expression;
+        if (typeof json !== "string" || !json.trim()) {
+          throw new Error("A JSON string is required.");
+        }
+        if (typeof expression !== "string" || !expression.trim()) {
+          throw new Error("A JSONPath expression starting with $ is required.");
+        }
+        outputText = testJsonPath(json, expression);
+        break;
+      }
+      case "codestation_html_codec": {
+        const text2 = args.text;
+        const action = String(args.action ?? "");
+        if (typeof text2 !== "string") {
+          throw new Error("A text string is required.");
+        }
+        if (action !== "encode" && action !== "decode") {
+          throw new Error(`Invalid action "${action}". Expected "encode" or "decode".`);
+        }
+        outputText = action === "encode" ? encodeHtml(text2) : decodeHtml(text2);
+        break;
+      }
+      case "codestation_csv_json": {
+        const input = args.input;
+        const direction = String(args.direction ?? "");
+        if (typeof input !== "string" || !input.trim()) {
+          throw new Error("Non-empty CSV or JSON input is required.");
+        }
+        if (direction === "csv-to-json") {
+          outputText = csvToJson(input);
+        } else if (direction === "json-to-csv") {
+          outputText = jsonToCsv(input);
+        } else {
+          throw new Error(`Invalid direction "${direction}". Expected "csv-to-json" or "json-to-csv".`);
+        }
         break;
       }
       // --- Pro tools ---
@@ -3988,6 +4833,24 @@ async function executeMcpTool(name, args = {}, license) {
       case "codestation_cron_explain": {
         const parsed = parseCron(String(args.expression ?? ""));
         outputText = explainCron(parsed);
+        break;
+      }
+      case "codestation_cron_next_runs": {
+        const expression = String(args.expression ?? "");
+        const count = args.count === void 0 ? 5 : Number(args.count);
+        if (!Number.isInteger(count) || count < 1 || count > 20) {
+          throw new RangeError("count must be an integer between 1 and 20.");
+        }
+        const timeZone = args.timeZone !== void 0 ? String(args.timeZone) : "UTC";
+        let cursor = args.startFrom !== void 0 ? String(args.startFrom) : (/* @__PURE__ */ new Date()).toISOString();
+        const parsed = parseCron(expression);
+        const runs = [];
+        for (let i = 0; i < count; i += 1) {
+          const next = nextCronRun(parsed, cursor, timeZone);
+          runs.push({ run: i + 1, dateTime: next.dateTime, duration: next.duration });
+          cursor = new Date(next.instant).toISOString();
+        }
+        outputText = JSON.stringify({ expression, timeZone, runs }, null, 2);
         break;
       }
       case "codestation_timezone_convert": {
@@ -4082,7 +4945,7 @@ function createMcpServer(cliKey) {
   const server = new Server(
     {
       name: "codestation-mcp",
-      version: "1.2.1"
+      version: "1.3.0"
     },
     {
       capabilities: {
@@ -4242,159 +5105,6 @@ async function runAutoSetup(licenseKey) {
 
 // mcp/cli-tools.ts
 import * as fs3 from "node:fs";
-
-// lib/tools/cron/next-run.ts
-var DAY2 = 864e5;
-var SIX_HOURS = 6 * 36e5;
-var pad3 = (value, width = 2) => String(value).padStart(width, "0");
-function parseCronReference(reference) {
-  if (reference.length > 64) throw new Error("Reference exceeds the 64-character limit.");
-  const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2})(?:\.(\d{1,3}))?)?(Z|[+-]\d{2}:\d{2})$/.exec(reference);
-  if (!match) throw new Error("Reference must be an absolute ISO date/time: YYYY-MM-DDTHH:mm[:ss[.sss]] followed by Z or \xB1HH:mm.");
-  const [year, month, day, hour, minute, second] = [match[1], match[2], match[3], match[4], match[5], match[6] ?? "0"].map(Number);
-  if (year < 1970 || year > 2099) throw new Error("Reference years must be between 1970 and 2099.");
-  const days = new Date(Date.UTC(year, month, 0)).getUTCDate();
-  if (month < 1 || month > 12 || day < 1 || day > days || hour > 23 || minute > 59 || second > 59) throw new Error("Reference contains an impossible calendar date or time.");
-  const milliseconds = Number((match[7] ?? "").padEnd(3, "0"));
-  let offset = 0;
-  if (match[8] !== "Z") {
-    const offsetHour = Number(match[8].slice(1, 3));
-    const offsetMinute = Number(match[8].slice(4, 6));
-    if (offsetMinute > 59 || offsetHour > 14 || offsetHour === 14 && offsetMinute !== 0) throw new Error("Reference offset must be within \xB114:00, with valid minutes.");
-    offset = (offsetHour * 60 + offsetMinute) * 6e4 * (match[8][0] === "-" ? -1 : 1);
-  }
-  const instant = Date.UTC(year, month - 1, day, hour, minute, second, milliseconds) - offset;
-  const utcYear = new Date(instant).getUTCFullYear();
-  if (utcYear < 1970 || utcYear > 2099) throw new Error("Reference instant must fall within UTC years 1970\u20132099.");
-  return instant;
-}
-function zoneFormatter2(timezone) {
-  if (!timezone || timezone !== timezone.trim()) throw new Error("Select a nonempty IANA timezone.");
-  if (timezone.length > 128 || !/^[A-Za-z][A-Za-z0-9_+\-/]*$/.test(timezone)) throw new Error("Enter a valid IANA timezone name; numeric offsets are not timezone names.");
-  try {
-    return new Intl.DateTimeFormat("en-GB-u-ca-gregory-nu-latn", {
-      timeZone: timezone,
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-      hourCycle: "h23"
-    });
-  } catch {
-    throw new Error("Timezone is not a recognized IANA timezone in this runtime.");
-  }
-}
-function wallTime(formatter, instant) {
-  const parts = formatter.formatToParts(instant);
-  const get = (name) => Number(parts.find((part) => part.type === name)?.value);
-  return { year: get("year"), month: get("month"), day: get("day"), hour: get("hour"), minute: get("minute"), second: get("second") };
-}
-function offsetAt(formatter, instant) {
-  const wholeSecond = Math.floor(instant / 1e3) * 1e3;
-  const wall = wallTime(formatter, wholeSecond);
-  return Date.UTC(wall.year, wall.month - 1, wall.day, wall.hour, wall.minute, wall.second) - wholeSecond;
-}
-function offsetIntervals(formatter, midnight) {
-  const start = midnight - 2 * DAY2;
-  const end = midnight + 3 * DAY2;
-  const intervals = [];
-  let intervalStart = start;
-  let priorOffset = offsetAt(formatter, start);
-  for (let probe = start + SIX_HOURS; probe <= end; probe += SIX_HOURS) {
-    const nextOffset = offsetAt(formatter, probe);
-    if (nextOffset !== priorOffset) {
-      let low = probe - SIX_HOURS;
-      let high = probe;
-      while (high - low > 1e3) {
-        const middle = Math.floor((low + high) / 2e3) * 1e3;
-        if (offsetAt(formatter, middle) === priorOffset) low = middle;
-        else high = middle;
-      }
-      intervals.push({ start: intervalStart, end: high, offset: priorOffset });
-      intervalStart = high;
-      priorOffset = nextOffset;
-    }
-  }
-  intervals.push({ start: intervalStart, end, offset: priorOffset });
-  return intervals;
-}
-function selectedSecond(cron, lower, upper) {
-  if (lower >= upper || lower >= 86400) return void 0;
-  lower = Math.max(0, Math.ceil(lower));
-  const firstHour = Math.floor(lower / 3600);
-  for (const hour of cron.hour.values) {
-    if (hour < firstHour) continue;
-    const firstMinute = hour === firstHour ? Math.floor(lower % 3600 / 60) : 0;
-    for (const minute of cron.minute.values) {
-      if (minute < firstMinute) continue;
-      const base = hour * 3600 + minute * 60;
-      if (base >= upper) return void 0;
-      const second = cron.second.values.find((value) => base + value >= lower);
-      if (second !== void 0) return base + second < upper ? base + second : void 0;
-    }
-  }
-  return void 0;
-}
-function formatCronDuration(milliseconds) {
-  if (!Number.isSafeInteger(milliseconds)) throw new Error("Duration is outside supported integer precision.");
-  const sign = milliseconds < 0 ? "-" : "+";
-  let remainder = Math.abs(milliseconds);
-  const pieces = [];
-  for (const [size, name] of [[DAY2, "day"], [36e5, "hour"], [6e4, "minute"], [1e3, "second"], [1, "millisecond"]]) {
-    const count = Math.floor(remainder / size);
-    remainder %= size;
-    if (count) pieces.push(`${count} ${name}${count === 1 ? "" : "s"}`);
-  }
-  return sign + (pieces.join(", ") || "0 seconds");
-}
-function nextCronRun(expression, reference, timezone) {
-  const cron = typeof expression === "string" ? parseCron(expression) : expression;
-  const instant = parseCronReference(reference);
-  const formatter = zoneFormatter2(timezone);
-  const referenceWall = wallTime(formatter, instant);
-  if (referenceWall.year < 1970 || referenceWall.year > 2099) throw new Error("Reference in the selected timezone must fall within years 1970\u20132099.");
-  const referenceDay = Date.UTC(referenceWall.year, referenceWall.month - 1, referenceWall.day);
-  const firstDay = Math.max(Date.UTC(1970, 0, 1), referenceDay - 2 * DAY2);
-  const searchEnd = Math.min(Date.UTC(2100, 0, 1), Date.UTC(referenceWall.year + 8, referenceWall.month - 1, referenceWall.day + 1));
-  const utcReference = new Date(instant);
-  const eightYearLimit = Date.UTC(utcReference.getUTCFullYear() + 8, utcReference.getUTCMonth(), utcReference.getUTCDate(), utcReference.getUTCHours(), utcReference.getUTCMinutes(), utcReference.getUTCSeconds(), utcReference.getUTCMilliseconds());
-  const absoluteEnd = Math.min(Date.UTC(2100, 0, 1), eightYearLimit + 1);
-  let best;
-  let bestOffset = 0;
-  for (let midnight = firstDay; midnight < searchEnd; midnight += DAY2) {
-    if (best !== void 0 && midnight - DAY2 > best) break;
-    const date = new Date(midnight);
-    const year = date.getUTCFullYear();
-    const month = date.getUTCMonth() + 1;
-    const day = date.getUTCDate();
-    if (!matchesCronDate(cron, year, month, day)) continue;
-    for (const interval of offsetIntervals(formatter, midnight)) {
-      const lowerUtc = Math.max(interval.start, instant + 1, midnight - interval.offset, Date.UTC(1970, 0, 1));
-      const upperUtc = Math.min(interval.end, midnight + DAY2 - interval.offset, absoluteEnd, best ?? Infinity);
-      const second = selectedSecond(cron, (lowerUtc + interval.offset - midnight) / 1e3, (upperUtc + interval.offset - midnight) / 1e3);
-      if (second === void 0) continue;
-      const candidate = midnight + second * 1e3 - interval.offset;
-      const actual = wallTime(formatter, candidate);
-      if (actual.year !== year || actual.month !== month || actual.day !== day || actual.hour !== Math.floor(second / 3600) || actual.minute !== Math.floor(second % 3600 / 60) || actual.second !== second % 60) continue;
-      if (candidate > instant && (best === void 0 || candidate < best)) {
-        best = candidate;
-        bestOffset = interval.offset;
-      }
-    }
-  }
-  if (best === void 0) throw new Error("No occurrence found within eight calendar years after the reference, ending no later than 2099. The expression may select impossible calendar dates.");
-  if (bestOffset % 6e4 !== 0) throw new Error("This historical timezone offset includes seconds and cannot be represented by an RFC 3339 \xB1HH:mm offset; choose a reference after the zone adopted minute-based offsets.");
-  const wall = wallTime(formatter, best);
-  const offsetMinutes = Math.abs(bestOffset / 6e4);
-  const offset = `${bestOffset < 0 ? "-" : "+"}${pad3(Math.floor(offsetMinutes / 60))}:${pad3(offsetMinutes % 60)}`;
-  const dateTime = `${pad3(wall.year, 4)}-${pad3(wall.month)}-${pad3(wall.day)}T${pad3(wall.hour)}:${pad3(wall.minute)}:${pad3(wall.second)}${offset}[${timezone}]`;
-  const durationMilliseconds = best - instant;
-  return { instant: best, dateTime, timezone, durationMilliseconds, duration: formatCronDuration(durationMilliseconds) };
-}
-
-// mcp/cli-tools.ts
 function stripAnsi(text2) {
   return text2.replace(/\x1B\[[0-9;]*[a-zA-Z]/g, "");
 }
@@ -4444,7 +5154,7 @@ async function handleCliSubcommand(command, args) {
           JSON.stringify(
             {
               name: "Code Station",
-              version: "1.2.1",
+              version: "1.3.0",
               license: {
                 tier: license.tier,
                 isPro: license.isPro,
@@ -4460,7 +5170,7 @@ async function handleCliSubcommand(command, args) {
         );
       } else {
         out("\n=== CODE STATION STATUS ===\n");
-        out("Version:     1.2.1\n");
+        out("Version:     1.3.0\n");
         out(`License:     ${license.isPro ? "PRO TIER (Active)" : "FREE TIER (Pro key not active)"}
 `);
         out(`Tools:       ${SHARED_TOOLS.length} registered tools across Web, CLI & MCP
@@ -4871,12 +5581,236 @@ Next run:    ${next.dateTime} (${next.duration})
         return { handled: true, exitCode: 1 };
       }
     }
+    // -------------------------------------------------------------
+    // ULID Generator
+    // -------------------------------------------------------------
+    case "ulid": {
+      if (isHelp) {
+        out("Usage: codestation ulid [count]\n");
+        return { handled: true, exitCode: 0 };
+      }
+      const count = Math.min(Math.max(parseInt(args[0], 10) || 1, 1), 100);
+      for (let i = 0; i < count; i++) {
+        out(ulid() + "\n");
+      }
+      return { handled: true, exitCode: 0 };
+    }
+    // -------------------------------------------------------------
+    // NanoID Generator
+    // -------------------------------------------------------------
+    case "nanoid": {
+      if (isHelp) {
+        out("Usage: codestation nanoid [count] [--length <2-128>]\n");
+        return { handled: true, exitCode: 0 };
+      }
+      const countArg = args.find((a) => !a.startsWith("-"));
+      const count = Math.min(Math.max(parseInt(countArg ?? "1", 10) || 1, 1), 100);
+      const lenIdx = args.indexOf("--length");
+      const length = lenIdx !== -1 && args[lenIdx + 1] ? parseInt(args[lenIdx + 1], 10) || 21 : 21;
+      for (let i = 0; i < count; i++) {
+        out(nanoid(length) + "\n");
+      }
+      return { handled: true, exitCode: 0 };
+    }
+    // -------------------------------------------------------------
+    // Base64 Encode / Decode
+    // -------------------------------------------------------------
+    case "base64":
+    case "b64": {
+      if (isHelp) {
+        out('Usage: codestation base64 "<text>" [--decode] [--url-safe]\n');
+        return { handled: true, exitCode: 0 };
+      }
+      const input = await readInput(args.find((a) => !a.startsWith("-")));
+      if (!input) {
+        err("Error: Input text is required.\n");
+        return { handled: true, exitCode: 1 };
+      }
+      const decode = args.includes("--decode") || args.includes("-d");
+      const urlSafe = args.includes("--url-safe");
+      try {
+        if (decode) {
+          out((urlSafe ? decodeBase64Url(input) : Buffer.from(input, "base64").toString("utf-8")) + "\n");
+        } else {
+          out((urlSafe ? encodeBase64Url(input) : Buffer.from(input, "utf-8").toString("base64")) + "\n");
+        }
+        return { handled: true, exitCode: 0 };
+      } catch (e) {
+        err(`Error: ${e instanceof Error ? e.message : String(e)}
+`);
+        return { handled: true, exitCode: 1 };
+      }
+    }
+    // -------------------------------------------------------------
+    // Structural JSON Diff
+    // -------------------------------------------------------------
+    case "json-diff":
+    case "jdiff": {
+      if (isHelp) {
+        out("Usage: codestation json-diff <left_json_or_file> <right_json_or_file>\n");
+        return { handled: true, exitCode: 0 };
+      }
+      const positional = args.filter((a) => !a.startsWith("-"));
+      if (positional.length < 2) {
+        err("Error: Provide both left and right JSON inputs or files.\n");
+        return { handled: true, exitCode: 1 };
+      }
+      try {
+        const left = await readInput(positional[0]);
+        const right = await readInput(positional[1]);
+        out(jsonDiff(left, right) + "\n");
+        return { handled: true, exitCode: 0 };
+      } catch (e) {
+        err(`Error: ${e instanceof Error ? e.message : String(e)}
+`);
+        return { handled: true, exitCode: 1 };
+      }
+    }
+    // -------------------------------------------------------------
+    // JSONPath Query Extractor
+    // -------------------------------------------------------------
+    case "jsonpath":
+    case "json-path": {
+      if (isHelp) {
+        out('Usage: codestation jsonpath <json_or_file> "<expression>"\n');
+        return { handled: true, exitCode: 0 };
+      }
+      const positional = args.filter((a) => !a.startsWith("-"));
+      if (positional.length < 2) {
+        err("Error: Provide both JSON input and a JSONPath expression starting with $.\n");
+        return { handled: true, exitCode: 1 };
+      }
+      try {
+        const json = await readInput(positional[0]);
+        out(testJsonPath(json, positional[1]) + "\n");
+        return { handled: true, exitCode: 0 };
+      } catch (e) {
+        err(`Error: ${e instanceof Error ? e.message : String(e)}
+`);
+        return { handled: true, exitCode: 1 };
+      }
+    }
     default:
       return { handled: false, exitCode: 0 };
   }
 }
 
+// mcp/update-check.ts
+import * as fs4 from "node:fs";
+import * as os3 from "node:os";
+import * as path3 from "node:path";
+var UPDATE_CHECK_TTL_MS = 24 * 60 * 60 * 1e3;
+var NPM_LATEST_URL = "https://registry.npmjs.org/codestation-mcp/latest";
+function defaultCacheFile() {
+  return path3.join(os3.homedir(), ".codestation", "update-check.json");
+}
+function parseSemverParts(version) {
+  const cleaned = version.trim().replace(/^v/i, "").split("-")[0];
+  const match = /^(\d+)\.(\d+)\.(\d+)$/.exec(cleaned);
+  if (!match) return null;
+  return [Number(match[1]), Number(match[2]), Number(match[3])];
+}
+function compareSemver(current, latest) {
+  const a = parseSemverParts(current);
+  const b = parseSemverParts(latest);
+  if (!a || !b) return 0;
+  for (let i = 0; i < 3; i += 1) {
+    if (a[i] < b[i]) return -1;
+    if (a[i] > b[i]) return 1;
+  }
+  return 0;
+}
+function shouldSkipUpdateCheck(argv = process.argv.slice(2), env = process.env, forceInTest = false) {
+  if (argv.includes("--no-update-check")) return true;
+  const optOut = env.CODESTATION_NO_UPDATE_CHECK?.trim().toLowerCase();
+  if (optOut === "1" || optOut === "true") return true;
+  if (env.NO_UPDATE_NOTIFIER === "1" || env.NO_UPDATE_NOTIFIER === "true") return true;
+  if (env.CI === "1" || env.CI === "true") return true;
+  if (!forceInTest && env.NODE_ENV === "test") return true;
+  return false;
+}
+function formatUpdateNotice(currentVersion, latestVersion) {
+  return `
+[codestation-mcp] Update available: v${currentVersion} -> v${latestVersion} (run: npx -y codestation-mcp@latest). Pass --no-update-check or set CODESTATION_NO_UPDATE_CHECK=1 to disable.
+`;
+}
+function readCache(cacheFile) {
+  try {
+    if (!fs4.existsSync(cacheFile)) return null;
+    const raw = fs4.readFileSync(cacheFile, "utf-8");
+    const parsed = JSON.parse(raw);
+    if (typeof parsed.checkedAt === "number" && typeof parsed.latestVersion === "string") {
+      return { checkedAt: parsed.checkedAt, latestVersion: parsed.latestVersion };
+    }
+  } catch {
+  }
+  return null;
+}
+function writeCache(cacheFile, info) {
+  try {
+    const dir = path3.dirname(cacheFile);
+    if (!fs4.existsSync(dir)) {
+      fs4.mkdirSync(dir, { recursive: true });
+    }
+    fs4.writeFileSync(cacheFile, JSON.stringify(info, null, 2), "utf-8");
+  } catch {
+  }
+}
+async function checkForCliUpdate(options) {
+  const argv = options.argv ?? process.argv.slice(2);
+  const env = options.env ?? process.env;
+  if (shouldSkipUpdateCheck(argv, env, options.forceInTest)) {
+    return { status: "skipped", updateAvailable: false };
+  }
+  const now = options.now ?? Date.now();
+  const cacheFile = options.cacheFile ?? defaultCacheFile();
+  const notify = options.onNotice ?? ((msg) => process.stderr.write(msg));
+  const cached = readCache(cacheFile);
+  if (cached && now - cached.checkedAt >= 0 && now - cached.checkedAt < UPDATE_CHECK_TTL_MS) {
+    const updateAvailable = compareSemver(options.currentVersion, cached.latestVersion) < 0;
+    if (updateAvailable) {
+      notify(formatUpdateNotice(options.currentVersion, cached.latestVersion));
+    }
+    return { status: "cached", updateAvailable, latestVersion: cached.latestVersion };
+  }
+  const fetchImpl = options.fetchFn ?? globalThis.fetch;
+  if (typeof fetchImpl !== "function") {
+    return { status: "error", updateAvailable: false };
+  }
+  const controller = new AbortController();
+  const timeoutMs = options.timeoutMs ?? 1200;
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  if (typeof timer.unref === "function") {
+    timer.unref();
+  }
+  try {
+    const response = await fetchImpl(NPM_LATEST_URL, {
+      headers: { Accept: "application/vnd.npm.install-v1+json" },
+      signal: controller.signal
+    });
+    if (!response.ok) {
+      return { status: "error", updateAvailable: false };
+    }
+    const payload = await response.json();
+    const latestVersion = typeof payload.version === "string" ? payload.version.trim() : "";
+    if (!latestVersion || !parseSemverParts(latestVersion)) {
+      return { status: "error", updateAvailable: false };
+    }
+    writeCache(cacheFile, { checkedAt: now, latestVersion });
+    const updateAvailable = compareSemver(options.currentVersion, latestVersion) < 0;
+    if (updateAvailable) {
+      notify(formatUpdateNotice(options.currentVersion, latestVersion));
+    }
+    return { status: "fetched", updateAvailable, latestVersion };
+  } catch {
+    return { status: "error", updateAvailable: false };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 // mcp/cli.ts
+var CLI_VERSION = "1.3.0";
 var PRO_ASCII_BADGE = `
   \u250C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510
   \u2502  CODE STATION [PRO]  \u2022  LOCAL MCP & DEVELOPER TOOLBOX    \u2502
@@ -4907,10 +5841,16 @@ Terminal Subcommands:
   mock [template] [--count]     Generate realistic mock data (users, products, orders)
   conflict <file> [--strategy]  Parse & resolve Git merge conflicts (ours, theirs, both)
   uuid [count]                  Generate random RFC 4122 v4 UUIDs
+  ulid [count]                  Generate sortable ULIDs
+  nanoid [count] [--length N]   Generate URL-safe NanoIDs
   json "<raw_json>"             Validate & pretty-print JSON
+  json-diff '<a.json>' '<b.json>' Compute structural JSON diff
+  jsonpath "<json>" "<expr>"    Query JSON using JSONPath (e.g. $.users[*].name)
+  base64 "<text>" [--decode]    Encode or decode Base64 (--url-safe supported)
 
 Stdio Server Options (for AI Assistants):
   --key <license_key>           Activate Code Station Pro features
+  --no-update-check             Disable npm update check (or set CODESTATION_NO_UPDATE_CHECK=1)
   --help, -h                    Show this help message
   --version, -v                 Show version information
 
@@ -4922,17 +5862,31 @@ Pricing:
 
 `);
 }
+async function runCliUpdateCheck(args) {
+  await Promise.race([
+    checkForCliUpdate({
+      currentVersion: CLI_VERSION,
+      argv: args,
+      timeoutMs: 800
+    }),
+    new Promise((resolve) => setTimeout(resolve, 250))
+  ]);
+}
 async function main() {
   const args = process.argv.slice(2);
-  if (args.includes("--version") || args.includes("-v")) {
-    process.stderr.write("codestation-mcp v1.2.1\n");
+  const cleanArgs = args.filter((a) => a !== "--no-update-check");
+  if (cleanArgs.includes("--version") || cleanArgs.includes("-v")) {
+    process.stderr.write(`codestation-mcp v${CLI_VERSION}
+`);
+    await runCliUpdateCheck(args);
     process.exit(0);
   }
-  if (args[0] === "setup") {
+  if (cleanArgs[0] === "setup") {
+    const updatePromise = runCliUpdateCheck(args);
     let key;
-    const keyIdx = args.indexOf("--key");
-    if (keyIdx !== -1 && args[keyIdx + 1]) {
-      key = args[keyIdx + 1];
+    const keyIdx = cleanArgs.indexOf("--key");
+    if (keyIdx !== -1 && cleanArgs[keyIdx + 1]) {
+      key = cleanArgs[keyIdx + 1];
     }
     process.stdout.write("\n=== Code Station 1-Click AI Setup ===\n");
     if (key) {
@@ -4952,22 +5906,26 @@ async function main() {
       }
     }
     process.stdout.write("\n\u2728 Setup complete! Restart your editor(s) to start using Code Station tools.\n\n");
+    await updatePromise;
     process.exit(0);
   }
-  if (args.length > 0 && !args[0].startsWith("-")) {
-    const res = await handleCliSubcommand(args[0], args.slice(1));
+  if (cleanArgs.length > 0 && !cleanArgs[0].startsWith("-")) {
+    const updatePromise = runCliUpdateCheck(args);
+    const res = await handleCliSubcommand(cleanArgs[0], cleanArgs.slice(1));
     if (res.handled) {
+      await updatePromise;
       process.exit(res.exitCode);
     }
   }
-  if (args.includes("--help") || args.includes("-h")) {
+  if (cleanArgs.includes("--help") || cleanArgs.includes("-h")) {
     printHelp();
+    await runCliUpdateCheck(args);
     process.exit(0);
   }
   let cliKey;
-  const keyIndex = args.indexOf("--key");
-  if (keyIndex !== -1 && args[keyIndex + 1]) {
-    cliKey = args[keyIndex + 1];
+  const keyIndex = cleanArgs.indexOf("--key");
+  if (keyIndex !== -1 && cleanArgs[keyIndex + 1]) {
+    cliKey = cleanArgs[keyIndex + 1];
   }
   const { server, license } = createMcpServer(cliKey);
   if (license.isPro) {

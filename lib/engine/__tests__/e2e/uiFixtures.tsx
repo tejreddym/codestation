@@ -26,6 +26,9 @@ import type {
 import { resolveToolKey } from "./testHelpers";
 import { useToolEngine } from "../../useToolEngine";
 import { BlobUrlRegistry } from "../../blobRegistry";
+import { buildToolPermalinkUrl, decodePermalinkHash } from "../../permalink";
+import { registerActiveToolBridge } from "../../tool-actions-bridge";
+import { EmbedModal } from "@/components/EmbedModal";
 
 // ============================================================================
 // 1. ToolPrivacyBadge Component (Feature 11)
@@ -631,6 +634,9 @@ export function ToolErrorBanner({ error, validation, onDismiss }: ToolErrorBanne
 export interface ToolActionBarProps {
   result: ToolResult | null;
   onWorkflowChain?: (output: unknown) => void;
+  onCopyLink?: () => Promise<void> | void;
+  onOpenEmbed?: () => void;
+  linkNotice?: { kind: "copied" | "error"; message: string } | null;
   disabled?: boolean;
   suggestedFilename?: string;
   mimeType?: string;
@@ -639,6 +645,9 @@ export interface ToolActionBarProps {
 export function ToolActionBar({
   result,
   onWorkflowChain,
+  onCopyLink,
+  onOpenEmbed,
+  linkNotice,
   disabled = false,
   suggestedFilename = "output.txt",
   mimeType = "text/plain",
@@ -716,6 +725,30 @@ export function ToolActionBar({
           Download
         </button>
 
+        {onCopyLink && (
+          <button
+            type="button"
+            data-testid="btn-action-copy-link"
+            className="btn btn-sm px-3 py-1.5 text-xs font-semibold bg-stone-100 hover:bg-stone-200 rounded border border-stone-300 disabled:opacity-40 disabled:cursor-not-allowed"
+            disabled={disabled}
+            onClick={() => void onCopyLink()}
+          >
+            {linkNotice?.kind === "copied" ? "Link Copied!" : "Copy Link"}
+          </button>
+        )}
+
+        {onOpenEmbed && (
+          <button
+            type="button"
+            data-testid="btn-action-embed"
+            className="btn btn-sm px-3 py-1.5 text-xs font-semibold bg-stone-100 hover:bg-stone-200 rounded border border-stone-300 disabled:opacity-40 disabled:cursor-not-allowed"
+            disabled={disabled}
+            onClick={onOpenEmbed}
+          >
+            Embed
+          </button>
+        )}
+
         {onWorkflowChain && (
           <button
             type="button"
@@ -728,6 +761,16 @@ export function ToolActionBar({
           </button>
         )}
       </div>
+
+      {linkNotice && (
+        <span
+          role={linkNotice.kind === "error" ? "alert" : "status"}
+          data-testid="permalink-notice"
+          className={`text-xs ${linkNotice.kind === "error" ? "text-amber-700 font-medium" : "text-emerald-700"}`}
+        >
+          {linkNotice.message}
+        </span>
+      )}
 
       {hasResult && result.durationMs !== undefined && (
         <span className="text-xs text-stone-500" data-testid="result-duration">
@@ -766,6 +809,7 @@ export function ToolOutputPreview({ result, outputConfig }: ToolOutputPreviewPro
       String(result.data);
     return (
       <div className="output-preview image-preview p-4 border border-stone-200 rounded bg-stone-50 flex justify-center" data-testid="tool-output-preview">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           data-testid="preview-image"
           src={src}
@@ -908,6 +952,7 @@ export interface UniversalToolShellProps {
   customCanvas?: (props: CustomCanvasSlotProps) => React.ReactNode;
   initialInput?: unknown;
   onWorkflowChain?: (output: unknown) => void;
+  embedMode?: boolean;
 }
 
 export function UniversalToolShell({
@@ -916,6 +961,7 @@ export function UniversalToolShell({
   customCanvas,
   initialInput,
   onWorkflowChain,
+  embedMode = false,
 }: UniversalToolShellProps) {
   const { state, result, validation, error, progress, run, cancel, reset, blobUrls } = useToolEngine(
     definition,
@@ -957,6 +1003,9 @@ export function UniversalToolShell({
   });
 
   const [dismissedError, setDismissedError] = useState(false);
+  const [linkNotice, setLinkNotice] = useState<{ kind: "copied" | "error"; message: string } | null>(null);
+  const [embedOpen, setEmbedOpen] = useState(false);
+  const hashHydratedRef = useRef(false);
 
   // Reset dismissed error flag when a new run begins
   useEffect(() => {
@@ -968,6 +1017,92 @@ export function UniversalToolShell({
   const handleControlChange = (name: string, value: unknown) => {
     setControlValues((prev) => ({ ...prev, [name]: value }));
   };
+
+  const getPermalinkStatePayload = useCallback(() => {
+    const filteredControls: Record<string, unknown> = {};
+    for (const [key, val] of Object.entries(controlValues)) {
+      if (primaryInputConfig && key === primaryInputConfig.name) continue;
+      filteredControls[key] = val;
+    }
+    return {
+      input: textInput,
+      controls: filteredControls,
+    };
+  }, [controlValues, primaryInputConfig, textInput]);
+
+  const handleCopyLink = useCallback(async () => {
+    const baseHref = typeof window !== "undefined" ? window.location.href : "/";
+    const built = await buildToolPermalinkUrl(baseHref, getPermalinkStatePayload());
+    if (!built.ok) {
+      setLinkNotice({ kind: "error", message: built.message });
+      return;
+    }
+    try {
+      if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(built.url);
+      }
+      setLinkNotice({ kind: "copied", message: "Share link copied." });
+    } catch {
+      setLinkNotice({ kind: "error", message: "Could not copy share link to clipboard." });
+    }
+  }, [getPermalinkStatePayload]);
+
+  // Register active shell with global Command Palette actions bridge
+  useEffect(() => {
+    return registerActiveToolBridge({
+      getOutputText: () => {
+        if (!result || result.data === undefined || result.data === null) return null;
+        return typeof result.data === "object"
+          ? JSON.stringify(result.data, null, 2)
+          : String(result.data);
+      },
+      getShareUrl: async () => {
+        const baseHref = typeof window !== "undefined" ? window.location.href : "/";
+        return buildToolPermalinkUrl(baseHref, getPermalinkStatePayload());
+      },
+    });
+  }, [result, getPermalinkStatePayload]);
+
+  // Hydrate URL `#state=` / `#s=` permalink once on mount and auto-run if state is present
+  useEffect(() => {
+    if (hashHydratedRef.current) return;
+    hashHydratedRef.current = true;
+    const hash = typeof window !== "undefined" ? window.location.hash : "";
+    if (!hash || (!hash.includes("state=") && !hash.includes("s="))) return;
+
+    let cancelled = false;
+    void decodePermalinkHash(hash).then(async (decoded) => {
+      if (cancelled || !decoded) return;
+      const nextText = typeof decoded.input === "string" ? decoded.input : textInput;
+      const nextControls = decoded.controls ? { ...controlValues, ...decoded.controls } : controlValues;
+
+      if (typeof decoded.input === "string") {
+        setTextInput(decoded.input);
+      }
+      if (decoded.controls) {
+        setControlValues((prev) => ({ ...prev, ...decoded.controls }));
+      }
+
+      if (!isZeroInput) {
+        if (definition.input.length > 1) {
+          const payload: Record<string, unknown> = { ...nextControls };
+          if (primaryInputConfig) {
+            payload[primaryInputConfig.name] = nextText;
+          } else {
+            payload.input = nextText;
+          }
+          await run(payload);
+        } else {
+          await run(nextText);
+        }
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  // Mount-only hash hydration intentionally reads initial state once.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleExecute = useCallback(async () => {
     blobUrls.revokeAll();
@@ -989,7 +1124,7 @@ export function UniversalToolShell({
     } else {
       await run(textInput);
     }
-  }, [isZeroInput, definition.input, controlValues, primaryInputConfig, textInput, run]);
+  }, [isZeroInput, definition.input, controlValues, primaryInputConfig, textInput, run, blobUrls]);
 
   // Keyboard shortcut: Cmd+Enter / Ctrl+Enter at shell container
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
@@ -1006,7 +1141,12 @@ export function UniversalToolShell({
       role="region"
       aria-label={definition.name}
       data-testid="universal-tool-shell"
-      className="shell universal-tool-shell tactile-technical bg-white border border-stone-200 rounded-xl p-6 shadow-sm max-w-4xl mx-auto space-y-6"
+      data-embed-mode={embedMode ? "true" : undefined}
+      className={
+        embedMode
+          ? "shell universal-tool-shell tactile-technical bg-white border border-stone-200 rounded-xl p-4 shadow-sm max-w-4xl mx-auto space-y-4"
+          : "shell universal-tool-shell tactile-technical bg-white border border-stone-200 rounded-xl p-6 shadow-sm max-w-4xl mx-auto space-y-6"
+      }
       onKeyDown={handleKeyDown}
       tabIndex={0}
     >
@@ -1112,6 +1252,9 @@ export function UniversalToolShell({
         <ToolActionBar
           result={result}
           onWorkflowChain={onWorkflowChain}
+          onCopyLink={handleCopyLink}
+          onOpenEmbed={!embedMode ? () => setEmbedOpen(true) : undefined}
+          linkNotice={linkNotice}
           disabled={isProcessing}
           suggestedFilename={
             definition.output[0] && "suggestedFilename" in definition.output[0]
@@ -1125,6 +1268,30 @@ export function UniversalToolShell({
           }
         />
       </div>
+
+      {embedMode ? (
+        <footer
+          data-testid="universal-embed-footer"
+          className="flex items-center justify-between gap-3 pt-3 border-t border-stone-200 text-xs text-stone-500"
+        >
+          <span>{definition.name}</span>
+          <a
+            href={`https://codestation.in/tools/${definition.slug || definition.id}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-semibold text-stone-700 hover:underline"
+          >
+            Powered by Code Station ↗
+          </a>
+        </footer>
+      ) : (
+        <EmbedModal
+          open={embedOpen}
+          onClose={() => setEmbedOpen(false)}
+          slug={definition.slug || definition.id}
+          toolName={definition.name}
+        />
+      )}
     </div>
   );
 }

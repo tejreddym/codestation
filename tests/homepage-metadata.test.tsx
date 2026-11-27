@@ -30,9 +30,9 @@ describe("homepage SEO metadata", () => {
     expect(metadata.alternates?.canonical).toBe(`${origin}/`);
     expect(metadata.openGraph).toMatchObject({ url: origin, siteName: "Code Station", type: "website" });
     expect(metadata.openGraph?.images).toEqual([
-      expect.objectContaining({ url: `${origin}/brand/social/social-landscape-light-1200x630.png`, width: 1200, height: 630 }),
+      expect.objectContaining({ url: `${origin}/og`, width: 1200, height: 630 }),
     ]);
-    expect(metadata.twitter).toMatchObject({ card: "summary", title: homeTitle });
+    expect(metadata.twitter).toMatchObject({ card: "summary_large_image", title: homeTitle });
     expect(metadata.robots).toMatchObject({ index: true, follow: true });
   });
 

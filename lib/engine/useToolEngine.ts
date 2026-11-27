@@ -127,6 +127,7 @@ export function useToolEngine<
   // 1. Unmount-only teardown effect: runs solely when component unmounts from DOM
   useEffect(() => {
     isMountedRef.current = true;
+    const blobRegistry = blobRegistryRef.current;
 
     return () => {
       isMountedRef.current = false;
@@ -139,7 +140,7 @@ export function useToolEngine<
 
       safeCancel(engineRef.current);
       safeDispose(engineRef.current);
-      blobRegistryRef.current.revokeAll();
+      blobRegistry.revokeAll();
     };
   }, []);
 

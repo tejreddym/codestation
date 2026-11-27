@@ -1407,3 +1407,99 @@ describe("E2E Shell: Feature 19 - Dynamic Route UI Unification", () => {
     });
   });
 });
+
+describe("E2E Shell: URL Hash State Permalinks", () => {
+  beforeEach(() => {
+    setupTestEnvironment();
+    window.location.hash = "";
+  });
+
+  afterEach(() => {
+    window.location.hash = "";
+    cleanup();
+    cleanupTestEnvironment();
+  });
+
+  it("copies a #state= permalink and restores input, controls, and output from hash", async () => {
+    const { encodeToolPermalink } = await import("../../permalink");
+    const definition = createMockToolDefinition({
+      name: "JSON Formatter",
+      input: [
+        { name: "data", label: "JSON Data", control: "code", required: true },
+        {
+          name: "indent",
+          label: "Indent",
+          control: "select",
+          defaultValue: "2",
+          options: ["2", "4"],
+        },
+      ],
+    });
+    const engine = createMockToolEngine({
+      process: async (input: unknown) => ({
+        data: `RESULT:${JSON.stringify(input)}`,
+        durationMs: 2,
+      }),
+    });
+
+    const firstMount = render(el(UniversalToolShell, { definition, engine }));
+    fireEvent.change(screen.getByTestId("tool-editor-textarea"), {
+      target: { value: '{"hello":"world"}' },
+    });
+    fireEvent.change(screen.getByTestId("control-indent"), {
+      target: { value: "4" },
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("btn-action-copy-link"));
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId("btn-action-copy-link").textContent).toBe("Link Copied!");
+    });
+    const copied = MockClipboardManager.getLastWritten() ?? "";
+    expect(copied).toContain("#state=");
+
+    // Extract hash and mount a fresh shell with that shared URL hash
+    const hash = "#" + copied.split("#")[1];
+    firstMount.unmount();
+
+    const sanity = await encodeToolPermalink({ input: '{"hello":"world"}', controls: { indent: "4" } });
+    expect(sanity.ok).toBe(true);
+    window.location.hash = hash;
+
+    render(el(UniversalToolShell, { definition, engine }));
+
+    await waitFor(() => {
+      expect((screen.getByTestId("tool-editor-textarea") as HTMLTextAreaElement).value).toBe(
+        '{"hello":"world"}'
+      );
+      expect((screen.getByTestId("control-indent") as HTMLSelectElement).value).toBe("4");
+      expect(screen.getByTestId("preview-text").textContent).toContain('"indent":"4"');
+    });
+  });
+
+  it("ignores malformed #state= hashes gracefully and warns when input exceeds 8 KB", async () => {
+    window.location.hash = "#state=corrupted!!!payload";
+    const definition = createMockToolDefinition();
+    const engine = createMockToolEngine();
+
+    render(el(UniversalToolShell, { definition, engine }));
+    expect((screen.getByTestId("tool-editor-textarea") as HTMLTextAreaElement).value).toBe("");
+
+    const highEntropy = Array.from({ length: 12000 }, (_, i) =>
+      String.fromCharCode(33 + ((i * 73 + i * i) % 90))
+    ).join("");
+    fireEvent.change(screen.getByTestId("tool-editor-textarea"), {
+      target: { value: highEntropy },
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("btn-action-copy-link"));
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId("permalink-notice").textContent).toMatch(/too large/i);
+    });
+  });
+});

@@ -122,8 +122,6 @@ export default function TimePicker({
           onChange={handleInputChange}
           placeholder={placeholder}
           maxLength={maxLength}
-          aria-haspopup="dialog"
-          aria-expanded={open}
           aria-describedby={hint ? `${id}-hint` : undefined}
           autoComplete="off"
           spellCheck={false}
@@ -134,6 +132,8 @@ export default function TimePicker({
             className={`${styles.iconButton} ${open ? styles.iconButtonActive : ""}`}
             onClick={() => setOpen(!open)}
             aria-label={`Open clock for ${label}`}
+            aria-haspopup="dialog"
+            aria-expanded={open}
             tabIndex={-1}
           >
             <ClockIcon size={15} />

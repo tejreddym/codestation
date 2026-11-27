@@ -53,8 +53,8 @@ const modules = Object.assign({}, ...registrations.map(entry => entry[1]));
 const cache = {};
 function requireModule(id) {
   if (cache[id]) return cache[id].exports;
-  const module = { exports: {} }; cache[id] = module;
-  assert.ok(modules[id], `Missing local engine module ${id}`); modules[id](module, module.exports, requireModule); return module.exports;
+  const mod = { exports: {} }; cache[id] = mod;
+  assert.ok(modules[id], `Missing local engine module ${id}`); modules[id](mod, mod.exports, requireModule); return mod.exports;
 }
 requireModule.d = (exports, definitions) => { for (const [key, get] of Object.entries(definitions)) Object.defineProperty(exports, key, { enumerable: true, get }); };
 let runDateTime;

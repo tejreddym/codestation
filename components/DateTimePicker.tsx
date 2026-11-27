@@ -232,8 +232,6 @@ export default function DateTimePicker({
           } : undefined}
           placeholder={placeholder}
           maxLength={isUtc ? undefined : maxLength}
-          aria-haspopup="dialog"
-          aria-expanded={open}
           aria-describedby={describedBy}
           aria-invalid={invalid}
           autoComplete="off"
@@ -245,6 +243,8 @@ export default function DateTimePicker({
             className={`${styles.iconButton} ${open && activeTab === "date" ? styles.iconButtonActive : ""}`}
             onClick={() => openWithTab("date")}
             aria-label={`Open calendar for ${label}`}
+            aria-haspopup="dialog"
+            aria-expanded={open && activeTab === "date"}
             tabIndex={isUtc ? 0 : -1}
             title="Select date and year"
           >
@@ -255,6 +255,8 @@ export default function DateTimePicker({
             className={`${styles.iconButton} ${open && activeTab === "time" ? styles.iconButtonActive : ""}`}
             onClick={() => openWithTab("time")}
             aria-label={`Open clock for ${label}`}
+            aria-haspopup="dialog"
+            aria-expanded={open && activeTab === "time"}
             tabIndex={isUtc ? 0 : -1}
             title="Select time"
           >

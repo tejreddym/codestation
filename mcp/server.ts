@@ -22,6 +22,12 @@ import {
   decodeJwt,
   generateJsonSchema,
   testRegex,
+  jsonDiff,
+  testJsonPath,
+  encodeHtml,
+  decodeHtml,
+  csvToJson,
+  jsonToCsv,
 } from "../lib/tools/index";
 import {
   md5,
@@ -32,6 +38,8 @@ import {
   hmacSha256,
   hmacSha512,
   crc32,
+  ulid,
+  nanoid,
 } from "../lib/tools/security-station";
 import {
   encodeBase64Url,
@@ -53,6 +61,7 @@ import {
 } from "../lib/tools/date-time-station";
 import { parseCron } from "../lib/tools/cron/parser";
 import { explainCron } from "../lib/tools/cron/explain";
+import { nextCronRun } from "../lib/tools/cron/engine";
 import { runSql } from "../lib/tools/sql/engine";
 import { jsonToTypescript, jsonToZod } from "../lib/tools/json-to-types";
 import { curlToCode, type CurlTargetLanguage } from "../lib/tools/curl-to-code";
@@ -219,6 +228,98 @@ export const MCP_TOOLS: Tool[] = [
         required: ["text"],
       },
     },
+    {
+      name: "codestation_ulid",
+      description: "Generate lexicographically sortable ULID identifiers (Crockford Base32). [Free Tier]",
+      inputSchema: {
+        type: "object",
+        properties: {
+          count: {
+            type: "integer",
+            description: "Number of ULIDs to generate (1 to 50, default: 1)",
+            minimum: 1,
+            maximum: 50,
+          },
+        },
+      },
+    },
+    {
+      name: "codestation_nanoid",
+      description: "Generate compact URL-safe cryptographic NanoIDs with customizable length. [Free Tier]",
+      inputSchema: {
+        type: "object",
+        properties: {
+          length: {
+            type: "integer",
+            description: "Character length (2 to 128, default: 21)",
+            minimum: 2,
+            maximum: 128,
+          },
+          count: {
+            type: "integer",
+            description: "Number of IDs to generate (1 to 50, default: 1)",
+            minimum: 1,
+            maximum: 50,
+          },
+        },
+      },
+    },
+    {
+      name: "codestation_json_diff",
+      description: "Compute a structural key-by-key diff between two JSON documents. [Free Tier]",
+      inputSchema: {
+        type: "object",
+        properties: {
+          left: { type: "string", description: "Original JSON document" },
+          right: { type: "string", description: "Updated JSON document" },
+        },
+        required: ["left", "right"],
+      },
+    },
+    {
+      name: "codestation_json_path",
+      description: "Query and extract matching nodes from JSON using JSONPath (e.g. $.users[*].name, $[0].id). [Free Tier]",
+      inputSchema: {
+        type: "object",
+        properties: {
+          json: { type: "string", description: "Valid JSON payload to query" },
+          expression: { type: "string", description: "JSONPath expression starting with $" },
+        },
+        required: ["json", "expression"],
+      },
+    },
+    {
+      name: "codestation_html_codec",
+      description: "Encode or decode HTML entities (&lt;, &gt;, &amp;, numeric character references). [Free Tier]",
+      inputSchema: {
+        type: "object",
+        properties: {
+          text: { type: "string", description: "Text or HTML entity string" },
+          action: {
+            type: "string",
+            enum: ["encode", "decode"],
+            description: "Whether to encode or decode HTML entities",
+          },
+        },
+        required: ["text", "action"],
+      },
+    },
+    {
+      name: "codestation_csv_json",
+      description: "Convert CSV tables (with header row) to JSON arrays or JSON arrays of objects to CSV. [Free Tier]",
+      inputSchema: {
+        type: "object",
+        properties: {
+          input: { type: "string", description: "CSV or JSON input text" },
+          direction: {
+            type: "string",
+            enum: ["csv-to-json", "json-to-csv"],
+            description: "Conversion direction",
+          },
+        },
+        required: ["input", "direction"],
+      },
+    },
 
     // ----------------- PRO TOOLS (₹199 / $2.99) -----------------
     {
@@ -290,6 +391,34 @@ export const MCP_TOOLS: Tool[] = [
           expression: {
             type: "string",
             description: "5-field cron expression, e.g. '*/15 9-17 * * 1-5'",
+          },
+        },
+        required: ["expression"],
+      },
+    },
+    {
+      name: "codestation_cron_next_runs",
+      description: "Calculate upcoming execution timestamps for a cron expression in any IANA timezone. [Pro Tier: ₹199/mo or $2.99/mo]",
+      inputSchema: {
+        type: "object",
+        properties: {
+          expression: {
+            type: "string",
+            description: "5-field (or 6-field seconds-first) cron expression",
+          },
+          count: {
+            type: "integer",
+            description: "Number of upcoming runs to return (1 to 20, default: 5)",
+            minimum: 1,
+            maximum: 20,
+          },
+          timeZone: {
+            type: "string",
+            description: "IANA timezone (default: 'UTC')",
+          },
+          startFrom: {
+            type: "string",
+            description: "Optional ISO 8601 reference timestamp (e.g. '2026-10-09T14:30:00Z')",
           },
         },
         required: ["expression"],
@@ -503,6 +632,9 @@ export async function executeMcpTool(
           const text = String(args.text ?? "");
           const action = String(args.action ?? "encode");
           const urlSafe = Boolean(args.urlSafe);
+          if (action !== "encode" && action !== "decode") {
+            throw new Error(`Invalid Base64 action "${action}". Expected "encode" or "decode".`);
+          }
 
           if (action === "encode") {
             if (urlSafe) {
@@ -514,7 +646,11 @@ export async function executeMcpTool(
             if (urlSafe) {
               outputText = decodeBase64Url(text);
             } else {
-              outputText = Buffer.from(text, "base64").toString("utf-8");
+              const cleaned = text.replace(/\s+/g, "");
+              if (!/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(cleaned)) {
+                throw new Error("Invalid standard Base64 input.");
+              }
+              outputText = Buffer.from(cleaned, "base64").toString("utf-8");
             }
           }
           break;
@@ -573,6 +709,82 @@ export async function executeMcpTool(
           break;
         }
 
+        case "codestation_ulid": {
+          const count = args.count === undefined ? 1 : Number(args.count);
+          if (!Number.isInteger(count) || count < 1 || count > 50) {
+            throw new RangeError("count must be an integer between 1 and 50.");
+          }
+          const ulids = Array.from({ length: count }, () => ulid());
+          outputText = count === 1 ? ulids[0] : ulids.join("\n");
+          break;
+        }
+
+        case "codestation_nanoid": {
+          const length = args.length === undefined ? 21 : Number(args.length);
+          const count = args.count === undefined ? 1 : Number(args.count);
+          if (!Number.isInteger(length) || length < 2 || length > 128) {
+            throw new RangeError("length must be an integer between 2 and 128.");
+          }
+          if (!Number.isInteger(count) || count < 1 || count > 50) {
+            throw new RangeError("count must be an integer between 1 and 50.");
+          }
+          const ids = Array.from({ length: count }, () => nanoid(length));
+          outputText = count === 1 ? ids[0] : ids.join("\n");
+          break;
+        }
+
+        case "codestation_json_diff": {
+          const left = args.left;
+          const right = args.right;
+          if (typeof left !== "string" || typeof right !== "string" || !left.trim() || !right.trim()) {
+            throw new Error("Both left and right JSON strings are required.");
+          }
+          outputText = jsonDiff(left, right);
+          break;
+        }
+
+        case "codestation_json_path": {
+          const json = args.json;
+          const expression = args.expression;
+          if (typeof json !== "string" || !json.trim()) {
+            throw new Error("A JSON string is required.");
+          }
+          if (typeof expression !== "string" || !expression.trim()) {
+            throw new Error("A JSONPath expression starting with $ is required.");
+          }
+          outputText = testJsonPath(json, expression);
+          break;
+        }
+
+        case "codestation_html_codec": {
+          const text = args.text;
+          const action = String(args.action ?? "");
+          if (typeof text !== "string") {
+            throw new Error("A text string is required.");
+          }
+          if (action !== "encode" && action !== "decode") {
+            throw new Error(`Invalid action "${action}". Expected "encode" or "decode".`);
+          }
+          outputText = action === "encode" ? encodeHtml(text) : decodeHtml(text);
+          break;
+        }
+
+        case "codestation_csv_json": {
+          const input = args.input;
+          const direction = String(args.direction ?? "");
+          if (typeof input !== "string" || !input.trim()) {
+            throw new Error("Non-empty CSV or JSON input is required.");
+          }
+          if (direction === "csv-to-json") {
+            outputText = csvToJson(input);
+          } else if (direction === "json-to-csv") {
+            outputText = jsonToCsv(input);
+          } else {
+            throw new Error(`Invalid direction "${direction}". Expected "csv-to-json" or "json-to-csv".`);
+          }
+          break;
+        }
+
         // --- Pro tools ---
         case "codestation_hash": {
           const text = String(args.text ?? "");
@@ -625,6 +837,25 @@ export async function executeMcpTool(
         case "codestation_cron_explain": {
           const parsed = parseCron(String(args.expression ?? ""));
           outputText = explainCron(parsed);
+          break;
+        }
+
+        case "codestation_cron_next_runs": {
+          const expression = String(args.expression ?? "");
+          const count = args.count === undefined ? 5 : Number(args.count);
+          if (!Number.isInteger(count) || count < 1 || count > 20) {
+            throw new RangeError("count must be an integer between 1 and 20.");
+          }
+          const timeZone = args.timeZone !== undefined ? String(args.timeZone) : "UTC";
+          let cursor = args.startFrom !== undefined ? String(args.startFrom) : new Date().toISOString();
+          const parsed = parseCron(expression);
+          const runs: Array<{ run: number; dateTime: string; duration: string }> = [];
+          for (let i = 0; i < count; i += 1) {
+            const next = nextCronRun(parsed, cursor, timeZone);
+            runs.push({ run: i + 1, dateTime: next.dateTime, duration: next.duration });
+            cursor = new Date(next.instant).toISOString();
+          }
+          outputText = JSON.stringify({ expression, timeZone, runs }, null, 2);
           break;
         }
 
@@ -732,7 +963,7 @@ export async function executeMcpTool(
     const server = new Server(
       {
         name: "codestation-mcp",
-        version: "1.2.1",
+        version: "1.3.0",
       },
       {
         capabilities: {

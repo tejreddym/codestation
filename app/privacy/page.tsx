@@ -1,35 +1,52 @@
+import Link from "next/link";
 import {
   InformationalPage,
   informationalStyles,
 } from "@/components/InformationalPage";
 import { metadataForPage } from "@/config/site";
+import { operatorMetadata } from "@/lib/legal/operator";
 
 export const metadata = metadataForPage(
   "/privacy",
   "Privacy Notice",
-  "Provisional privacy notice for Code Station.",
+  "Privacy notice, client-side processing guarantees, and hosting/retention disclosures for Code Station.",
 );
 
 export default function PrivacyPage() {
   return (
     <InformationalPage
       title="Privacy Notice"
-      intro="This provisional notice describes the behavior currently observed in the published application."
+      intro="This notice describes data handling across Code Station tools, local preferences, and supporting server endpoints."
     >
-      <p className={informationalStyles.notice}>
-        Operator, hosting provider, retention period, and governing jurisdiction
-        have not been identified in the available project materials. Those
-        details require an owner decision before this notice can be treated as
-        final.
-      </p>
+      {operatorMetadata.hasPendingFields && (
+        <p className={informationalStyles.notice}>
+          {operatorMetadata.provisionalNotice}
+        </p>
+      )}
       <h2>Browser-local processing</h2>
       <p>
-        Tool inputs and results are generally processed in the browser. The
-        application does not currently expose an app analytics implementation,
-        and no application analytics sink was found during inspection. This does
-        not establish what a hosting provider, browser, network, or third-party
-        service may log.
+        {operatorMetadata.hosting.applicationRetention} Tool inputs and results
+        stay in your browser tab. This does not restrict what an external
+        hosting provider, browser, network, or third-party destination may log.
       </p>
+      <h2>Hosting &amp; data retention disclosures</h2>
+      <ul>
+        <li>
+          <strong>Hosting Provider:</strong> {operatorMetadata.hosting.provider}
+        </li>
+        <li>
+          <strong>Pro License Storage:</strong>{" "}
+          {operatorMetadata.hosting.proLicenseStorage}
+        </li>
+        <li>
+          <strong>Checkout Processing:</strong>{" "}
+          {operatorMetadata.hosting.paymentProcessor}
+        </li>
+        <li>
+          <strong>Governing Jurisdiction:</strong>{" "}
+          {operatorMetadata.jurisdiction}
+        </li>
+      </ul>
       <h2>Outbound requests</h2>
       <ul>
         <li>
@@ -48,17 +65,18 @@ export default function PrivacyPage() {
       <p>
         The illustrated theme toggle stores the selected light/dark preference
         in browser <code>localStorage</code> under{" "}
-        <code>code-station-theme</code>. Tool content is not described as being
-        persisted by the app. Browser history, downloads, caches, extensions,
+        <code>code-station-theme</code>. Tool content is not persisted on any
+        server by the app. Browser history, downloads, caches, extensions,
         hosting logs, and outbound destinations are separate systems.
       </p>
       <h2>Workbench and clipboard</h2>
       <p>
         Favorites, recent tool IDs and detection preferences are stored in
-        browser localStorage under code-station-workbench-v1. Smart Detection
-        inspects clipboard text in browser memory, after browser permission or a
-        manual paste. Automatic focus checks are optional. Tool input and
-        results are not included in saved preferences or shared recipe links.
+        browser localStorage under <code>code-station-workbench-v1</code>. Smart
+        Detection inspects clipboard text in browser memory, after browser
+        permission or a manual paste. Automatic focus checks are optional. Tool
+        input and results are not included in saved preferences or shared recipe
+        links.
       </p>
       <h2>Offline files</h2>
       <p>
@@ -67,14 +85,26 @@ export default function PrivacyPage() {
         API requests or arbitrary browsing. Remove the pack in Settings or clear
         site data in your browser.
       </p>
-      <h2>Feedback</h2>
+      <h2>Analytics</h2>
       <p>
-        Feedback opens an email draft to{" "}
-        <a href="mailto:hello@codestation.in">hello@codestation.in</a>. Nothing
-        is sent until you send the message in your mail application. You choose
-        the report content; tool data is not attached automatically. The email
-        provider handles any message you send. Operator identity and formal
-        privacy-request procedures still need to be finalized.
+        When explicitly enabled on production deployments via{" "}
+        <code>NEXT_PUBLIC_CF_WEB_ANALYTICS_TOKEN</code>, Code Station loads
+        cookie-free Cloudflare Web Analytics to count aggregate pageviews and
+        Web Vitals. It sets no cookies, builds no cross-site user profiles, and
+        never inspects tool inputs or client URL hash fragments (
+        <code>#state=</code>).
+      </p>
+      <h2>Feedback &amp; Privacy Inquiries</h2>
+      <p>
+        Operated by <strong>{operatorMetadata.operatorName}</strong> (
+        {operatorMetadata.entityType}). Feedback and privacy inquiries can be
+        sent to{" "}
+        <a href={`mailto:${operatorMetadata.privacyEmail}`}>
+          {operatorMetadata.privacyEmail}
+        </a>{" "}
+        or started via <Link href="/contact">Contact &amp; Support</Link>.
+        Nothing is sent from feedback drafts until you submit the message in
+        your mail client.
       </p>
     </InformationalPage>
   );

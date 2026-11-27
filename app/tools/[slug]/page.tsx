@@ -1,4 +1,5 @@
 import { FavoriteButton } from "@/components/PersonalTools";
+import { EmbedToolButton } from "@/components/EmbedModal";
 import ToolHelp from "@/components/ToolHelp";
 import StationMark from "@/components/StationMark";
 import Link from "next/link";
@@ -99,7 +100,7 @@ export default async function ToolPage({ params }: { params: Promise<{ slug: str
     <nav className="crumb" aria-label="Breadcrumb"><Link href="/">Home</Link><span aria-hidden="true"> / </span><Link href="/tools">Tools</Link><span aria-hidden="true"> / </span><Link href={tool.localContract && getStationByName(tool.category) ? getStationByName(tool.category)!.route : tool.apiContract ? "/stations/api" : tool.webContract ? "/stations/web" : `/tools?category=${encodeURIComponent(tool.category)}`}>{tool.category}</Link><span aria-hidden="true"> / </span><Link href={`/tools/${tool.slug}`} aria-current="page">{tool.name}</Link></nav>
     <div className="workspace-heading"><div><div className="eyebrow"><span className="bracket-label">{tool.category}</span></div>
     <h1>{tool.name}</h1><p className="lead">{tool.description}</p></div><span className="workspace-symbol" aria-hidden="true"><StationMark large label={tool.category} /></span></div>
-    <div className="tool-utility-bar"><FavoriteButton slug={tool.slug} /><span>Keep this tool in your workbench</span><Link href={`/feedback?tool=${tool.slug}`}>Report a problem</Link></div>
+    <div className="tool-utility-bar"><FavoriteButton slug={tool.slug} /><span>Keep this tool in your workbench</span><EmbedToolButton slug={tool.slug} toolName={tool.name} /><Link href={`/feedback?tool=${tool.slug}`}>Report a problem</Link></div>
     <ToolWorkspace toolId={tool.id} />
     <div style={{ display: "flex", flexWrap: "wrap", gap: "32px", alignItems: "flex-start", marginTop: "32px" }}>
       <div style={{ flex: "1 1 0%", minWidth: "min(100%, 600px)" }}>

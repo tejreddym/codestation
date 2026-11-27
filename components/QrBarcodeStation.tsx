@@ -310,7 +310,8 @@ export default function QrBarcodeStation({ toolId }: { toolId: QrBarcodeToolId }
             </div>}
           >
             {qrPngUrl
-              ? <img src={qrPngUrl} alt="QR Code Preview" className={styles.qrImage} />
+              ? /* eslint-disable-next-line @next/next/no-img-element */
+                <img src={qrPngUrl} alt="QR Code Preview" className={styles.qrImage} />
               : <Hint>QR code preview appears here.</Hint>}
           </CanvasStage>
         </Panel>

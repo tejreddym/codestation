@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { ogImagePathForRoute } from "@/lib/og/card-data";
 
 /** A public origin is opt-in; an unverified hostname must never become a canonical URL. */
 export function getVerifiedSiteOrigin(value = process.env.NEXT_PUBLIC_SITE_URL): string | undefined {
@@ -45,10 +46,28 @@ export function metadataForPage(path: string, title: string, description: string
 
 /** Metadata for a public route. Indexing is opt-in and requires a verified origin. */
 export function metadataForRoute(path: string, title: string, description: string): Metadata {
+  const ogPath = ogImagePathForRoute(path);
+  const ogUrl = siteConfig.origin ? `${siteConfig.origin}${ogPath}` : ogPath;
+  const routeUrl = siteConfig.origin ? `${siteConfig.origin}${path}` : path;
+
   return {
     title,
     description,
     alternates: { canonical: path },
+    openGraph: {
+      title,
+      description,
+      url: routeUrl,
+      siteName: siteConfig.name,
+      type: "website",
+      images: [{ url: ogUrl, width: 1200, height: 630, alt: title }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [ogUrl],
+    },
     robots: siteConfig.indexing ? { index: true, follow: true } : { index: false, follow: false },
   };
 }

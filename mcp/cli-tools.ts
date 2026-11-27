@@ -1,9 +1,10 @@
 import * as fs from "node:fs";
-import { decodeJwt, formatJson } from "../lib/tools/index";
+import { decodeJwt, formatJson, jsonDiff, testJsonPath } from "../lib/tools/index";
 import { parseCron } from "../lib/tools/cron/parser";
 import { explainCron } from "../lib/tools/cron/explain";
 import { nextCronRun } from "../lib/tools/cron/engine";
-import { md5, sha1, sha256, sha512, crc32 } from "../lib/tools/security-station";
+import { md5, sha1, sha256, sha512, crc32, ulid, nanoid } from "../lib/tools/security-station";
+import { encodeBase64Url, decodeBase64Url } from "../lib/tools/encoding-station";
 import { jsonToTypescript, jsonToZod } from "../lib/tools/json-to-types";
 import { curlToCode, type CurlTargetLanguage } from "../lib/tools/curl-to-code";
 import { auditEnv, formatEnvAuditReport } from "../lib/tools/env-audit";
@@ -76,7 +77,7 @@ export async function handleCliSubcommand(command: string, args: string[]): Prom
           JSON.stringify(
             {
               name: "Code Station",
-              version: "1.2.1",
+              version: "1.3.0",
               license: {
                 tier: license.tier,
                 isPro: license.isPro,
@@ -92,7 +93,7 @@ export async function handleCliSubcommand(command: string, args: string[]): Prom
         );
       } else {
         out("\n=== CODE STATION STATUS ===\n");
-        out("Version:     1.2.1\n");
+        out("Version:     1.3.0\n");
         out(`License:     ${license.isPro ? "PRO TIER (Active)" : "FREE TIER (Pro key not active)"}\n`);
         out(`Tools:       ${SHARED_TOOLS.length} registered tools across Web, CLI & MCP\n`);
         out("MCP Server:  Ready (Stdio transport)\n");
@@ -511,6 +512,117 @@ export async function handleCliSubcommand(command: string, args: string[]): Prom
       }
       try {
         out(formatJson(input, 2) + "\n");
+        return { handled: true, exitCode: 0 };
+      } catch (e) {
+        err(`Error: ${e instanceof Error ? e.message : String(e)}\n`);
+        return { handled: true, exitCode: 1 };
+      }
+    }
+
+    // -------------------------------------------------------------
+    // ULID Generator
+    // -------------------------------------------------------------
+    case "ulid": {
+      if (isHelp) {
+        out("Usage: codestation ulid [count]\n");
+        return { handled: true, exitCode: 0 };
+      }
+      const count = Math.min(Math.max(parseInt(args[0], 10) || 1, 1), 100);
+      for (let i = 0; i < count; i++) {
+        out(ulid() + "\n");
+      }
+      return { handled: true, exitCode: 0 };
+    }
+
+    // -------------------------------------------------------------
+    // NanoID Generator
+    // -------------------------------------------------------------
+    case "nanoid": {
+      if (isHelp) {
+        out("Usage: codestation nanoid [count] [--length <2-128>]\n");
+        return { handled: true, exitCode: 0 };
+      }
+      const countArg = args.find((a) => !a.startsWith("-"));
+      const count = Math.min(Math.max(parseInt(countArg ?? "1", 10) || 1, 1), 100);
+      const lenIdx = args.indexOf("--length");
+      const length = lenIdx !== -1 && args[lenIdx + 1] ? parseInt(args[lenIdx + 1], 10) || 21 : 21;
+      for (let i = 0; i < count; i++) {
+        out(nanoid(length) + "\n");
+      }
+      return { handled: true, exitCode: 0 };
+    }
+
+    // -------------------------------------------------------------
+    // Base64 Encode / Decode
+    // -------------------------------------------------------------
+    case "base64":
+    case "b64": {
+      if (isHelp) {
+        out("Usage: codestation base64 \"<text>\" [--decode] [--url-safe]\n");
+        return { handled: true, exitCode: 0 };
+      }
+      const input = await readInput(args.find((a) => !a.startsWith("-")));
+      if (!input) {
+        err("Error: Input text is required.\n");
+        return { handled: true, exitCode: 1 };
+      }
+      const decode = args.includes("--decode") || args.includes("-d");
+      const urlSafe = args.includes("--url-safe");
+      try {
+        if (decode) {
+          out((urlSafe ? decodeBase64Url(input) : Buffer.from(input, "base64").toString("utf-8")) + "\n");
+        } else {
+          out((urlSafe ? encodeBase64Url(input) : Buffer.from(input, "utf-8").toString("base64")) + "\n");
+        }
+        return { handled: true, exitCode: 0 };
+      } catch (e) {
+        err(`Error: ${e instanceof Error ? e.message : String(e)}\n`);
+        return { handled: true, exitCode: 1 };
+      }
+    }
+
+    // -------------------------------------------------------------
+    // Structural JSON Diff
+    // -------------------------------------------------------------
+    case "json-diff":
+    case "jdiff": {
+      if (isHelp) {
+        out("Usage: codestation json-diff <left_json_or_file> <right_json_or_file>\n");
+        return { handled: true, exitCode: 0 };
+      }
+      const positional = args.filter((a) => !a.startsWith("-"));
+      if (positional.length < 2) {
+        err("Error: Provide both left and right JSON inputs or files.\n");
+        return { handled: true, exitCode: 1 };
+      }
+      try {
+        const left = await readInput(positional[0]);
+        const right = await readInput(positional[1]);
+        out(jsonDiff(left, right) + "\n");
+        return { handled: true, exitCode: 0 };
+      } catch (e) {
+        err(`Error: ${e instanceof Error ? e.message : String(e)}\n`);
+        return { handled: true, exitCode: 1 };
+      }
+    }
+
+    // -------------------------------------------------------------
+    // JSONPath Query Extractor
+    // -------------------------------------------------------------
+    case "jsonpath":
+    case "json-path": {
+      if (isHelp) {
+        out("Usage: codestation jsonpath <json_or_file> \"<expression>\"\n");
+        return { handled: true, exitCode: 0 };
+      }
+      const positional = args.filter((a) => !a.startsWith("-"));
+      if (positional.length < 2) {
+        err("Error: Provide both JSON input and a JSONPath expression starting with $.\n");
+        return { handled: true, exitCode: 1 };
+      }
+      try {
+        const json = await readInput(positional[0]);
+        out(testJsonPath(json, positional[1]) + "\n");
         return { handled: true, exitCode: 0 };
       } catch (e) {
         err(`Error: ${e instanceof Error ? e.message : String(e)}\n`);

@@ -1,0 +1,53 @@
+name: Weekly Security Audit
+
+on:
+  schedule:
+    - cron: "0 7 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  dependency-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Run production npm audit (high+ advisory check)
+        id: npm_audit
+        continue-on-error: true
+        run: |
+          npm audit --omit=dev --audit-level=high > audit-report.txt 2>&1
+          EXIT_CODE=$?
+          cat audit-report.txt
+          echo "audit_exit=$EXIT_CODE" >> "$GITHUB_OUTPUT"
+          exit $EXIT_CODE
+
+      - name: Publish audit summary
+        if: always()
+        run: |
+          {
+            echo "## Production Dependency Audit (npm audit --omit=dev --audit-level=high)"
+            echo ""
+            if [ "${{ steps.npm_audit.outputs.audit_exit }}" = "0" ]; then
+              echo "No high or critical production dependency advisories detected."
+            else
+              echo "Advisories detected (non-blocking weekly report; resolve via tested PRs — never run \`npm audit fix --force\`)."
+            fi
+            echo ""
+            echo "\`\`\`text"
+            cat audit-report.txt || true
+            echo "\`\`\`"
+          } >> "$GITHUB_STEP_SUMMARY"

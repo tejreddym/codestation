@@ -4,9 +4,12 @@ import { siteConfig } from "@/config/site";
 import { ConverterSessionProvider } from "@/components/ConverterSession";
 import { WorkbenchProvider } from "@/components/WorkbenchProvider";
 import AdsterraGlobalScripts from "@/components/AdsterraGlobalScripts";
+import CloudflareWebAnalytics from "@/components/CloudflareWebAnalytics";
+import PwaRegistrar from "@/components/PwaRegistrar";
 import WebMcpBridge from "@/components/WebMcpBridge";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
+import ChromeGate from "@/components/ChromeGate";
 import BannerAd from "@/components/BannerAd";
 
 export const metadata: Metadata = {
@@ -31,7 +34,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   // Only the root theme attribute intentionally differs after the prepaint script.
-  return <html lang="en" suppressHydrationWarning><head><link rel="icon" href="/favicon-light.ico" media="(prefers-color-scheme: light)" /><link rel="icon" href="/favicon-dark.ico" media="(prefers-color-scheme: dark)" /><script dangerouslySetInnerHTML={{ __html: `(() => { let saved; try { saved = window.localStorage.getItem('code-station-theme'); } catch {} const dark = saved === 'dark' || (saved !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches); document.documentElement.dataset.theme = dark ? 'dark' : 'light'; })()` }} /></head><body><AdsterraGlobalScripts /><ConverterSessionProvider><WorkbenchProvider><WebMcpBridge /><SiteHeader />
+  return <html lang="en" suppressHydrationWarning><head><link rel="icon" href="/favicon-light.ico" media="(prefers-color-scheme: light)" /><link rel="icon" href="/favicon-dark.ico" media="(prefers-color-scheme: dark)" /><script dangerouslySetInnerHTML={{ __html: `(() => { let saved; try { const q = window.location.pathname.startsWith('/embed') ? new URLSearchParams(window.location.search).get('theme') : null; if (q === 'light' || q === 'dark') { document.documentElement.dataset.theme = q; return; } saved = window.localStorage.getItem('code-station-theme'); } catch {} const dark = saved === 'dark' || (saved !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches); document.documentElement.dataset.theme = dark ? 'dark' : 'light'; })()` }} /></head><body><ChromeGate><AdsterraGlobalScripts /><CloudflareWebAnalytics /><PwaRegistrar /></ChromeGate><ConverterSessionProvider><WorkbenchProvider><WebMcpBridge /><ChromeGate><SiteHeader /></ChromeGate>
     {children}
-  <SiteFooter /></WorkbenchProvider></ConverterSessionProvider></body></html>;
+  <ChromeGate><SiteFooter /></ChromeGate></WorkbenchProvider></ConverterSessionProvider></body></html>;
 }

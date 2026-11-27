@@ -1,5 +1,19 @@
 # Changelog
 
+## Repository Governance, ESLint 9 & Build Hygiene — 2026-11-27
+
+- **Open-source trust & GitHub workflows:** Added root `LICENSE` (MIT, Tej Reddy 2026), `SECURITY.md`, `CONTRIBUTING.md`, `.github/dependabot.yml`, `.github/ISSUE_TEMPLATE/{bug_report,tool_request}.yml`, and `.github/pull_request_template.md`; updated `README.md` with badges, homepage light/dark screenshots, and synchronized tool/station counts (`383` tools across `30` stations, `codestation-mcp` v1.2.1).
+- **ESLint 9 flat config migration:** Replaced legacy `.eslintrc.json` with `eslint.config.mjs` (`@eslint/eslintrc` `FlatCompat` extending `next/core-web-vitals`), updated `"lint"` in `package.json` to `"eslint . --cache"`, ignored `.eslintcache` and build outputs, and resolved all 18 baseline lint errors/warnings (`npm run lint -- --max-warnings=0`).
+- **Build-generated notices & doc consolidation:** Converted `THIRD_PARTY_NOTICES.md` into a build-time artifact generated at `public/THIRD_PARTY_NOTICES.md` (`npm run generate:notices`, wired into `npm run build`), added notice outputs to `.gitignore`, untracked the 1.5 MB root/public blobs from git, and archived historical logs into `docs/archive/HISTORICAL_LOGS.md` while keeping `PROJECT_STATUS.md`, `HANDOFF.md`, and active-only `TODO.md` concise.
+
+## Video Trimmer, PDF Compressor, Thumbnail Overlay Studio & Invoice Generator — 2026-11-17
+
+- **Video Trimmer (`video-trimmer`, Video Station):** Added 100% browser-side video slicing and encoding via native HTML5/MediaStream APIs with an interactive timeline scrubber, start/end range markers, SMPTE/millisecond precision controls, loop preview, `.mp4`/`.webm` export, and `codestation_video_trimmer` WebMCP integration.
+- **PDF Compressor (`pdf-compressor`, PDF Station):** Added client-side PDF downsampling using `pdf-lib` and canvas rasterization with 72/150/300 DPI quality presets, original vs. compressed size comparison, savings percentage badge, direct download, and `codestation_pdf_compressor` WebMCP support.
+- **Canva-Style Thumbnail Overlay Studio (`video-thumbnail-generator`):** Extended the Thumbnail Maker with an interactive layer canvas supporting text layers (typography, stroke outlines, drop shadows, pill highlights), geometric shapes/badges, SVG icon stamps, drag/resize/reorder controls, and high-resolution composite export.
+- **Invoice Generator (`invoice-generator`, Productivity Station):** Added single and bulk batch invoice generation with local logo upload, multi-currency/tax/discount/shipping options, template styles, vector PDF export via `pdf-lib`, CSV/JSON/ZIP downloads, browser print isolation (`InvoiceGeneratorTool.module.css`), and WebMCP support.
+- **Registry synchronization:** Expanded central catalog to **383 tools across 30 stations** (`app/home-metadata.ts`, `components/HomeSearch.tsx`, `components/DocsRepo.tsx`, `config/*`, `public/llms.txt`).
+
 ## Homepage Search Placement, Station Corrections & SEO/AEO/GEO — 2026-11-16
 
 - **Homepage search bug fixed**: results no longer inherit the Quick-access fallback or render below favorites/recent. While a trimmed query is active, PersonalTools and Quick access are not rendered, the listbox sits directly under the input with its own scroll, the stage stays hidden, and the detection triage panel follows the results. Added full ARIA combobox/listbox semantics, `aria-activedescendant`, wrap-around Arrow keys, Enter-to-open, Escape-to-clear with focus retention, hover selection, and in-panel no-result + Clear.
