@@ -83,7 +83,7 @@ jobs:
 
       - name: Upload Playwright report on failure
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: playwright-report-shard-${{ strategy.job-index }}
           path: playwright-report/
@@ -139,7 +139,7 @@ jobs:
 
       - name: Upload media Playwright report on failure
         if: failure() && steps.media_scope.outputs.run == 'true'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: playwright-media-report
           path: playwright-report/
