@@ -192,9 +192,9 @@ export default function ProPage() {
         <section>
           <div className={styles.sectionHeader}>
             <span className={styles.sectionKicker}>Pro Architecture</span>
-            <h3 className={styles.sectionTitle}>
+            <h2 className={styles.sectionTitle}>
               Why Developers & AI Teams Choose Pro
-            </h3>
+            </h2>
             <p className={styles.sectionSubtitle}>
               Engineered from the ground up for maximum privacy, zero friction,
               and sub-millisecond execution.
@@ -203,8 +203,8 @@ export default function ProPage() {
 
           <div className={styles.perksGrid}>
             <div className={styles.perkCard}>
-              <div className={styles.perkIconWrap}>🤖</div>
-              <h4 className={styles.perkTitle}>Native AI Assistant Tools</h4>
+              <div className={styles.perkIconWrap} aria-hidden="true">🤖</div>
+              <h3 className={styles.perkTitle}>Native AI Assistant Tools</h3>
               <p className={styles.perkDesc}>
                 Connect Cursor, Claude Desktop, Windsurf, and Claude Code via
                 Model Context Protocol. Eliminates model hallucinations in
@@ -214,8 +214,8 @@ export default function ProPage() {
             </div>
 
             <div className={styles.perkCard}>
-              <div className={styles.perkIconWrap}>⚡</div>
-              <h4 className={styles.perkTitle}>10+ Terminal Subcommands</h4>
+              <div className={styles.perkIconWrap} aria-hidden="true">⚡</div>
+              <h3 className={styles.perkTitle}>10+ Terminal Subcommands</h3>
               <p className={styles.perkDesc}>
                 Run <code>jwt</code>, <code>sql</code>, <code>cron</code>,{" "}
                 <code>hash</code>, <code>curl</code>, <code>env</code>,{" "}
@@ -227,8 +227,8 @@ export default function ProPage() {
             </div>
 
             <div className={styles.perkCard}>
-              <div className={styles.perkIconWrap}>🔑</div>
-              <h4 className={styles.perkTitle}>100% Login-Free Privacy</h4>
+              <div className={styles.perkIconWrap} aria-hidden="true">🔑</div>
+              <h3 className={styles.perkTitle}>100% Login-Free Privacy</h3>
               <p className={styles.perkDesc}>
                 No passwords, no spam emails, and no tracking databases. Your
                 cryptographic license key is delivered instantly and verified at
@@ -238,8 +238,8 @@ export default function ProPage() {
             </div>
 
             <div className={styles.perkCard}>
-              <div className={styles.perkIconWrap}>💻</div>
-              <h4 className={styles.perkTitle}>3-Device Seat Allocation</h4>
+              <div className={styles.perkIconWrap} aria-hidden="true">💻</div>
+              <h3 className={styles.perkTitle}>3-Device Seat Allocation</h3>
               <p className={styles.perkDesc}>
                 Use your single Pro key concurrently across up to 3 machines
                 (e.g. MacBook, Linux workstation, home desktop) with intelligent
@@ -249,8 +249,8 @@ export default function ProPage() {
             </div>
 
             <div className={styles.perkCard}>
-              <div className={styles.perkIconWrap}>✈️</div>
-              <h4 className={styles.perkTitle}>30-Day Air-Gapped Offline</h4>
+              <div className={styles.perkIconWrap} aria-hidden="true">✈️</div>
+              <h3 className={styles.perkTitle}>30-Day Air-Gapped Offline</h3>
               <p className={styles.perkDesc}>
                 Validated licenses are cached locally on your device (
                 <code>~/.codestation/license.json</code>). Work completely
@@ -260,8 +260,8 @@ export default function ProPage() {
             </div>
 
             <div className={styles.perkCard}>
-              <div className={styles.perkIconWrap}>🛡️</div>
-              <h4 className={styles.perkTitle}>Secret & Leak Scanner</h4>
+              <div className={styles.perkIconWrap} aria-hidden="true">🛡️</div>
+              <h3 className={styles.perkTitle}>Secret & Leak Scanner</h3>
               <p className={styles.perkDesc}>
                 Audit your local <code>.env</code> files before git commits.
                 Flags exposed live Stripe keys, AWS IAM tokens, OpenAI keys,
@@ -276,7 +276,7 @@ export default function ProPage() {
         <section id="pricing">
           <div className={styles.sectionHeader}>
             <span className={styles.sectionKicker}>Instant Access</span>
-            <h3 className={styles.sectionTitle}>Get Code Station Pro</h3>
+            <h2 className={styles.sectionTitle}>Get Code Station Pro</h2>
             <p className={styles.sectionSubtitle}>
               Select monthly flexibility or save with lifetime access. Instant
               activation key generated upon payment.
@@ -290,9 +290,9 @@ export default function ProPage() {
         <section>
           <div className={styles.sectionHeader}>
             <span className={styles.sectionKicker}>Capabilities Catalog</span>
-            <h3 className={styles.sectionTitle}>
+            <h2 className={styles.sectionTitle}>
               15 Dedicated Pro MCP & CLI Tools
-            </h3>
+            </h2>
             <p className={styles.sectionSubtitle}>
               Available to your AI agents via stdio and callable directly from
               your command line.
@@ -318,9 +318,9 @@ export default function ProPage() {
         <section>
           <div className={styles.sectionHeader}>
             <span className={styles.sectionKicker}>Feature Matrix</span>
-            <h3 className={styles.sectionTitle}>
+            <h2 className={styles.sectionTitle}>
               Free Web Toolbox vs Pro MCP & CLI
-            </h3>
+            </h2>
           </div>
 
           <div className={styles.tableWrap}>
@@ -392,7 +392,16 @@ export default function ProPage() {
                   <td className={styles.featureCol}>Concurrent Device Seats</td>
                   <td className={styles.freeCol}>Browser session</td>
                   <td className={styles.proCol}>
-                    <span className={styles.check}>✔</span> Up to 3 Devices
+                    <span className={styles.check}>✔</span> 3 Devices (Individual) · 5 / 10 / 25 Seats (Team)
+                  </td>
+                </tr>
+                <tr>
+                  <td className={styles.featureCol}>Organization &amp; Seat Management</td>
+                  <td className={styles.freeCol}>
+                    <span className={styles.cross}>✖</span> Not applicable
+                  </td>
+                  <td className={styles.proCol}>
+                    <span className={styles.check}>✔</span> Org Metadata &amp; Per-Seat Revocation
                   </td>
                 </tr>
                 <tr>
@@ -420,14 +429,14 @@ export default function ProPage() {
         <section>
           <div className={styles.sectionHeader}>
             <span className={styles.sectionKicker}>Questions & Answers</span>
-            <h3 className={styles.sectionTitle}>Frequently Asked Questions</h3>
+            <h2 className={styles.sectionTitle}>Frequently Asked Questions</h2>
           </div>
 
           <div className={styles.faqGrid}>
             <div className={styles.faqCard}>
-              <h4 className={styles.faqQuestion}>
+              <h3 className={styles.faqQuestion}>
                 Do I need an account or password?
-              </h4>
+              </h3>
               <p className={styles.faqAnswer}>
                 No! Code Station has no user accounts, passwords, or tracking
                 cookies. Upon checkout, you receive a cryptographic license key
@@ -437,9 +446,9 @@ export default function ProPage() {
             </div>
 
             <div className={styles.faqCard}>
-              <h4 className={styles.faqQuestion}>
+              <h3 className={styles.faqQuestion}>
                 How do I activate Cursor or Claude Desktop?
-              </h4>
+              </h3>
               <p className={styles.faqAnswer}>
                 Simply open your terminal and run{" "}
                 <code>npx codestation-mcp setup --key YOUR_KEY</code>. The CLI
@@ -449,9 +458,9 @@ export default function ProPage() {
             </div>
 
             <div className={styles.faqCard}>
-              <h4 className={styles.faqQuestion}>
+              <h3 className={styles.faqQuestion}>
                 How does 3-device binding work?
-              </h4>
+              </h3>
               <p className={styles.faqAnswer}>
                 Your license allows up to 3 active machines concurrently (e.g.,
                 your work laptop, home PC, and a secondary machine). If you
@@ -461,9 +470,9 @@ export default function ProPage() {
             </div>
 
             <div className={styles.faqCard}>
-              <h4 className={styles.faqQuestion}>
+              <h3 className={styles.faqQuestion}>
                 What happens if I lose my license key?
-              </h4>
+              </h3>
               <p className={styles.faqAnswer}>
                 For privacy, Code Station never stores plaintext keys on servers
                 (only one-way SHA-256 hashes for edge verification). If you lose
@@ -479,9 +488,9 @@ export default function ProPage() {
             </div>
 
             <div className={styles.faqCard}>
-              <h4 className={styles.faqQuestion}>
+              <h3 className={styles.faqQuestion}>
                 What is the Key Regeneration Fee policy?
-              </h4>
+              </h3>
               <p className={styles.faqAnswer}>
                 To discourage key sharing and unauthorized redistribution,
                 license regeneration requires a progressive administrative fee:{" "}
@@ -494,9 +503,9 @@ export default function ProPage() {
             </div>
 
             <div className={styles.faqCard}>
-              <h4 className={styles.faqQuestion}>
+              <h3 className={styles.faqQuestion}>
                 Are all the tools on the website free?
-              </h4>
+              </h3>
               <p className={styles.faqAnswer}>
                 Yes! All 250+ tools on codestation.in are 100% free with no
                 paywalls or signups. The Pro subscription is strictly for local

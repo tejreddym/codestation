@@ -2,21 +2,38 @@
 
 import { useState, useEffect } from "react";
 import { validateCoupon, type CouponValidationResult } from "@/lib/coupons";
+import {
+  INDIVIDUAL_PRICING,
+  TEAM_PRICING,
+  TEAM_SEAT_TIERS,
+  type CheckoutPlanId,
+  type TeamSeatTier,
+} from "@/lib/license/pricing";
+import type { ActiveDevice, LicensePlan, LicensePlanType } from "@/lib/license/types";
 import styles from "./ProSubscriptionManager.module.css";
 import { useCopy } from "./ui/useCopy";
 
 interface VerifyResult {
   valid: boolean;
   tier?: string;
-  plan?: string;
+  plan?: LicensePlan;
+  planType?: LicensePlanType;
+  seatLimit?: number;
+  orgName?: string;
   expiresAt?: number | null;
+  deviceCount?: number;
+  maxDevices?: number;
+  devices?: ActiveDevice[];
   message?: string;
 }
 
 interface GenerateResult {
   success: boolean;
   key?: string;
-  plan?: string;
+  plan?: LicensePlan;
+  planType?: LicensePlanType;
+  seatLimit?: number;
+  orgName?: string;
   expiresAt?: number | null;
   message?: string;
 }
@@ -31,10 +48,12 @@ export function ProSubscriptionManager() {
   const [verifyKeyInput, setVerifyKeyInput] = useState("");
   const [verifyLoading, setVerifyLoading] = useState(false);
   const [verifyResult, setVerifyResult] = useState<VerifyResult | null>(null);
+  const [seatActionLoading, setSeatActionLoading] = useState<string | null>(null);
+  const [seatActionMessage, setSeatActionMessage] = useState<string | null>(null);
 
-  const [selectedPlan, setSelectedPlan] = useState<"monthly" | "lifetime">(
-    "monthly",
-  );
+  const [selectedPlan, setSelectedPlan] = useState<CheckoutPlanId>("monthly");
+  const [teamSeats, setTeamSeats] = useState<TeamSeatTier>(5);
+  const [orgName, setOrgName] = useState("");
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [generatedResult, setGeneratedResult] = useState<GenerateResult | null>(
@@ -49,12 +68,21 @@ export function ProSubscriptionManager() {
     useState<CouponValidationResult | null>(null);
   const [couponError, setCouponError] = useState<string | null>(null);
 
+  const selectedTeamPricing = TEAM_PRICING[teamSeats];
+  const activeCheckoutPricing =
+    selectedPlan === "team"
+      ? selectedTeamPricing
+      : INDIVIDUAL_PRICING[selectedPlan];
+
   function handleApplyCoupon(e: React.FormEvent) {
     e.preventDefault();
     if (!couponInput.trim()) return;
 
-    const basePaise = selectedPlan === "monthly" ? 19900 : 99900;
-    const result = validateCoupon(couponInput, selectedPlan, basePaise);
+    const result = validateCoupon(
+      couponInput,
+      activeCheckoutPricing.plan,
+      activeCheckoutPricing.amountPaise,
+    );
 
     if (result.valid) {
       setAppliedCoupon(result);
@@ -71,9 +99,9 @@ export function ProSubscriptionManager() {
     setCouponError(null);
   }
 
-  function handleSelectPlan(plan: "monthly" | "lifetime") {
+  function handleSelectPlan(plan: CheckoutPlanId) {
     setSelectedPlan(plan);
-    if (plan === "lifetime" && appliedCoupon) {
+    if (plan !== "monthly" && appliedCoupon) {
       setAppliedCoupon(null);
       setCouponError(
         "Coupon CS50FIRST was removed because it is valid only for the Monthly Pro plan.",
@@ -99,6 +127,7 @@ export function ProSubscriptionManager() {
 
     setVerifyLoading(true);
     setVerifyResult(null);
+    setSeatActionMessage(null);
 
     try {
       const res = await fetch("/api/v1/license/verify", {
@@ -118,18 +147,69 @@ export function ProSubscriptionManager() {
     }
   }
 
+  async function handleRevokeSeat(options: { deviceId?: string; resetAll?: boolean }) {
+    const cleanKey = verifyKeyInput.trim();
+    if (!cleanKey) return;
+
+    const actionKey = options.resetAll ? "reset_all" : options.deviceId || "revoke";
+    setSeatActionLoading(actionKey);
+    setSeatActionMessage(null);
+
+    try {
+      const res = await fetch("/api/v1/license/revoke", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          key: cleanKey,
+          ...(options.resetAll ? { resetAll: true } : { deviceId: options.deviceId }),
+        }),
+      });
+      const data = (await res.json()) as {
+        success?: boolean;
+        message?: string;
+        deviceCount?: number;
+        maxDevices?: number;
+        seatLimit?: number;
+        devices?: ActiveDevice[];
+      };
+
+      if (res.ok && data.success) {
+        setVerifyResult((prev) =>
+          prev
+            ? {
+                ...prev,
+                deviceCount: data.deviceCount ?? 0,
+                maxDevices: data.maxDevices ?? prev.maxDevices,
+                seatLimit: data.seatLimit ?? prev.seatLimit,
+                devices: data.devices ?? [],
+              }
+            : prev,
+        );
+        setSeatActionMessage(data.message || "Seat updated successfully.");
+      } else {
+        setSeatActionMessage(data.message || "Could not revoke device seat.");
+      }
+    } catch (err) {
+      setSeatActionMessage(
+        err instanceof Error ? err.message : "Network error while revoking device seat.",
+      );
+    } finally {
+      setSeatActionLoading(null);
+    }
+  }
+
   async function handleRazorpayCheckout() {
     setCheckoutLoading(true);
     setCheckoutError(null);
     setGeneratedResult(null);
 
     try {
-      // 1. Create order on backend with optional coupon
-      const basePaise = selectedPlan === "monthly" ? 19900 : 99900;
+      const basePaise = activeCheckoutPricing.amountPaise;
       const amountPaise =
         appliedCoupon?.valid && selectedPlan === "monthly"
           ? appliedCoupon.discountedAmountPaise!
           : basePaise;
+      const cleanOrgName = orgName.trim();
 
       const orderRes = await fetch("/api/create-order", {
         method: "POST",
@@ -137,7 +217,10 @@ export function ProSubscriptionManager() {
         body: JSON.stringify({
           amount: amountPaise,
           currency: "INR",
-          plan: selectedPlan,
+          plan: activeCheckoutPricing.plan,
+          planType: activeCheckoutPricing.planType,
+          seatLimit: activeCheckoutPricing.seatLimit,
+          ...(selectedPlan === "team" && cleanOrgName ? { orgName: cleanOrgName } : {}),
           couponCode: appliedCoupon?.valid ? appliedCoupon.code : undefined,
         }),
       });
@@ -160,7 +243,6 @@ export function ProSubscriptionManager() {
         );
       }
 
-      // 2. Open Razorpay Checkout modal
       const options = {
         key: orderData.key_id || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
         amount: orderData.amount,
@@ -168,8 +250,10 @@ export function ProSubscriptionManager() {
         name: "Code Station Pro",
         description:
           selectedPlan === "monthly"
-            ? "Monthly Pro Subscription"
-            : "Lifetime Pro License",
+            ? "Monthly Pro Subscription (3 devices)"
+            : selectedPlan === "lifetime"
+              ? "Lifetime Pro License (3 devices)"
+              : `Team Pro License (${activeCheckoutPricing.seatLimit} seats)`,
         order_id: orderData.order_id,
         handler: async function (response: {
           razorpay_payment_id: string;
@@ -177,7 +261,6 @@ export function ProSubscriptionManager() {
           razorpay_signature: string;
         }) {
           try {
-            // 3. Verify signature on backend and issue license key
             const verifyRes = await fetch("/api/verify-payment", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -185,7 +268,12 @@ export function ProSubscriptionManager() {
                 razorpay_order_id: response.razorpay_order_id,
                 razorpay_payment_id: response.razorpay_payment_id,
                 razorpay_signature: response.razorpay_signature,
-                plan: selectedPlan,
+                plan: activeCheckoutPricing.plan,
+                planType: activeCheckoutPricing.planType,
+                seatLimit: activeCheckoutPricing.seatLimit,
+                ...(selectedPlan === "team" && cleanOrgName
+                  ? { orgName: cleanOrgName }
+                  : {}),
               }),
             });
 
@@ -196,6 +284,9 @@ export function ProSubscriptionManager() {
                 success: true,
                 key: verifyData.licenseKey,
                 plan: verifyData.plan,
+                planType: verifyData.planType,
+                seatLimit: verifyData.seatLimit,
+                orgName: verifyData.orgName,
                 expiresAt: verifyData.expiresAt,
                 message:
                   "Payment successful! Your Code Station Pro key has been generated.",
@@ -245,6 +336,14 @@ export function ProSubscriptionManager() {
     setTimeout(() => setCopiedKey(false), 2000);
   }
 
+  const checkoutButtonLabel = checkoutLoading
+    ? "Opening Razorpay..."
+    : appliedCoupon?.valid && selectedPlan === "monthly"
+      ? `Pay ₹${Math.round(appliedCoupon.discountedAmountPaise! / 100)} with Razorpay (50% OFF Applied)`
+      : `Pay ₹${activeCheckoutPricing.amountInr} with Razorpay${
+          selectedPlan === "team" ? ` (Team · ${activeCheckoutPricing.seatLimit} seats)` : ""
+        }`;
+
   return (
     <div className={styles.container}>
       {/* Pricing Cards */}
@@ -252,65 +351,132 @@ export function ProSubscriptionManager() {
         <div
           className={`${styles.planCard} ${selectedPlan === "monthly" ? styles.selected : ""}`}
         >
-          <div className={styles.planHeader}>
-            <span className={styles.badge}>POPULAR</span>
-            <h3>Monthly Pro</h3>
-            <div className={styles.priceContainer}>
-              <span className={styles.priceInr}>₹199</span>
-              <span className={styles.pricePeriod}>/ month (India)</span>
+          <div>
+            <div className={styles.planHeader}>
+              <span className={styles.badge}>POPULAR</span>
+              <h3>Monthly Pro</h3>
+              <div className={styles.priceContainer}>
+                <span className={styles.priceInr}>₹{INDIVIDUAL_PRICING.monthly.amountInr}</span>
+                <span className={styles.pricePeriod}>/ month (India)</span>
+              </div>
+              <div className={styles.priceGlobal}>
+                or {INDIVIDUAL_PRICING.monthly.usdDisplay} globally
+              </div>
             </div>
-            <div className={styles.priceGlobal}>or $2.99 / month globally</div>
+            <ul className={styles.featuresList}>
+              <li>✓ Full access to local MCP server</li>
+              <li>✓ Up to 3 personal devices</li>
+              <li>✓ Unlimited offline usage with 30-day cache</li>
+              <li>✓ SHA-256, HMAC, JWT inspector</li>
+              <li>✓ Multi-dialect SQL, IANA timezones &amp; business days</li>
+              <li>✓ Zero login or password required</li>
+            </ul>
           </div>
-          <ul className={styles.featuresList}>
-            <li>✓ Full access to local MCP server</li>
-            <li>✓ Unlimited offline usage with 30-day cache</li>
-            <li>✓ SHA-256, HMAC, JWT inspector</li>
-            <li>✓ Multi-dialect SQL formatter</li>
-            <li>✓ Accurate IANA timezones & business days</li>
-            <li>✓ Zero login or password required</li>
-          </ul>
           <button
             type="button"
             className={styles.selectBtn}
+            aria-pressed={selectedPlan === "monthly"}
             onClick={() => handleSelectPlan("monthly")}
           >
             {selectedPlan === "monthly"
               ? appliedCoupon?.valid
                 ? "Selected Monthly (₹99)"
                 : "Selected Plan"
-              : "Choose Monthly (₹199)"}
+              : `Choose Monthly (₹${INDIVIDUAL_PRICING.monthly.amountInr})`}
           </button>
         </div>
 
         <div
           className={`${styles.planCard} ${selectedPlan === "lifetime" ? styles.selected : ""}`}
         >
-          <div className={styles.planHeader}>
-            <span className={styles.badgeAlt}>BEST VALUE</span>
-            <h3>Lifetime Access</h3>
-            <div className={styles.priceContainer}>
-              <span className={styles.priceInr}>₹999</span>
-              <span className={styles.pricePeriod}>one-time (India)</span>
+          <div>
+            <div className={styles.planHeader}>
+              <span className={styles.badgeAlt}>BEST VALUE</span>
+              <h3>Lifetime Access</h3>
+              <div className={styles.priceContainer}>
+                <span className={styles.priceInr}>₹{INDIVIDUAL_PRICING.lifetime.amountInr}</span>
+                <span className={styles.pricePeriod}>one-time (India)</span>
+              </div>
+              <div className={styles.priceGlobal}>
+                or {INDIVIDUAL_PRICING.lifetime.usdDisplay} globally
+              </div>
             </div>
-            <div className={styles.priceGlobal}>
-              or $19.00 one-time globally
-            </div>
+            <ul className={styles.featuresList}>
+              <li>✓ Everything in Monthly Pro</li>
+              <li>✓ Up to 3 personal devices</li>
+              <li>✓ Lifetime perpetual license</li>
+              <li>✓ Never expires, no recurring charges</li>
+              <li>✓ All future stations &amp; tools included</li>
+              <li>✓ Direct priority feature requests</li>
+            </ul>
           </div>
-          <ul className={styles.featuresList}>
-            <li>✓ Everything in Monthly Pro</li>
-            <li>✓ Lifetime perpetual license</li>
-            <li>✓ Never expires, no recurring charges</li>
-            <li>✓ All future stations & tools included</li>
-            <li>✓ Direct priority feature requests</li>
-          </ul>
           <button
             type="button"
             className={styles.selectBtn}
+            aria-pressed={selectedPlan === "lifetime"}
             onClick={() => handleSelectPlan("lifetime")}
           >
             {selectedPlan === "lifetime"
               ? "Selected Plan"
-              : "Choose Lifetime (₹999)"}
+              : `Choose Lifetime (₹${INDIVIDUAL_PRICING.lifetime.amountInr})`}
+          </button>
+        </div>
+
+        <div
+          className={`${styles.planCard} ${selectedPlan === "team" ? styles.selected : ""}`}
+          data-testid="team-plan-card"
+        >
+          <div>
+            <div className={styles.planHeader}>
+              <span className={styles.badge}>TEAM &amp; ORG</span>
+              <h3>Team Multi-Seat</h3>
+              <div className={styles.priceContainer}>
+                <span className={styles.priceInr}>₹{selectedTeamPricing.amountInr}</span>
+                <span className={styles.pricePeriod}>
+                  / month ({teamSeats} seats)
+                </span>
+              </div>
+              <div className={styles.priceGlobal}>
+                or {selectedTeamPricing.usdDisplay} globally
+              </div>
+            </div>
+
+            <div className={styles.seatSelector} role="group" aria-label="Team seat tier">
+              {TEAM_SEAT_TIERS.map((tierSeats) => (
+                <button
+                  key={tierSeats}
+                  type="button"
+                  className={`${styles.seatOptionBtn} ${
+                    teamSeats === tierSeats ? styles.seatOptionActive : ""
+                  }`}
+                  aria-pressed={teamSeats === tierSeats}
+                  onClick={() => {
+                    setTeamSeats(tierSeats);
+                    handleSelectPlan("team");
+                  }}
+                >
+                  {tierSeats} seats · ₹{TEAM_PRICING[tierSeats].amountInr}
+                </button>
+              ))}
+            </div>
+
+            <ul className={styles.featuresList}>
+              <li>✓ Shared team key with 5, 10, or 25 seats</li>
+              <li>✓ Organization / team name metadata</li>
+              <li>✓ Per-seat revocation &amp; self-serve reset</li>
+              <li>✓ Everything in Individual Pro MCP &amp; CLI</li>
+              <li>✓ Zero user accounts, hash-only KV storage</li>
+            </ul>
+          </div>
+          <button
+            type="button"
+            className={styles.selectBtn}
+            aria-pressed={selectedPlan === "team"}
+            onClick={() => handleSelectPlan("team")}
+          >
+            {selectedPlan === "team"
+              ? `Selected Team (${teamSeats} seats)`
+              : `Choose Team (${teamSeats} seats · ₹${selectedTeamPricing.amountInr})`}
           </button>
         </div>
       </div>
@@ -318,13 +484,29 @@ export function ProSubscriptionManager() {
       {/* Razorpay Standard Web Checkout Action Box */}
       <section className={styles.actionBox}>
         <div className={styles.boxHeader}>
-          <h4>Pay with Razorpay (Instant Login-Free Key)</h4>
+          <h3>Pay with Razorpay (Instant Login-Free Key)</h3>
           <p>
-            No registration or account creation needed. Complete the checkout
-            via UPI, Cards, NetBanking, or Wallets. Your cryptographic key is
-            issued immediately and verified via Cloudflare edge one-way hashing.
+            No registration or account creation needed. Complete checkout via
+            UPI, Cards, NetBanking, or Wallets. Your cryptographic key is
+            issued immediately and stored only via one-way SHA-256 hashing.
           </p>
         </div>
+
+        {selectedPlan === "team" && (
+          <div className={styles.teamMetaRow}>
+            <label className={styles.orgLabel}>
+              Organization / Team Name (optional)
+              <input
+                type="text"
+                value={orgName}
+                onChange={(e) => setOrgName(e.target.value)}
+                placeholder="e.g. Acme Platform Engineering"
+                maxLength={80}
+                className={styles.orgInput}
+              />
+            </label>
+          </div>
+        )}
 
         {/* Coupon Code Section */}
         <div className={styles.couponSection}>
@@ -372,16 +554,12 @@ export function ProSubscriptionManager() {
             onClick={handleRazorpayCheckout}
             disabled={checkoutLoading}
           >
-            {checkoutLoading
-              ? "Opening Razorpay..."
-              : appliedCoupon?.valid && selectedPlan === "monthly"
-                ? `Pay ₹${Math.round(appliedCoupon.discountedAmountPaise! / 100)} with Razorpay (50% OFF Applied)`
-                : `Pay ${selectedPlan === "monthly" ? "₹199 with Razorpay" : "₹999 with Razorpay"}`}
+            {checkoutButtonLabel}
           </button>
         </div>
 
         {checkoutError && (
-          <div className={`${styles.resultBanner} ${styles.invalid}`}>
+          <div className={`${styles.resultBanner} ${styles.invalid}`} role="alert">
             <strong>Payment Notice</strong>
             <p>{checkoutError}</p>
           </div>
@@ -406,7 +584,19 @@ export function ProSubscriptionManager() {
             </div>
             <div className={styles.expiryInfo}>
               Plan: <strong>{generatedResult.plan?.toUpperCase()}</strong> •
-              Validity:{" "}
+              Type:{" "}
+              <strong>
+                {generatedResult.planType === "team" ? "TEAM" : "INDIVIDUAL"}
+              </strong>{" "}
+              • Seats:{" "}
+              <strong>{generatedResult.seatLimit ?? 3}</strong>
+              {generatedResult.orgName && (
+                <>
+                  {" "}
+                  • Org: <strong>{generatedResult.orgName}</strong>
+                </>
+              )}{" "}
+              • Validity:{" "}
               <strong>
                 {generatedResult.expiresAt
                   ? new Date(generatedResult.expiresAt).toLocaleDateString()
@@ -440,13 +630,14 @@ export function ProSubscriptionManager() {
         )}
       </section>
 
-      {/* Key Verifier Box */}
-      <section className={styles.actionBox}>
+      {/* License & Seat Management Box */}
+      <section id="manage" className={styles.actionBox}>
         <div className={styles.boxHeader}>
-          <h4>Already Have a Key? Verify Status</h4>
+          <h3>Verify &amp; Manage License Seats</h3>
           <p>
-            Check the validity, plan tier, and expiration date of your Code
-            Station license key.
+            Check validity, expiration, organization metadata, and active seat
+            usage. License holders can revoke individual stale devices or reset
+            all active slots cleanly.
           </p>
         </div>
 
@@ -454,6 +645,7 @@ export function ProSubscriptionManager() {
           <input
             type="text"
             placeholder="CS-PRO-XXXX-XXXX-XXXX"
+            aria-label="Code Station Pro license key"
             value={verifyKeyInput}
             onChange={(e) => setVerifyKeyInput(e.target.value)}
             className={styles.inputField}
@@ -463,7 +655,7 @@ export function ProSubscriptionManager() {
             className={styles.verifyBtn}
             disabled={verifyLoading}
           >
-            {verifyLoading ? "Checking..." : "Verify"}
+            {verifyLoading ? "Checking..." : "Verify & Manage"}
           </button>
         </form>
 
@@ -474,19 +666,91 @@ export function ProSubscriptionManager() {
             <div>
               <strong>
                 {verifyResult.valid
-                  ? "Active Pro License"
+                  ? verifyResult.planType === "team"
+                    ? "Active Team License"
+                    : "Active Pro License"
                   : "Verification Failed"}
               </strong>
               <p>{verifyResult.message}</p>
               {verifyResult.valid && (
                 <small>
-                  Plan: {verifyResult.plan?.toUpperCase()} • Expires:{" "}
+                  Plan: {verifyResult.plan?.toUpperCase()} • Type:{" "}
+                  {verifyResult.planType === "team" ? "Team" : "Individual"} •
+                  Seats:{" "}
+                  {verifyResult.deviceCount ??
+                    verifyResult.devices?.length ??
+                    0}{" "}
+                  / {verifyResult.seatLimit ?? verifyResult.maxDevices ?? 3}
+                  {verifyResult.orgName ? ` • Org: ${verifyResult.orgName}` : ""} •
+                  Expires:{" "}
                   {verifyResult.expiresAt
                     ? new Date(verifyResult.expiresAt).toLocaleDateString()
                     : "Lifetime"}
                 </small>
               )}
             </div>
+
+            {verifyResult.valid && (
+              <div className={styles.seatManager}>
+                <div className={styles.seatManagerHeader}>
+                  <span>
+                    Active seats (
+                    {verifyResult.devices?.length ?? verifyResult.deviceCount ?? 0} /{" "}
+                    {verifyResult.seatLimit ?? verifyResult.maxDevices ?? 3})
+                  </span>
+                  {(verifyResult.devices?.length ?? 0) > 0 && (
+                    <button
+                      type="button"
+                      className={styles.resetSeatsBtn}
+                      disabled={seatActionLoading !== null}
+                      onClick={() => void handleRevokeSeat({ resetAll: true })}
+                    >
+                      {seatActionLoading === "reset_all"
+                        ? "Resetting..."
+                        : "Reset All Seats"}
+                    </button>
+                  )}
+                </div>
+
+                {verifyResult.devices && verifyResult.devices.length > 0 ? (
+                  <ul className={styles.deviceList}>
+                    {verifyResult.devices.map((device) => (
+                      <li key={device.id} className={styles.deviceRow}>
+                        <div className={styles.deviceMeta}>
+                          <strong>{device.name || "Unknown device"}</strong>
+                          <small>
+                            ID: <code>{device.id}</code> · Last active:{" "}
+                            {new Date(device.lastSeen).toLocaleDateString()}
+                          </small>
+                        </div>
+                        <button
+                          type="button"
+                          className={styles.revokeSeatBtn}
+                          disabled={seatActionLoading !== null}
+                          onClick={() =>
+                            void handleRevokeSeat({ deviceId: device.id })
+                          }
+                        >
+                          {seatActionLoading === device.id
+                            ? "Revoking..."
+                            : "Revoke Seat"}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className={styles.emptySeats}>
+                    No active devices are currently bound to this license key.
+                  </p>
+                )}
+
+                {seatActionMessage && (
+                  <p className={styles.seatStatus} role="status" aria-live="polite">
+                    {seatActionMessage}
+                  </p>
+                )}
+              </div>
+            )}
           </div>
         )}
       </section>

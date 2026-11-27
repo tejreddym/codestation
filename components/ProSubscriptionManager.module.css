@@ -56,8 +56,9 @@
   letter-spacing: 0.08em;
   padding: 3px 8px;
   border-radius: 4px;
-  background: color-mix(in srgb, var(--yellow) 15%, transparent);
-  color: var(--yellow);
+  background: color-mix(in srgb, var(--yellow) 22%, var(--surface));
+  color: var(--ink);
+  border: 1px solid color-mix(in srgb, var(--yellow) 55%, var(--line));
   margin-bottom: 12px;
 }
 
@@ -134,6 +135,7 @@
   box-shadow: var(--shadow);
 }
 
+.boxHeader h3,
 .boxHeader h4 {
   margin: 0 0 8px;
   font-size: 17px;
@@ -407,5 +409,145 @@
 .recoveryNotice a {
   color: var(--accent);
   text-decoration: underline;
+}
+
+.seatSelector {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.seatOptionBtn {
+  padding: 5px 9px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-xs);
+  background: var(--surface-alt);
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.seatOptionBtn:hover {
+  border-color: var(--accent);
+}
+
+.seatOptionActive {
+  background: var(--action-bg);
+  color: var(--action-ink);
+  border-color: var(--action-border);
+}
+
+.teamMetaRow {
+  margin-bottom: 14px;
+}
+
+.orgLabel {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--secondary);
+}
+
+.orgInput {
+  max-width: 360px;
+  padding: 9px 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 13.5px;
+}
+
+.seatManager {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+  color: var(--ink);
+}
+
+.seatManagerHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.deviceList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.deviceRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 9px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+}
+
+.deviceMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  color: var(--ink);
+}
+
+.deviceMeta small {
+  color: var(--muted);
+}
+
+.revokeSeatBtn,
+.resetSeatsBtn {
+  padding: 6px 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface-alt);
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.revokeSeatBtn:hover,
+.resetSeatsBtn:hover {
+  border-color: var(--red);
+  color: var(--red);
+}
+
+.emptySeats,
+.seatStatus {
+  margin: 6px 0 0;
+  font-size: 12.5px;
+  color: var(--secondary);
+}
+
+.seatOptionBtn:focus-visible,
+.selectBtn:focus-visible,
+.couponApplyBtn:focus-visible,
+.couponRemoveBtn:focus-visible,
+.generateButton:focus-visible,
+.verifyBtn:focus-visible,
+.keyCopyBtn:focus-visible,
+.revokeSeatBtn:focus-visible,
+.resetSeatsBtn:focus-visible,
+.inputField:focus-visible,
+.orgInput:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
 }
 

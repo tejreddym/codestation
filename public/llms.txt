@@ -4,6 +4,7 @@
 
 Canonical site: https://codestation.in
 Tool directory: https://codestation.in/tools
+Compare: https://codestation.in/compare (vs IT-Tools: https://codestation.in/compare/it-tools, vs CyberChef: https://codestation.in/compare/cyberchef, vs DevToys: https://codestation.in/compare/devtoys)
 Documentation: https://codestation.in/docs
 Privacy: https://codestation.in/privacy
 

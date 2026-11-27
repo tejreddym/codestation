@@ -12,7 +12,11 @@ import LicensesPage from "./licenses/page";
 import SiteFooter from "@/components/SiteFooter";
 import { operatorMetadata, PENDING_OPERATOR_FIELDS } from "@/lib/legal/operator";
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.unstubAllEnvs();
+  vi.resetModules();
+});
 
 describe("utility, fallback, and operator-wired legal pages", () => {
   it("centralizes operator metadata and flags pending owner fields", () => {
@@ -54,9 +58,37 @@ describe("utility, fallback, and operator-wired legal pages", () => {
     }
   });
 
-  it("exposes /contact and /accessibility links in the shared footer", () => {
+  it("exposes /contact, /accessibility, and /compare links in the shared footer", () => {
     render(<SiteFooter />);
     expect(screen.getByRole("link", { name: "Contact" }).getAttribute("href")).toBe("/contact");
     expect(screen.getByRole("link", { name: "Accessibility" }).getAttribute("href")).toBe("/accessibility");
+    expect(screen.getByRole("link", { name: "Compare" }).getAttribute("href")).toBe("/compare");
+  });
+
+  it("renders /compare hub and versus pages with FAQPage JSON-LD when indexing is enabled", async () => {
+    vi.stubEnv("NEXT_PUBLIC_SITE_URL", "https://codestation.in");
+    vi.stubEnv("SITE_INDEXING", "index");
+    vi.resetModules();
+
+    const [
+      { default: CompareHubPage },
+      { default: CompareItToolsPage },
+      { default: CompareCyberChefPage },
+      { default: CompareDevToysPage },
+    ] = await Promise.all([
+      import("./compare/page"),
+      import("./compare/it-tools/page"),
+      import("./compare/cyberchef/page"),
+      import("./compare/devtoys/page"),
+    ]);
+
+    for (const Page of [CompareHubPage, CompareItToolsPage, CompareCyberChefPage, CompareDevToysPage]) {
+      const { container, unmount } = render(<Page />);
+      expect(screen.getByRole("heading", { level: 1 })).toBeTruthy();
+      const jsonLd = container.querySelector('script[type="application/ld+json"]');
+      expect(jsonLd).not.toBeNull();
+      expect(JSON.parse(jsonLd!.innerHTML)["@type"]).toBe("FAQPage");
+      unmount();
+    }
   });
 });

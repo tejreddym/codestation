@@ -17,25 +17,32 @@ export default function AccessibilityPage() {
     >
       <h2>Conformance Target</h2>
       <p>
-        We target <strong>WCAG 2.2 Level AA</strong> across navigation,
-        contrast tokens, focus visibility, form labeling, and status
-        announcements. Accessibility checks run alongside our automated unit and
-        UI token audits as stations evolve.
+        We target <strong>WCAG 2.1 / 2.2 Level AA</strong> across navigation,
+        contrast tokens, heading hierarchy, ARIA labeling, focus visibility, and
+        status announcements. Automated <code>@axe-core/playwright</code> audits
+        run in continuous verification across core homepage, tool, station, Pro,
+        support, and embed routes in both light and dark themes.
       </p>
 
-      <h2>Keyboard Navigation &amp; Shortcuts</h2>
+      <h2>Keyboard Navigation, Focus Traps &amp; Shortcuts</h2>
       <ul>
         <li>
           <strong>Command Palette:</strong> Press <kbd>Cmd + K</kbd> (macOS) or{" "}
           <kbd>Ctrl + K</kbd> (Windows/Linux) anywhere in the app to open global
-          tool, station, and action search with arrow-key selection and{" "}
-          <kbd>Escape</kbd> focus restoration.
+          tool, station, and action search with arrow-key selection, full modal
+          <kbd>Tab</kbd> focus trapping, and <kbd>Escape</kbd> focus restoration.
+        </li>
+        <li>
+          <strong>Modal Dialogs:</strong> The Command Palette (<kbd>Cmd/Ctrl + K</kbd>),
+          Keyboard Shortcuts cheat sheet (<kbd>?</kbd>), and Embed Snippet
+          generator wrap <kbd>Tab</kbd> / <kbd>Shift + Tab</kbd> focus inside
+          the active dialog and return focus to the invoking trigger when closed.
         </li>
         <li>
           <strong>Native Form Controls:</strong> Tool inputs use labeled native
           controls, explicit fieldsets, visible <code>:focus-visible</code>{" "}
-          outlines, and keyboard-operable triggers for date/time pickers and
-          page reordering.
+          outlines across buttons, links, inputs, selects, and summaries, plus
+          accessible names matching visible button text.
         </li>
         <li>
           <strong>Live Status Announcements:</strong> Processing completions,

@@ -117,13 +117,13 @@ export default function CommandPalette() {
         type="button"
         className={styles.trigger}
         onClick={show}
-        aria-label="Open command palette"
         aria-haspopup="dialog"
         aria-expanded={open}
         data-command-palette-shell
       >
         <Search size={17} aria-hidden="true" />
         <span className={styles.triggerLabel}>Search</span>
+        <span className={styles.srOnly}> — open command palette</span>
         <kbd className={styles.kbd} aria-hidden="true">
           ⌘K
         </kbd>

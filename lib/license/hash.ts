@@ -48,6 +48,6 @@ export function generateLicenseKey(prefix = "CS-PRO"): string {
 export function isValidKeyFormat(rawKey?: string | null): boolean {
   if (!rawKey) return false;
   const key = rawKey.trim();
-  return /^CS-PRO-[2-9A-HJ-NP-Z]{4}-[2-9A-HJ-NP-Z]{4}-[2-9A-HJ-NP-Z]{4}$/i.test(key)
-    || /^CS-PRO-[A-Za-z0-9_-]+$/i.test(key);
+  return /^CS-(?:PRO|TEAM)-[2-9A-HJ-NP-Z]{4}-[2-9A-HJ-NP-Z]{4}-[2-9A-HJ-NP-Z]{4}$/i.test(key)
+    || /^CS-(?:PRO|TEAM)-[A-Za-z0-9_-]+$/i.test(key);
 }

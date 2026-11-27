@@ -27,7 +27,7 @@ describe("CommandPalette", () => {
   it("mounts only the trigger and lazily loads the dialog on first open", async () => {
     const { container } = render(<CommandPalette />);
 
-    const trigger = screen.getByRole("button", { name: "Open command palette" });
+    const trigger = screen.getByRole("button", { name: /Open command palette/i });
     expect(trigger.getAttribute("aria-haspopup")).toBe("dialog");
     expect(trigger.getAttribute("aria-expanded")).toBe("false");
     expect(container.querySelector("[data-command-palette-shell]")).toBeTruthy();
@@ -153,7 +153,7 @@ describe("CommandPalette", () => {
 
   it("closes on Escape and restores focus to the opener", async () => {
     render(<CommandPalette />);
-    const trigger = screen.getByRole("button", { name: "Open command palette" });
+    const trigger = screen.getByRole("button", { name: /Open command palette/i });
     trigger.focus();
     fireEvent.click(trigger);
     const dialog = await screen.findByRole("dialog");

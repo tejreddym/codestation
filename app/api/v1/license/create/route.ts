@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { generateLicenseKey } from "@/lib/license/hash";
-import { saveLicense } from "@/lib/license/storage";
-import type { LicensePlan } from "@/lib/license/types";
+import { resolvePlanPricing } from "@/lib/license/pricing";
+import { sanitizeOrgName, saveLicense } from "@/lib/license/storage";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -30,21 +30,39 @@ export async function POST(request: Request) {
       );
     }
 
-    const plan: LicensePlan = body.plan === "lifetime" ? "lifetime" : "monthly";
+    const resolved = resolvePlanPricing({
+      plan: body.plan,
+      planType: body.planType,
+      seatLimit: body.seatLimit,
+    });
+    if (!resolved.ok) {
+      return NextResponse.json(
+        { error: resolved.error },
+        { status: 400, headers: CORS_HEADERS }
+      );
+    }
+
+    const { pricing } = resolved;
+    const orgName = sanitizeOrgName(body.orgName);
     const orderId: string = body.orderId || `ord_${Date.now().toString(36)}`;
 
     // Generate fresh key
     const rawKey = generateLicenseKey();
 
-    // Validity: 30 days for monthly, null for lifetime
+    // Validity: 30 days for monthly/team, null for lifetime
     const now = Date.now();
-    const expiresAt = plan === "lifetime" ? null : now + 30 * 86400 * 1000;
+    const expiresAt =
+      pricing.durationMs === null ? null : now + pricing.durationMs;
 
     // Save one-way hash in Cloudflare KV
     await saveLicense(rawKey, {
       status: "active",
       tier: "pro",
-      plan,
+      plan: pricing.plan,
+      planType: pricing.planType,
+      seatLimit: pricing.seatLimit,
+      maxDevices: pricing.seatLimit,
+      ...(orgName ? { orgName } : {}),
       createdAt: now,
       expiresAt,
       orderId,
@@ -54,7 +72,11 @@ export async function POST(request: Request) {
       {
         success: true,
         key: rawKey, // Shown once to the user
-        plan,
+        plan: pricing.plan,
+        planType: pricing.planType,
+        seatLimit: pricing.seatLimit,
+        maxDevices: pricing.seatLimit,
+        ...(orgName ? { orgName } : {}),
         createdAt: now,
         expiresAt,
         message: "License generated successfully and stored securely via one-way hash.",

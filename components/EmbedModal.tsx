@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import { Code2, X } from "lucide-react";
+import { trapModalTabFocus } from "@/lib/a11y/focusTrap";
 import {
   EMBED_HEIGHT_PRESETS,
   buildEmbedIframeSnippet,
@@ -31,28 +32,36 @@ export function EmbedModal({
   const [copyError, setCopyError] = useState("");
   const headingId = useId();
   const closeBtnRef = useRef<HTMLButtonElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
 
   useEffect(() => {
     if (!open) return;
     previousFocusRef.current =
       document.activeElement instanceof HTMLElement ? document.activeElement : null;
     closeBtnRef.current?.focus();
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
 
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         event.preventDefault();
         event.stopPropagation();
-        onClose();
+        onCloseRef.current();
+        return;
       }
+      trapModalTabFocus(event, dialogRef.current);
     };
     window.addEventListener("keydown", onKeyDown, true);
     return () => {
       window.removeEventListener("keydown", onKeyDown, true);
+      document.body.style.overflow = previousOverflow;
       const opener = previousFocusRef.current;
       if (opener && opener.isConnected) opener.focus();
     };
-  }, [open, onClose]);
+  }, [open]);
 
   if (!open) return null;
 
@@ -88,6 +97,8 @@ export function EmbedModal({
       }}
     >
       <div
+        ref={dialogRef}
+        tabIndex={-1}
         className={styles.dialog}
         role="dialog"
         aria-modal="true"

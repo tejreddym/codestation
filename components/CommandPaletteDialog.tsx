@@ -15,6 +15,7 @@ import { searchTools } from "@/lib/tool-search";
 import { buildActiveToolShareUrl, getActiveToolOutputText } from "@/lib/engine/tool-actions-bridge";
 import { toggleDocumentTheme } from "./ThemeToggle";
 import { OPEN_SHORTCUTS_EVENT } from "./KeyboardShortcutsModal";
+import { trapModalTabFocus } from "@/lib/a11y/focusTrap";
 import { useSafeRouter } from "./useSafeNavigation";
 import styles from "./CommandPalette.module.css";
 
@@ -386,17 +387,7 @@ export default function CommandPaletteDialog({ open, onClose, onNotify }: Comman
         onClose();
         break;
       case "Tab": {
-        const first = inputRef.current;
-        const last = closeRef.current;
-        if (!first || !last) break;
-        const current = document.activeElement;
-        if (event.shiftKey && current === first) {
-          event.preventDefault();
-          last.focus();
-        } else if (!event.shiftKey && current === last) {
-          event.preventDefault();
-          first.focus();
-        }
+        trapModalTabFocus(event, panelRef.current);
         break;
       }
       default:

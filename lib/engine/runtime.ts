@@ -21,6 +21,10 @@ import type {
 } from "./types";
 import { BlobUrlRegistry } from "./blobRegistry";
 import {
+  recordEngineDiagnostic,
+  type EngineDiagnosticStage,
+} from "./diagnostics";
+import {
   createWorkerRunnerHelper,
   CancellationError,
   TimeoutError,
@@ -108,6 +112,17 @@ export function isTimeoutError(error: unknown): error is TimeoutError {
     error instanceof TimeoutError ||
     (isToolEngineError(error) && error.name === "TimeoutError")
   );
+}
+
+function classifyEngineStage(
+  error: unknown,
+  fallback: EngineDiagnosticStage
+): EngineDiagnosticStage {
+  if (isTimeoutError(error)) return "timeout";
+  if (error instanceof WorkerExecutionError || error instanceof WorkerNotSupportedError) {
+    return "worker";
+  }
+  return fallback;
 }
 
 // ============================================================================
@@ -256,6 +271,11 @@ export async function executeTool<TInput, TOutput>(
 
     const message =
       valErr instanceof Error ? valErr.message : String(valErr);
+    recordEngineDiagnostic({
+      toolSlug: _definition.id,
+      stage: "validating",
+      error: valErr,
+    });
     const errorResult: ValidationResult = {
       valid: false,
       errors: [message],
@@ -362,10 +382,17 @@ export async function executeTool<TInput, TOutput>(
     return normalizedResult;
   } catch (cause) {
     if (isTimedOut || cause instanceof TimeoutError) {
+      const timeoutErr =
+        cause instanceof TimeoutError
+          ? cause
+          : new TimeoutError(options.timeoutMs ?? 0);
+      recordEngineDiagnostic({
+        toolSlug: _definition.id,
+        stage: "timeout",
+        error: timeoutErr,
+      });
       options.onStateChange?.("error");
-      throw cause instanceof TimeoutError
-        ? cause
-        : new TimeoutError(options.timeoutMs ?? 0);
+      throw timeoutErr;
     }
 
     const isAbort =
@@ -385,6 +412,11 @@ export async function executeTool<TInput, TOutput>(
         : new CancellationError();
     }
 
+    recordEngineDiagnostic({
+      toolSlug: _definition.id,
+      stage: classifyEngineStage(cause, "processing"),
+      error: cause,
+    });
     options.onStateChange?.("error");
     if (cause instanceof Error) {
       throw cause;
@@ -536,6 +568,11 @@ export class ExecutionRuntimeController<
       if (isValidationError(err)) {
         this.validation = err.result;
       } else {
+        recordEngineDiagnostic({
+          toolSlug: this.definition.id,
+          stage: classifyEngineStage(err, "processing"),
+          error: errorObj,
+        });
         this.validation = {
           valid: false,
           errors: [errorObj.message],

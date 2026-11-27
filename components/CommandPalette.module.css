@@ -109,6 +109,10 @@
   color: var(--muted);
 }
 
+.searchRow:focus-within {
+  box-shadow: inset 0 0 0 2px var(--focus);
+}
+
 .searchInput {
   flex: 1;
   min-width: 0;
@@ -247,7 +251,7 @@
 
 .trigger:focus-visible,
 .closeButton:focus-visible {
-  outline: 3px solid color-mix(in srgb, var(--accent) 55%, transparent);
+  outline: 2px solid var(--focus);
   outline-offset: 2px;
 }
 
@@ -265,6 +269,11 @@
   display: flex;
   flex-direction: column;
   gap: 14px;
+}
+
+.shortcutsBody:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: -2px;
 }
 
 .shortcutGroup {

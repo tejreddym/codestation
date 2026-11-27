@@ -85,6 +85,19 @@ export default function PrivacyPage() {
         API requests or arbitrary browsing. Remove the pack in Settings or clear
         site data in your browser.
       </p>
+      <h2>Local Engine Diagnostics</h2>
+      <p>
+        If a tool engine encounters an unexpected runtime or rendering crash, Code
+        Station records anonymized diagnostic metadata locally in browser{" "}
+        <code>localStorage</code> under{" "}
+        <code>codestation-engine-diagnostics-v1</code> (capped at the last 20
+        events). Entries capture only the tool slug, engine stage, sanitized
+        error name/message, timestamp, and app version—redacting URLs, tokens,
+        emails, file paths, and quoted payload snippets. Tool inputs and outputs
+        are never recorded, and nothing is sent off-device unless you explicitly
+        copy and share a bug report from the error fallback view or{" "}
+        <Link href="/settings#diagnostics">Settings</Link>.
+      </p>
       <h2>Analytics</h2>
       <p>
         When explicitly enabled on production deployments via{" "}

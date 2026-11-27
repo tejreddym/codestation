@@ -1,3 +1,5 @@
+import type { LicensePlan } from "./license/types";
+
 export interface CouponValidationResult {
   valid: boolean;
   code?: string;
@@ -22,7 +24,7 @@ export const ACTIVE_COUPONS = {
  */
 export function validateCoupon(
   rawCode: string | undefined | null,
-  plan: "monthly" | "lifetime",
+  plan: LicensePlan,
   baseAmountPaise: number
 ): CouponValidationResult {
   if (!rawCode || !rawCode.trim()) {

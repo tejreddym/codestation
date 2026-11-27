@@ -24,6 +24,7 @@ import {
   safeDispose,
 } from "./runtime";
 import { BlobUrlRegistry } from "./blobRegistry";
+import { recordEngineDiagnostic } from "./diagnostics";
 
 export type ToolStatus = ToolExecutionState;
 
@@ -435,6 +436,11 @@ export function useToolEngine<
 
         const finalErr =
           cause instanceof Error ? cause : new Error(String(cause));
+        recordEngineDiagnostic({
+          toolSlug: definition.id,
+          stage: "processing",
+          error: finalErr,
+        });
         setError(finalErr);
         setState("error");
         setProgress({});

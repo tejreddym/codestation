@@ -1,6 +1,17 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { hashLicenseKey, generateLicenseKey, isValidKeyFormat } from "./hash";
-import { saveLicense, getLicenseByRawKey, verifyLicenseKey, clearTestStore } from "./storage";
+import {
+  INDIVIDUAL_PRICING,
+  TEAM_PRICING,
+  resolvePlanPricing,
+} from "./pricing";
+import {
+  saveLicense,
+  getLicenseByRawKey,
+  verifyLicenseKey,
+  revokeLicenseDevice,
+  clearTestStore,
+} from "./storage";
 
 describe("License Hashing & Generation", () => {
   it("generates correctly formatted keys", () => {
@@ -133,5 +144,88 @@ describe("License Storage & Verification", () => {
 
     // Device 2 can now register
     expect((await verifyLicenseKey(key, "device_2")).valid).toBe(true);
+  });
+
+  it("preserves backward compatibility for legacy individual records without planType or seatLimit", async () => {
+    const key = generateLicenseKey();
+    await saveLicense(key, {
+      status: "active",
+      tier: "pro",
+      plan: "monthly",
+      createdAt: Date.now(),
+      expiresAt: Date.now() + 86400 * 1000,
+    });
+
+    const stored = await getLicenseByRawKey(key);
+    expect(stored?.planType).toBe("individual");
+    expect(stored?.seatLimit).toBe(3);
+    expect(stored?.maxDevices).toBe(3);
+
+    const verified = await verifyLicenseKey(key, "legacy_dev_1", "Legacy Laptop");
+    expect(verified.valid).toBe(true);
+    expect(verified.planType).toBe("individual");
+    expect(verified.seatLimit).toBe(3);
+    expect(verified.maxDevices).toBe(3);
+    expect(verified.deviceCount).toBe(1);
+  });
+
+  it("enforces configurable Team seat pools (5/10/25) and revokes individual seats", async () => {
+    const key = generateLicenseKey();
+    await saveLicense(key, {
+      status: "active",
+      tier: "pro",
+      plan: "team",
+      planType: "team",
+      seatLimit: 5,
+      orgName: "  Acme Engineering  ",
+      createdAt: Date.now(),
+      expiresAt: Date.now() + 30 * 86400 * 1000,
+    });
+
+    for (let i = 1; i <= 5; i += 1) {
+      const res = await verifyLicenseKey(key, `seat_${i}`, `Engineer ${i}`);
+      expect(res.valid).toBe(true);
+      expect(res.planType).toBe("team");
+      expect(res.seatLimit).toBe(5);
+      expect(res.orgName).toBe("Acme Engineering");
+      expect(res.deviceCount).toBe(i);
+    }
+
+    // Re-verifying existing seat refreshes rather than consuming a new slot
+    expect((await verifyLicenseKey(key, "seat_2", "Engineer 2 Updated")).valid).toBe(true);
+
+    // 6th distinct device is blocked
+    const sixth = await verifyLicenseKey(key, "seat_6", "Contractor");
+    expect(sixth.valid).toBe(false);
+    expect(sixth.message).toContain("Team seat limit reached (5/5");
+
+    // Revoke single stale seat
+    const revoked = await revokeLicenseDevice(key, { deviceId: "seat_3" });
+    expect(revoked.revoked).toBe(true);
+    expect(revoked.deviceCount).toBe(4);
+    expect(revoked.devices?.some((d) => d.id === "seat_3")).toBe(false);
+
+    // New device can now claim freed slot
+    const sixthAfterRevoke = await verifyLicenseKey(key, "seat_6", "Contractor");
+    expect(sixthAfterRevoke.valid).toBe(true);
+    expect(sixthAfterRevoke.deviceCount).toBe(5);
+  });
+
+  it("resolves central pricing tiers cleanly for individual and team plans", () => {
+    expect(INDIVIDUAL_PRICING.monthly.amountPaise).toBe(19900);
+    expect(INDIVIDUAL_PRICING.lifetime.amountPaise).toBe(99900);
+    expect(TEAM_PRICING[5].amountPaise).toBe(79900);
+    expect(TEAM_PRICING[10].amountPaise).toBe(149900);
+    expect(TEAM_PRICING[25].amountPaise).toBe(349900);
+
+    const team10 = resolvePlanPricing({ plan: "team", seatLimit: 10 });
+    expect(team10.ok).toBe(true);
+    if (team10.ok) {
+      expect(team10.pricing.seatLimit).toBe(10);
+      expect(team10.pricing.amountPaise).toBe(149900);
+    }
+
+    const invalidTeam = resolvePlanPricing({ plan: "team", seatLimit: 7 });
+    expect(invalidTeam.ok).toBe(false);
   });
 });

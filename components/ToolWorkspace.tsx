@@ -144,6 +144,7 @@ const NumericStation = dynamic(() => import("./NumericStation"), {
   loading: () => <p role="status">Loading numeric converter controls…</p>,
 });
 import WebMcpBridge from "./WebMcpBridge";
+import ToolEngineErrorBoundary from "./ToolEngineErrorBoundary";
 
 function renderStation(toolId: RegisteredToolId) {
   if (isProductivityToolId(toolId)) {
@@ -188,7 +189,9 @@ export default function ToolWorkspace({ toolId }: { toolId: RegisteredToolId }) 
   return (
     <>
       <WebMcpBridge toolId={toolId} />
-      {renderStation(toolId)}
+      <ToolEngineErrorBoundary toolSlug={toolId}>
+        {renderStation(toolId)}
+      </ToolEngineErrorBoundary>
     </>
   );
 }

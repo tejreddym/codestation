@@ -231,6 +231,16 @@
   text-decoration: underline;
 }
 
+.embedTrigger:focus-visible,
+.closeButton:focus-visible,
+.select:focus-visible,
+.codeBox:focus-visible,
+.copyBtn:focus-visible,
+.embedFooterLink:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
 @media (max-width: 720px) {
   .controlsRow {
     grid-template-columns: 1fr;
