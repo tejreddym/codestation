@@ -1,0 +1,53 @@
+name: Tool Request
+description: Propose a new 100% browser-side developer tool or station improvement
+title: "[Tool Request]: "
+labels: ["enhancement", "tool-request"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Code Station focuses on fast, 100% client-side developer utilities with WebMCP (`document.modelContext`) support and zero server uploads.
+
+  - type: input
+    id: tool_name
+    attributes:
+      label: Tool Name & Proposed Slug
+      description: Follow lowercase kebab-case for the slug (`id === slug`), e.g. `Cron Diff Checker (cron-diff-checker)`.
+      placeholder: "Invoice Generator (invoice-generator)"
+    validations:
+      required: true
+
+  - type: input
+    id: station
+    attributes:
+      label: Target Station
+      description: Which existing station should host this tool (or propose a new station if none fits)?
+      placeholder: "JSON & Data / PDF / Video / Productivity / ..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem & Use Case
+      description: What workflow friction does this tool solve for developers, designers, or technical teams?
+    validations:
+      required: true
+
+  - type: textarea
+    id: io_spec
+    attributes:
+      label: Inputs, Controls & Expected Outputs
+      description: Describe the UI controls, edge cases, and downloadable/copyable outputs.
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: client_side_checklist
+    attributes:
+      label: Browser-Side Compatibility
+      options:
+        - label: This tool can execute 100% client-side in the browser (Web APIs, JS, or WASM) without uploading user inputs to a server.
+          required: true
+        - label: It works cleanly with WebMCP structured inputs/outputs (`document.modelContext`).
+          required: false
