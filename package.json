@@ -27,7 +27,7 @@
     "lint": "eslint . --cache",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:e2e": "playwright test",
+    "test:e2e": "playwright test --project=chromium",
     "audit:ui": "node scripts/audit-ui.mjs"
   },
   "dependencies": {
