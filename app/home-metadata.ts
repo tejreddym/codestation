@@ -5,28 +5,31 @@ export const homeTitle = "Free Browser Developer Tools — 383 Utilities in 30 S
 export const homeBrandedTitle = `${homeTitle} | ${siteConfig.name}`;
 export const homeDescription = "Explore 383 free, browser-based developer tools across 30 stations. Format, convert, hash, inspect and generate data locally with no uploads or accounts.";
 
-export function buildHomeMetadata(origin = siteConfig.origin, indexing = siteConfig.indexing): Metadata {
+export function buildHomeMetadata(origin?: string, indexing?: boolean): Metadata {
+  const resolvedOrigin = arguments.length >= 1 ? origin : siteConfig.origin;
+  const resolvedIndexing = arguments.length >= 2 ? Boolean(indexing) : siteConfig.indexing;
+
   return {
     title: { absolute: homeBrandedTitle },
     description: homeDescription,
-    ...(origin ? {
-      alternates: { canonical: `${origin}/` },
+    ...(resolvedOrigin ? {
+      alternates: { canonical: `${resolvedOrigin}/` },
       openGraph: {
         title: homeTitle,
         description: homeDescription,
-        url: origin,
+        url: resolvedOrigin,
         siteName: siteConfig.name,
         type: "website" as const,
-        images: [{ url: `${origin}/og`, width: 1200, height: 630, alt: `${siteConfig.name} — 100% Local Developer Toolbox` }],
+        images: [{ url: `${resolvedOrigin}/og`, width: 1200, height: 630, alt: `${siteConfig.name} — 100% Local Developer Toolbox` }],
       },
       twitter: {
         card: "summary_large_image" as const,
         title: homeTitle,
         description: homeDescription,
-        images: [`${origin}/og`],
+        images: [`${resolvedOrigin}/og`],
       },
     } : {}),
-    robots: indexing ? { index: true, follow: true } : { index: false, follow: false },
+    robots: resolvedIndexing ? { index: true, follow: true } : { index: false, follow: false },
   };
 }
 
