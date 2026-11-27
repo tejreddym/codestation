@@ -4,7 +4,7 @@ const file = (label: string, accept: string): LocalField => ({ name: "file", lab
 const number = (name: string, label: string, min: number, max: number, optional = false): LocalField => ({ name, label, control: "number", min, max, optional });
 const select = (name: string, label: string, options: string[]): LocalField => ({ name, label, control: "select", options });
 
-export const videoToolIds = ["video-thumbnail-generator"] as const;
+export const videoToolIds = ["video-thumbnail-generator", "video-trimmer"] as const;
 export type VideoToolId = typeof videoToolIds[number];
 
 export const videoTools: readonly LocalDefinition<VideoToolId>[] = [
@@ -35,6 +35,34 @@ export const videoTools: readonly LocalDefinition<VideoToolId>[] = [
     seo: {
       title: "Video Thumbnail Generator — Local Frame Capture",
       description: "Capture frames from a local MP4, WebM, MOV, M4V or OGV video and download PNG/JPEG thumbnails or a ZIP archive without uploading the video.",
+    },
+  },
+  {
+    ...localDefinition<VideoToolId>(
+      "video-trimmer",
+      "Video Trimmer",
+      "Video",
+      [
+        file("Video file", "video/*,.mp4,.webm,.mov,.m4v,.ogv"),
+        number("startTime", "Start time (seconds)", 0, 86400),
+        number("endTime", "End time (seconds)", 0.1, 86400),
+        select("format", "Export format", ["webm", "mp4"]),
+      ],
+      ["Trimmed MP4 or WebM video file"],
+      { startTime: "0", endTime: "10", format: "webm" },
+      [
+        "Videos are processed 100% locally in your browser using native HTML5 and MediaStream APIs. No server uploads or cloud processing.",
+        "Supported formats depend on browser encoding capabilities (WebM and MP4). Both video and audio tracks are captured and synchronized.",
+        "Precise sub-second and frame-accurate timing controls allow trimming with millisecond accuracy.",
+      ],
+      "Trim & Export Video",
+    ),
+    description: "Cut and trim video files locally in your browser with millisecond precision, frame stepping, interactive timeline scrubbing, and direct MP4/WebM download without server uploads.",
+    keywords: ["video", "trimmer", "cut", "crop", "clip", "mp4", "webm", "timeline", "editor"],
+    relatedTools: ["video-thumbnail-generator", "audio-trimmer", "image-cropper"],
+    seo: {
+      title: "Video Trimmer — Local Browser Video Cutter",
+      description: "Cut and trim local MP4, WebM, MOV, M4V or OGV video files with timeline scrubbing and millisecond precision in your browser with zero server uploads.",
     },
   },
 ];

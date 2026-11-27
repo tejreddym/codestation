@@ -32,6 +32,7 @@ import { ToolLayout } from "./ui/ToolLayout";
 import PdfTextTool from "./PdfTextTool";
 import PdfImagesTool from "./PdfImagesTool";
 import PdfReorderTool from "./PdfReorderTool";
+import PdfCompressorTool from "./PdfCompressorTool";
 import ui from "./ui/ui.module.css";
 import styles from "./PdfStation.module.css";
 
@@ -370,6 +371,10 @@ export default function PdfStation({ toolId }: { toolId: PdfToolId }) {
 
   if (toolId === "pdf-reorder-pages") {
     return <PdfReorderTool definition={definition} />;
+  }
+
+  if (toolId === "pdf-compressor") {
+    return <PdfCompressorTool definition={definition} />;
   }
 
   if (toolId === "signature-pad") {

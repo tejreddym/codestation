@@ -18,13 +18,13 @@ describe("homepage SEO metadata", () => {
     const metadata = buildHomeMetadata(origin, true);
     expect(metadata.title).toEqual({ absolute: homeBrandedTitle });
     const title = homeBrandedTitle;
-    expect(title).toContain("381");
+    expect(title).toContain("383");
     expect(title).toContain("Developer Tools");
     expect(title.match(/\| Code Station/g)).toHaveLength(1);
     const description = String(metadata.description);
     expect(description.length).toBeGreaterThanOrEqual(150);
     expect(description.length).toBeLessThanOrEqual(160);
-    expect(description).toContain("381");
+    expect(description).toContain("383");
     expect(description).toContain("30 stations");
     expect(description).toContain("no uploads");
     expect(metadata.alternates?.canonical).toBe(`${origin}/`);
@@ -82,12 +82,12 @@ describe("homepage SEO metadata", () => {
     expect(layout).not.toMatch(/alternates\s*:\s*\{\s*canonical/);
   });
 
-  it("keeps current homepage and site copy on the 370+/381/30 baseline", () => {
+  it("keeps current homepage and site copy on the 370+/383/30 baseline", () => {
     const sources = ["app/page.tsx", "components/HomeSearch.tsx", "config/site.ts", "components/DocsRepo.tsx"]
       .map(file => readFileSync(file, "utf8"))
       .join("\n");
     expect(sources).not.toMatch(/300\+ browser|29 stations|29 STATIONS|Image owns 29 tools/);
-    expect(sources).toContain("381");
+    expect(sources).toContain("383");
     expect(sources).toMatch(/370\+/);
     expect(sources).toContain("30 stations");
   });

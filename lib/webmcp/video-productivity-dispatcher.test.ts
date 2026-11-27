@@ -19,6 +19,63 @@ describe("video and productivity WebMCP dispatcher", () => {
     expect(payload.notice).toMatch(/no frame is captured by this call/);
   });
 
+  it("returns manual-file notice for video-trimmer without arguments", async () => {
+    const payload = JSON.parse(await dispatchToolExecution("video-trimmer")) as {
+      status: string;
+      category: string;
+      canonicalUrl: string;
+      notice: string;
+    };
+    expect(payload).toMatchObject({
+      status: "manual-file-required",
+      category: "Video",
+      canonicalUrl: "https://codestation.in/tools/video-trimmer",
+    });
+    expect(payload.notice).toMatch(/file picker/);
+    expect(payload.notice).toMatch(/all trimming stays in the browser/);
+  });
+
+  it("calculates trim specification for video-trimmer with start and end times", async () => {
+    const payload = JSON.parse(
+      await dispatchToolExecution("video-trimmer", "", { start: 2, end: 8.5, fps: 30 })
+    ) as {
+      status: string;
+      category: string;
+      canonicalUrl: string;
+      trimSpecification: {
+        startTime: number;
+        endTime: number;
+        durationSeconds: number;
+        fps: number;
+        totalFrames: number;
+      };
+      notice: string;
+    };
+    expect(payload.status).toBe("ready");
+    expect(payload.category).toBe("Video");
+    expect(payload.canonicalUrl).toBe("https://codestation.in/tools/video-trimmer");
+    expect(payload.trimSpecification).toEqual({
+      startTime: 2,
+      endTime: 8.5,
+      durationSeconds: 6.5,
+      fps: 30,
+      totalFrames: 195,
+    });
+    expect(payload.notice).toMatch(/zero server uploads/);
+  });
+
+  it("returns manual-file notice for video-trimmer with invalid or negative start time", async () => {
+    const payloadNegative = JSON.parse(
+      await dispatchToolExecution("video-trimmer", "", { start: -5, end: 5, fps: 30 })
+    ) as { status: string };
+    expect(payloadNegative.status).toBe("manual-file-required");
+
+    const payloadInverted = JSON.parse(
+      await dispatchToolExecution("video-trimmer", "", { start: 10, end: 5, fps: 30 })
+    ) as { status: string };
+    expect(payloadInverted.status).toBe("manual-file-required");
+  });
+
   it("returns an honest manual-UI notice for the Pomodoro timer", async () => {
     const payload = JSON.parse(await dispatchToolExecution("pomodoro-timer")) as {
       status: string;

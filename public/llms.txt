@@ -1,6 +1,6 @@
 # Code Station
 
-> Code Station is a free, browser-first developer toolbox: 381 focused utilities across 30 stations for formatting, converting, generating, hashing, and inspecting data. Tools run locally in the browser with zero server uploads and no account required. Supported tools expose the browser-native WebMCP API (document.modelContext) so AI agents can discover and run them in the page.
+> Code Station is a free, browser-first developer toolbox: 383 focused utilities across 30 stations for formatting, converting, generating, hashing, and inspecting data. Tools run locally in the browser with zero server uploads and no account required. Supported tools expose the browser-native WebMCP API (document.modelContext) so AI agents can discover and run them in the page.
 
 Canonical site: https://codestation.in
 Tool directory: https://codestation.in/tools

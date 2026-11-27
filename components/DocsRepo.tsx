@@ -441,7 +441,7 @@ export function DocsRepo() {
               <li>
                 <Link href="/tools" className={styles.sidebarLink}>
                   <span>Web Tools Directory</span>
-                  <span className={styles.sidebarCount}>381</span>
+                  <span className={styles.sidebarCount}>383</span>
                 </Link>
               </li>
               <li>

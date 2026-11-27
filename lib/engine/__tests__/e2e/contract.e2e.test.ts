@@ -1389,7 +1389,7 @@ describe("E2E Contract: Feature 17 - adaptToolToEngine Legacy Adapter", () => {
   });
 });
 
-describe("E2E Contract: Feature 18 - Full 381 Tool Registry Unification", () => {
+describe("E2E Contract: Feature 18 - Full 383 Tool Registry Unification", () => {
   beforeEach(() => {
     setupTestEnvironment();
   });
@@ -1400,10 +1400,10 @@ describe("E2E Contract: Feature 18 - Full 381 Tool Registry Unification", () => 
 
   // --- Tier 1: Feature Coverage (Happy Path) ---
 
-  it("TIER1-F18-01: verifies exactly 381 registered tools in authoritative catalog", () => {
+  it("TIER1-F18-01: verifies exactly 383 registered tools in authoritative catalog", () => {
     expect(tools).toBeDefined();
     expect(Array.isArray(tools)).toBe(true);
-    expect(tools.length).toBe(381);
+    expect(tools.length).toBe(383);
   });
 
   it("TIER1-F18-02: verifies exactly 30 unique tool categories", () => {
@@ -1423,7 +1423,7 @@ describe("E2E Contract: Feature 18 - Full 381 Tool Registry Unification", () => 
     }
 
     expect(duplicates).toEqual([]);
-    expect(ids.size).toBe(381);
+    expect(ids.size).toBe(383);
   });
 
   it("TIER1-F18-04: verifies local tools and exactly 1 network-opt-in tool (api-request-tester)", () => {
@@ -1432,8 +1432,8 @@ describe("E2E Contract: Feature 18 - Full 381 Tool Registry Unification", () => 
     expect(networkOptInTools[0].id).toBe("api-request-tester");
   });
 
-  it("TIER1-F18-05: verifies category distribution and station route mapping across all 381 registered tools", () => {
-    expect(tools.length).toBe(381);
+  it("TIER1-F18-05: verifies category distribution and station route mapping across all 383 registered tools", () => {
+    expect(tools.length).toBe(383);
 
     for (const tool of tools) {
       expect(tool.id).toBeDefined();
@@ -1517,7 +1517,7 @@ describe("E2E Contract: Feature 18 - Full 381 Tool Registry Unification", () => 
     }
   });
 
-  it("TIER2-F18-05: verifies all 381 tools have non-empty description and valid keywords array", () => {
+  it("TIER2-F18-05: verifies all 383 tools have non-empty description and valid keywords array", () => {
     for (const tool of tools) {
       expect(tool.description.trim().length).toBeGreaterThan(0);
       expect(Array.isArray(tool.keywords)).toBe(true);

@@ -1,5 +1,17 @@
 # TODO
 
+## Batch 5 — Video Trimmer, PDF Compressor, Thumbnail Canva Studio & Invoice Generator — 2026-11-17
+
+- [x] Build `invoice-generator` with single/bulk modes, local logo upload, dynamic line-items, vector PDF export via `pdf-lib`, and WebMCP bridge.
+- [x] Build `video-trimmer` under Video Station with 100% browser-side video slicing, interactive HTML5 video timeline scrubber, SMPTE timecodes, millisecond accuracy, segment looping, and direct .mp4/.webm download.
+- [x] Build `pdf-compressor` under PDF Station with client-side downsampling via `pdf-lib` and canvas rasterization, 3 quality presets (72 DPI, 150 DPI, 300 DPI), real-time byte savings comparison, and direct download.
+- [x] Build Canva-style canvas overlay studio for `video-thumbnail-generator` (`components/ThumbnailOverlayEditor.tsx`, `lib/tools/video/overlay.ts`) supporting text, shapes, icons, custom styling, layer manipulation, and high-res composite export.
+- [x] Synchronize registries in `config/video-tools.ts`, `config/pdf-tools.ts`, `config/stations.ts`, and `config/tools.ts` to 383 tools / 30 stations.
+- [x] Integrate WebMCP bridge handlers `codestation_video_trimmer` and `codestation_pdf_compressor` in `lib/webmcp/dispatcher.ts`.
+- [x] Pass all TypeScript checks (`npm run typecheck`), UI token audit (`npm run audit:ui`, 0 errors), and test suites (`npm test`).
+- [ ] Run production build (`npm run build`) once dev server is stopped.
+- [ ] Safari/Firefox cross-browser codec and WebCodecs acceptance checks.
+
 ## Batch 4 — Homepage Search Placement, Station Corrections & SEO/AEO/GEO — 2026-11-16
 
 - [x] Separate homepage search results from detection matches, hide PersonalTools/Quick access while typing, move triage below results, and compress the panel to an internal scroll with 390 px no-overflow.

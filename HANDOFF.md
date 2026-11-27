@@ -1,5 +1,41 @@
 # Handoff
 
+## Batch 5 — Video Trimmer, PDF Compressor, Thumbnail Canva Studio & Invoice Generator — 2026-11-17
+
+- **Baseline Status**:
+  - Global tool count: **383 tools across 30 stations** (live copy `370+ tools`).
+  - Zero server uploads: All processing runs 100% locally in browser memory.
+  - WebMCP bridge: Every tool exposed via `document.modelContext` / `codestation_[slug]`.
+  - Design system: Fully aligned with Tactile Technical tokens; `npm run audit:ui` passed with 0 token errors.
+  - TypeScript: `npm run typecheck` passed with 0 errors.
+
+- **Completed in this Session**:
+  1. **Video Trimmer (`video-trimmer`)**:
+     - Route: `/tools/video-trimmer` (Video Station)
+     - Core engine: `lib/tools/video/trimmer.ts` & `lib/tools/video/trimmer.test.ts`
+     - UI component: `components/VideoTrimmerTool.tsx` & `components/VideoTrimmerTool.module.css`
+     - Interactive HTML5 video timeline scrubber, SMPTE timecodes (`HH:MM:SS:FF`), millisecond inputs, loop preview, and client-side `.mp4`/`.webm` slice & encode.
+     - WebMCP: `codestation_video_trimmer` registered in `lib/webmcp/dispatcher.ts`.
+  2. **PDF Compressor (`pdf-compressor`)**:
+     - Route: `/tools/pdf-compressor` (PDF Station)
+     - Core engine: `lib/tools/pdf/compress.ts` & `lib/tools/pdf/compress.test.ts`
+     - UI component: `components/PdfCompressorTool.tsx` & `components/PdfCompressorTool.module.css`
+     - Pure in-browser size reduction via `pdf-lib` + canvas downsampling with 3 quality presets: Maximum Compression (72 DPI), Balanced (150 DPI), and High Quality (300 DPI). Real-time byte savings display.
+     - WebMCP: `codestation_pdf_compressor` registered in `lib/webmcp/dispatcher.ts`.
+  3. **Thumbnail Canva-Style Canvas Overlay Studio**:
+     - Embedded in `/tools/video-thumbnail-generator`
+     - Engine: `lib/tools/video/overlay.ts` & `lib/tools/video/overlay.test.ts`
+     - Component: `components/ThumbnailOverlayEditor.tsx` & `components/ThumbnailOverlayEditor.module.css`
+     - Allows creators to place text layers (with stroke outlines, drop shadows, background pills), shapes (rectangles, badges, pills, circles, arrows), and icon stamps on top of video frames, customize styling, reorder layers, and export high-res composite images.
+  4. **Invoice Generator (`invoice-generator`)**:
+     - Route: `/tools/invoice-generator` (Productivity Station)
+     - Single & bulk invoice generation, local logo upload, dynamic line-items, and vector PDF download via `pdf-lib`.
+
+- **Pending / Next Steps for Incoming Agent**:
+  - Stop the active local dev server before running `npm run build` (to avoid `.next` lock contention).
+  - Test browser-native WebCodecs in Safari/Firefox if device-specific hardware testing is requested.
+  - Next tool candidates if requested: Quote Generator (`quote-generator`), Receipt Generator (`receipt-generator`), or Timesheet Calculator (`timesheet-calculator`).
+
 ## Universal Tool Engine & Declarative Tool Contract Architecture — 2026-11-11
 
 - **Implemented Architecture**:

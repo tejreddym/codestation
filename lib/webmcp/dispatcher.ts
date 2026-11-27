@@ -143,6 +143,10 @@ import {
   type PageNumberOptions,
 } from "../tools/pdf/engine";
 import {
+  optimizePdfStreams,
+  calculateSavings,
+} from "../tools/pdf/compress";
+import {
   executeSql,
 } from "../tools/spreadsheet/sql-engine";
 import {
@@ -992,6 +996,56 @@ export async function dispatchToolExecution(
       );
     }
 
+    case "video-trimmer": {
+      const toolDef = getTool(normId);
+      const rawStart = typeof options?.start === "number" ? options.start : typeof options?.startTime === "number" ? options.startTime : 0;
+      const rawEnd = typeof options?.end === "number" ? options.end : typeof options?.endTime === "number" ? options.endTime : 0;
+      const rawFps = typeof options?.fps === "number" ? options.fps : 30;
+
+      const start = Number.isFinite(rawStart) ? rawStart : -1;
+      const end = Number.isFinite(rawEnd) ? rawEnd : 0;
+      const fps = Number.isFinite(rawFps) && rawFps > 0 ? rawFps : 30;
+
+      if (start >= 0 && end > start) {
+        const sliceDuration = Number((end - start).toFixed(4));
+        const totalFrames = Math.round(sliceDuration * fps);
+        return JSON.stringify(
+          {
+            tool: toolDef?.name ?? normId,
+            id: normId,
+            category: "Video",
+            status: "ready",
+            canonicalUrl: `https://codestation.in/tools/${toolDef?.slug ?? normId}`,
+            trimSpecification: {
+              startTime: start,
+              endTime: end,
+              durationSeconds: sliceDuration,
+              fps,
+              totalFrames,
+            },
+            notice:
+              "Trim parameters calculated. Media encoding and video slicing run purely inside the client browser UI using native MediaStream recording to guarantee zero server uploads. Open the tool to complete slicing.",
+          },
+          null,
+          2
+        );
+      }
+
+      return JSON.stringify(
+        {
+          tool: toolDef?.name ?? normId,
+          id: normId,
+          category: "Video",
+          status: "manual-file-required",
+          canonicalUrl: `https://codestation.in/tools/${toolDef?.slug ?? normId}`,
+          notice:
+            "This tool needs a local video chosen with the file picker in the browser UI. WebMCP cannot read a video file from disk or run real-time video slicing, so no video is processed by this call. Open the tool, select the video, and all trimming stays in the browser.",
+        },
+        null,
+        2
+      );
+    }
+
     case "pomodoro-timer": {
       const toolDef = getTool(normId);
       return JSON.stringify(
@@ -1044,6 +1098,46 @@ export async function dispatchToolExecution(
     case "pdf-to-text":
     case "pdf-to-images":
     case "pdf-reorder-pages": {
+      const toolDef = getTool(normId);
+      return JSON.stringify(
+        {
+          tool: toolDef?.name ?? normId,
+          id: normId,
+          category: "PDF",
+          status: "manual-file-required",
+          canonicalUrl: `https://codestation.in/tools/${toolDef?.slug ?? normId}`,
+          notice:
+            "This tool needs a local PDF chosen with the file picker in the browser UI. WebMCP cannot read a file from disk, so no document is processed by this call. Open the tool, select the PDF, and all parsing stays in the browser.",
+        },
+        null,
+        2
+      );
+    }
+
+    case "pdf-compressor": {
+      if (input && input.trim()) {
+        try {
+          const pdfBytes = base64ToUint8Array(input);
+          const compressedBytes = await optimizePdfStreams(pdfBytes);
+          const originalSize = pdfBytes.byteLength;
+          const compressedSize = compressedBytes.byteLength;
+          const { savingsBytes, savingsPercentage } = calculateSavings(originalSize, compressedSize);
+          return JSON.stringify(
+            {
+              success: true,
+              originalSize,
+              compressedSize,
+              savingsBytes,
+              savingsPercentage,
+              pdfBase64: uint8ArrayToBase64(compressedBytes),
+            },
+            null,
+            2
+          );
+        } catch {
+          // If decoding or loading fails, fall through to notice
+        }
+      }
       const toolDef = getTool(normId);
       return JSON.stringify(
         {

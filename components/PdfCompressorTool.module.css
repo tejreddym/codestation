@@ -1,0 +1,201 @@
+/* Layout and visual tokens for PDF Compressor */
+.compressorContainer {
+  max-width: 1080px;
+  margin-inline: auto;
+  display: grid;
+  gap: var(--space-6);
+}
+
+.dropTitle {
+  color: var(--ink);
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+
+.dropSub {
+  color: var(--secondary);
+  font-size: var(--text-xs);
+}
+
+.docInfoCard {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+}
+
+.thumbnailContainer {
+  width: 72px;
+  height: 96px;
+  background: var(--surface-alt);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.thumbnail {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.docMeta {
+  display: grid;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.docName {
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.docSpecs {
+  font-size: var(--text-xs);
+  font-family: var(--font-mono);
+  color: var(--secondary);
+  display: flex;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.presetGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+}
+
+.presetCard {
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+  user-select: none;
+}
+
+.presetCard:hover {
+  border-color: var(--line-strong);
+}
+
+.presetCardSelected {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+.presetHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: var(--space-1);
+}
+
+.presetName {
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.presetDpi {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--secondary);
+}
+
+.presetDesc {
+  font-size: var(--text-xs);
+  color: var(--secondary);
+  line-height: 1.4;
+}
+
+.actionsBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  margin-top: var(--space-4);
+}
+
+.buttonGroup {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.comparisonGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.metricCard {
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.metricLabel {
+  font-size: var(--text-xs);
+  color: var(--secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+
+.metricValue {
+  font-size: var(--text-lg);
+  font-weight: 700;
+  font-family: var(--font-mono);
+  color: var(--ink);
+}
+
+.savingsBadgeSuccess {
+  color: var(--green);
+}
+
+.savingsBadgeNeutral {
+  color: var(--secondary);
+}
+
+.savingsBadgeNegative {
+  color: var(--red);
+}
+
+@media (max-width: 900px) {
+  .presetGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .comparisonGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .comparisonGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

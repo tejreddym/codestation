@@ -14,6 +14,7 @@ import { Select, TextInput } from "./ui/controls";
 import { downloadBlob } from "./ui/useDownload";
 import ui from "./ui/ui.module.css";
 import styles from "./VideoThumbnailTool.module.css";
+import ThumbnailOverlayEditor from "./ThumbnailOverlayEditor";
 import {
   clampFrameCount,
   evenTimestamps,
@@ -121,8 +122,15 @@ export default function VideoThumbnailTool() {
   const [progress, setProgress] = useState({ done: 0, total: 0 });
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [overlayTarget, setOverlayTarget] = useState<{
+    src: string;
+    name: string;
+    width: number;
+    height: number;
+  } | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const fileInput = useRef<HTMLInputElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
   const pendingFile = useRef<File | null>(null);
   const ownedUrls = useRef(new Set<string>());
   const run = useRef<{ cancelled: boolean } | null>(null);
@@ -198,6 +206,29 @@ export default function VideoThumbnailTool() {
     setVideoUrl(url);
     setLoading(true);
     setNotice("Reading video metadata locally…");
+  }
+
+  function chooseImageFile(file: File | null) {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setError("Please choose an image file (PNG, JPEG, WebP, etc.) to open in the Overlay Studio.");
+      return;
+    }
+    const url = own(URL.createObjectURL(file));
+    const img = new Image();
+    img.onload = () => {
+      setOverlayTarget({
+        src: url,
+        name: file.name,
+        width: img.naturalWidth || 1280,
+        height: img.naturalHeight || 720,
+      });
+      setNotice(`Opened ${file.name} in Overlay Studio.`);
+    };
+    img.onerror = () => {
+      setError("Could not load image into Overlay Studio.");
+    };
+    img.src = url;
   }
 
   function loadedMetadata() {
@@ -354,6 +385,21 @@ export default function VideoThumbnailTool() {
 
   const disabled = busy || loading || !source;
 
+  if (overlayTarget) {
+    return (
+      <ToolLayout kind="data" className={styles.videoContainer}>
+        <ThumbnailOverlayEditor
+          src={overlayTarget.src}
+          name={overlayTarget.name}
+          initialWidth={overlayTarget.width}
+          initialHeight={overlayTarget.height}
+          onClose={() => setOverlayTarget(null)}
+        />
+        <PrivacyNote>All layers, graphics, and composite thumbnails are rendered in this browser. Zero server uploads.</PrivacyNote>
+      </ToolLayout>
+    );
+  }
+
   return (
     <ToolLayout kind="data" className={styles.videoContainer}>
       <div className={styles.videoLayout}>
@@ -374,6 +420,22 @@ export default function VideoThumbnailTool() {
                 aria-invalid={error ? true : undefined}
                 aria-describedby={error ? `${id}-error` : `${id}-file-hint`}
                 onChange={event => chooseFile(event.target.files?.[0] ?? null)}
+              />
+            </Field>
+
+            <Field
+              id={`${id}-image`}
+              label="Or import image directly"
+              hint="Open an existing thumbnail image or screenshot directly into Overlay Studio without video."
+            >
+              <input
+                id={`${id}-image`}
+                ref={imageInputRef}
+                className={ui.control}
+                type="file"
+                accept="image/*"
+                disabled={busy}
+                onChange={event => chooseImageFile(event.target.files?.[0] ?? null)}
               />
             </Field>
 
@@ -504,7 +566,23 @@ export default function VideoThumbnailTool() {
                   <img src={frame.url} alt={`Captured frame at ${formatDuration(frame.timestamp)}`} />
                   <figcaption>
                     <span>{formatDuration(frame.timestamp)} · {frame.width} × {frame.height}</span>
-                    <a href={frame.url} download={frame.name}>Download {frame.name.split(".").pop()?.toUpperCase()}</a>
+                    <div style={{ display: "flex", gap: "var(--space-2)", alignItems: "center", marginTop: "var(--space-1)" }}>
+                      <Button
+                        size="sm"
+                        variant="primary"
+                        onClick={() =>
+                          setOverlayTarget({
+                            src: frame.url,
+                            name: frame.name,
+                            width: frame.width,
+                            height: frame.height,
+                          })
+                        }
+                      >
+                        Edit in Overlay Studio
+                      </Button>
+                      <a href={frame.url} download={frame.name}>Download {frame.name.split(".").pop()?.toUpperCase()}</a>
+                    </div>
                   </figcaption>
                 </figure>
               ))}

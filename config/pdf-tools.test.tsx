@@ -16,9 +16,21 @@ import {
 vi.mock("@/components/ToolWorkspace", () => ({ default: () => null }));
 afterEach(cleanup);
 
-it("registers exactly 12 PDF contracts", () => {
-  expect(pdfTools).toHaveLength(12);
-  expect(getStation("pdf")).toMatchObject({ route: "/stations/pdf", toolCount: 12 });
+it("registers exactly 13 PDF contracts", () => {
+  expect(pdfTools).toHaveLength(13);
+  expect(getStation("pdf")).toMatchObject({ route: "/stations/pdf", toolCount: 13 });
+});
+
+it("verifies contract for pdf-compressor", () => {
+  const compressor = pdfTools.find((tool) => tool.id === "pdf-compressor");
+  expect(compressor).toBeDefined();
+  expect(compressor && isPdfToolId(compressor.id)).toBe(true);
+  expect(compressor?.name).toBe("PDF Compressor");
+  expect(compressor?.keywords).toEqual(expect.arrayContaining(["compress", "compressor", "reduce pdf size"]));
+  expect(compressor?.localContract.action).toBe("Compress PDF");
+  expect(compressor?.seo.description.length).toBeGreaterThan(60);
+  expect(compressor?.seo.title).not.toContain("| Code Station");
+  expect(compressor?.relatedTools.every((related) => isPdfToolId(related))).toBe(true);
 });
 
 it("adds the text, image and reorder workflows without changing the metadata tool", () => {

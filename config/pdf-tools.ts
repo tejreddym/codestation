@@ -13,6 +13,7 @@ export const pdfToolIds = [
   "pdf-to-text",
   "pdf-to-images",
   "pdf-reorder-pages",
+  "pdf-compressor",
 ] as const;
 
 export type PdfToolId = (typeof pdfToolIds)[number];
@@ -408,6 +409,37 @@ export const pdfTools: readonly LocalDefinition<PdfToolId>[] = [
       seoDescription:
         "Reorder or remove PDF pages with drag-and-drop or keyboard controls. Export a clean PDF with a page mapping summary—no upload or account required.",
       action: "Export PDF",
+    }
+  ),
+  define(
+    "pdf-compressor",
+    "PDF Compressor",
+    [pdfFile],
+    ["Compressed PDF file", "Original file size", "Compressed file size", "Savings percentage"],
+    { preset: "balanced" },
+    [
+      "Compress PDF documents locally using client-side size reduction and canvas downsampling.",
+      "Selectable quality presets: Maximum Compression (72 DPI), Balanced (150 DPI), High Quality (300 DPI).",
+      "Real-time before and after file size comparison and savings percentage calculation.",
+      "Direct browser download of compressed PDF with zero server uploads.",
+    ],
+    {
+      description:
+        "Compress and reduce PDF file size directly in your browser with selectable DPI presets (72, 150, 300 DPI), real-time savings calculation, and zero server uploads.",
+      keywords: [
+        "pdf",
+        "compress",
+        "compressor",
+        "shrink",
+        "optimize",
+        "downsample",
+        "reduce pdf size",
+      ],
+      relatedTools: ["pdf-merge", "pdf-split", "pdf-to-images", "images-to-pdf"],
+      seoTitle: "PDF Compressor — Local In-Browser Size Reduction",
+      seoDescription:
+        "Compress PDF files directly in your browser with selectable quality presets (72, 150, 300 DPI) and zero server uploads.",
+      action: "Compress PDF",
     }
   ),
 ];
