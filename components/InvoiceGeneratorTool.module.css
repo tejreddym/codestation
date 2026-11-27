@@ -304,11 +304,11 @@
 
 /* Native Print Styles */
 @media print {
-  body * {
+  :global(body):has(.documentSheet) * {
     visibility: hidden;
   }
-  .documentSheet,
-  .documentSheet * {
+  :global(body):has(.documentSheet) .documentSheet,
+  :global(body):has(.documentSheet) .documentSheet * {
     visibility: visible;
   }
   .documentSheet {
