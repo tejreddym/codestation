@@ -67,7 +67,11 @@ export default function VideoTrimmerTool() {
   const [exportedBlob, setExportedBlob] = useState<Blob | null>(null);
   const [exportedUrl, setExportedUrl] = useState<string>("");
 
-  const [caps, setCaps] = useState(() => resolveSupportedVideoMimeTypes());
+  const [caps, setCaps] = useState(() => ({
+    mp4: false,
+    webm: true,
+    preferredMime: "video/webm",
+  }));
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const scrubberRef = useRef<HTMLDivElement | null>(null);

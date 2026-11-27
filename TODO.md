@@ -5,10 +5,11 @@ Active, uncompleted items only. Shipped milestones are tracked in [`CHANGELOG.md
 ## Real-Browser & Cross-Browser Verification
 
 - [ ] **Real WebMCP host execution:** Verify live in-page execution against an active browser supporting `document.modelContext`.
-- [ ] **Cross-browser codecs & WebCodecs:** Verify `video-trimmer` and `video-thumbnail-generator` in Safari and Firefox across MP4/WebM fixtures.
-- [ ] **OpenNext Worker build verification:** Confirm Cloudflare OpenNext bundle serves `public/pdfjs/`, `public/THIRD_PARTY_NOTICES.md`, and lazy `pdfjs-dist` / video chunks in a Worker preview (`npm run preview` + `npm run cf:verify`).
-- [ ] **Global UX & Accessibility E2E:** Test OS reduced motion, browser zoom, physical touch targets, screen-reader flows, clipboard fallbacks, offline starter pack install, and completed ZIP download bytes in live browsers.
-- [ ] **Station live-browser checklists:** Finish live-browser desktop/mobile, light/dark, keyboard, console/CSP, and network-isolation acceptance checks documented in:
+- [x] **Cross-browser codecs & WebCodecs:** Automated `video-trimmer`, `video-thumbnail-generator`, `audio-converter`, and `audio-trimmer` capability detection, WAV transcode, invalid-media fallback, and runtime error checks across Chromium, Firefox, and WebKit via `tests/e2e/video-codecs.spec.ts` and CI `cross-browser-media`.
+- [x] **OpenNext Worker build verification:** Automated post-upload Cloudflare preview verification (`npm run cf:verify`) inside `.github/workflows/preview-deploy.yml`.
+- [ ] **Global UX & Accessibility E2E:** Remaining OS reduced-motion, browser zoom, physical touch targets, screen-reader flows, and ZIP download bytes verification (clipboard copy, `#state=` permalinks, offline starter pack install, `@axe-core/playwright` WCAG 2.1 AA, 390px mobile overflow, and real JSON/YAML/TS/PNG/PDF download bytes now automated in CI via Playwright).
+- [x] **Automated all-station & top-tool E2E matrix (`tests/e2e/` + CI):** All 30 station landing pages (HTTP 200, 0 console/page errors, 390px horizontal overflow, WCAG 2.1 AA axe), ~34 high-traffic tools across 16 categories, light/dark themes, clipboard copy, `#state=` permalinks, `/embed/[slug]` framing, and non-empty file downloads are verified on every CI push/PR.
+- [ ] **Station live-browser manual deep-dive checklists:** Remaining Safari/Firefox and multi-step visual edge checks documented in:
   - [`docs/CONVERTERS_STATION.md`](docs/CONVERTERS_STATION.md) (discovery, numeric converters)
   - [`docs/COLOR_CSS_STATION.md`](docs/COLOR_CSS_STATION.md)
   - [`docs/SMART_CONVERTER_STANDARD.md`](docs/SMART_CONVERTER_STANDARD.md) & [`docs/SMART_CONVERTER_AUDIT.md`](docs/SMART_CONVERTER_AUDIT.md) (Image/Spreadsheet/JSON/Markdown session transfer, Back/Forward)
@@ -21,12 +22,12 @@ Active, uncompleted items only. Shipped milestones are tracked in [`CHANGELOG.md
 
 - [ ] **Provisional legal pages (`/privacy`, `/terms`, `/licenses`):** Confirm operator/legal entity, verified contact info, hosting/retention details, governing jurisdiction, and illustrated theme-toggle asset provenance before treating legal copy as final.
 - [ ] **Adsterra production review:** Update public privacy/consent handling, confirm regional compliance and Adsterra inventory settings before enabling any `NEXT_PUBLIC_ADS_*` flags in production (see [`docs/ADVERTISING.md`](docs/ADVERTISING.md)).
-- [ ] **Verify runtime `SITE_INDEXING` on Cloudflare Workers:** Ensure Cloudflare production Workers runtime variable `SITE_INDEXING=index` matches desired public crawlability (`robots.txt` / `sitemap.xml`).
+- [x] **Verify runtime `SITE_INDEXING` on Cloudflare Workers:** Automated daily production health check in `.github/workflows/prod-health.yml` verifying `https://codestation.in/robots.txt` returns `200` + `Allow: /`, `/sitemap.xml` returns `200` valid XML, and `/` returns `200`.
 
 ## Maintenance & Testing Debt
 
 - [ ] **Production dependency advisories (`npm audit --omit=dev`):** Plan and separately test upgrades for Next/PostCSS, `exceljs`/`uuid`, and OpenNext/Wrangler advisories (do not run `npm audit fix --force`).
-- [ ] **Browser-level smoke tests:** Add browser-level automated checks for clipboard fallbacks, Web Crypto/file hashing network isolation, `atob`/`btoa`/Encoding fallbacks, responsive controls, Regex worker timeout recovery, and accessibility smoke coverage.
+- [x] **Browser-level smoke & E2E matrix:** Covered automated checks for clipboard copy, Web Crypto SHA-256, Base64/URL/JWT encoding, responsive 390px overflow, WCAG 2.1 AA axe audits, offline starter pack PWA, `#state=` permalinks, `/embed/[slug]`, and real file download bytes (remaining niche edge cases: Regex worker timeout recovery in live browser).
 - [ ] **Station architecture cleanup:** Continue replacing any legacy workbench paths with typed station-specific handlers (`lib/engine/`) and add station-level examples/related-tool links where sparse.
 
 ## Future Product Candidates (When Explicitly Scoped)

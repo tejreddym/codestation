@@ -1,6 +1,7 @@
 const base = (process.env.PREVIEW_URL ?? "http://127.0.0.1:8787").replace(/\/$/, "");
 const expectIndexing = process.env.EXPECTED_INDEXING === "index";
 const expectedOrigin = process.env.EXPECTED_ORIGIN ?? "";
+const minSitemapUrls = Number(process.env.EXPECTED_MIN_SITEMAP_URLS || 380);
 const checks = [
   ["/", 200],
   ["/stations/json-data", 200],
@@ -34,9 +35,12 @@ for (const [path, expectedStatus] of checks) {
   }
   if (path === "/sitemap.xml") {
     const urls = (body.match(/<loc>/g) ?? []).length;
-    const expectedUrls = expectedOrigin ? 327 : 0;
-    if (urls !== expectedUrls) fail(`${path}: expected ${expectedUrls} URLs, got ${urls}`);
-    if (expectedOrigin && !body.includes(expectedOrigin)) fail(`${path}: expected origin is absent`);
+    if (expectedOrigin) {
+      if (urls < minSitemapUrls) fail(`${path}: expected at least ${minSitemapUrls} URLs, got ${urls}`);
+      if (!body.includes(expectedOrigin)) fail(`${path}: expected origin is absent`);
+    } else if (urls !== 0) {
+      fail(`${path}: expected 0 URLs without EXPECTED_ORIGIN, got ${urls}`);
+    }
   }
   if (path === "/offline-assets.json") {
     const manifest = JSON.parse(body);

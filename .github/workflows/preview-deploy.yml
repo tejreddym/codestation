@@ -47,6 +47,7 @@ jobs:
         run: npm ci
 
       - name: Build OpenNext bundle and upload preview version
+        id: upload_preview
         if: steps.check_secrets.outputs.enabled == 'true'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -55,4 +56,18 @@ jobs:
           SITE_INDEXING: ''
         run: |
           npx @opennextjs/cloudflare build
-          npx wrangler versions upload --preview-alias "pr-${{ github.event.pull_request.number }}"
+          npx wrangler versions upload --preview-alias "pr-${{ github.event.pull_request.number }}" 2>&1 | tee wrangler-upload.log
+          PREVIEW_URL=$(grep -oE 'https://[a-zA-Z0-9.-]+\.workers\.dev' wrangler-upload.log | head -n 1 || true)
+          if [ -z "$PREVIEW_URL" ]; then
+            echo "Could not parse Wrangler preview URL from upload output."
+            exit 1
+          fi
+          echo "preview_url=$PREVIEW_URL" >> "$GITHUB_OUTPUT"
+
+      - name: Verify Cloudflare preview Worker runtime & headers
+        if: steps.check_secrets.outputs.enabled == 'true'
+        env:
+          PREVIEW_URL: ${{ steps.upload_preview.outputs.preview_url }}
+          EXPECTED_INDEXING: ''
+          EXPECTED_ORIGIN: https://codestation.in
+        run: npm run cf:verify

@@ -1,0 +1,67 @@
+name: Production Health & Indexing Check
+
+on:
+  schedule:
+    - cron: "0 5 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  prod-health:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Verify codestation.in homepage, robots.txt, and sitemap.xml
+        run: |
+          node - <<'EOF'
+          const ORIGIN = "https://codestation.in";
+
+          async function checkHome() {
+            const res = await fetch(`${ORIGIN}/`, { redirect: "follow" });
+            if (res.status !== 200) {
+              throw new Error(`Homepage returned HTTP ${res.status}, expected 200`);
+            }
+            const html = await res.text();
+            if (!html.includes("Code Station")) {
+              throw new Error("Homepage response missing expected 'Code Station' marker");
+            }
+            console.log(`PASS GET ${ORIGIN}/ -> 200`);
+          }
+
+          async function checkRobots() {
+            const res = await fetch(`${ORIGIN}/robots.txt`);
+            if (res.status !== 200) {
+              throw new Error(`/robots.txt returned HTTP ${res.status}, expected 200`);
+            }
+            const body = await res.text();
+            if (!body.includes("Allow: /")) {
+              throw new Error(`/robots.txt is missing 'Allow: /' (SITE_INDEXING regression?):\n${body}`);
+            }
+            if (body.includes("Disallow: /")) {
+              throw new Error(`/robots.txt unexpectedly contains 'Disallow: /':\n${body}`);
+            }
+            console.log(`PASS GET ${ORIGIN}/robots.txt -> 200 (Allow: /)`);
+          }
+
+          async function checkSitemap() {
+            const res = await fetch(`${ORIGIN}/sitemap.xml`);
+            if (res.status !== 200) {
+              throw new Error(`/sitemap.xml returned HTTP ${res.status}, expected 200`);
+            }
+            const xml = await res.text();
+            if (!xml.includes("<urlset") || !xml.includes("<loc>")) {
+              throw new Error("/sitemap.xml does not look like a valid XML sitemap");
+            }
+            const locs = xml.match(/<loc>[^<]+<\/loc>/g) ?? [];
+            if (locs.length < 300) {
+              throw new Error(`/sitemap.xml returned unexpectedly few URLs: ${locs.length}`);
+            }
+            console.log(`PASS GET ${ORIGIN}/sitemap.xml -> 200 (${locs.length} URLs)`);
+          }
+
+          await checkHome();
+          await checkRobots();
+          await checkSitemap();
+          EOF

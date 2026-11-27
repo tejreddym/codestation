@@ -4,6 +4,9 @@ on:
   push:
     branches: [main]
   pull_request:
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -52,6 +55,10 @@ jobs:
     needs: verify
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1/2, 2/2]
     steps:
       - name: Check out source
         uses: actions/checkout@v4
@@ -71,13 +78,69 @@ jobs:
       - name: Production build
         run: npm run build
 
-      - name: Run Playwright smoke & accessibility tests
-        run: npm run test:e2e
+      - name: Run Playwright E2E matrix (shard ${{ matrix.shard }})
+        run: npx playwright test --shard=${{ matrix.shard }}
 
       - name: Upload Playwright report on failure
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-report
+          name: playwright-report-shard-${{ strategy.job-index }}
+          path: playwright-report/
+          retention-days: 14
+
+  cross-browser-media:
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine whether media/codec tests should run
+        id: media_scope
+        run: |
+          if [ "${{ github.event_name }}" = "push" ] || [ "${{ github.event_name }}" = "schedule" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          CHANGED=$(git diff --name-only "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}" || true)
+          if echo "$CHANGED" | grep -qE '(video|audio|Video|Audio|playwright\.config|video-codecs\.spec|\.github/workflows/ci\.yml)'; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            echo "No media/video/audio files changed on PR; skipping cross-browser media matrix."
+          fi
+
+      - name: Set up Node.js
+        if: steps.media_scope.outputs.run == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install locked dependencies
+        if: steps.media_scope.outputs.run == 'true'
+        run: npm ci
+
+      - name: Install Playwright Firefox and WebKit
+        if: steps.media_scope.outputs.run == 'true'
+        run: npx playwright install firefox webkit --with-deps
+
+      - name: Production build
+        if: steps.media_scope.outputs.run == 'true'
+        run: npm run build
+
+      - name: Run cross-browser video & audio codec suite (Firefox + WebKit)
+        if: steps.media_scope.outputs.run == 'true'
+        run: npx playwright test tests/e2e/video-codecs.spec.ts --project=firefox --project=webkit
+
+      - name: Upload media Playwright report on failure
+        if: failure() && steps.media_scope.outputs.run == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-media-report
           path: playwright-report/
           retention-days: 14
