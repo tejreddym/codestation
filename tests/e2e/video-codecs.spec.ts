@@ -6,10 +6,10 @@ import {
   trackRuntimeErrors,
 } from "./helpers";
 
-/** Builds a valid minimal 0.1s 8kHz mono 16-bit PCM WAV buffer in memory. */
+/** Builds a valid minimal 0.1s 44.1kHz mono 16-bit PCM WAV buffer in memory. */
 function createMinimalWavBuffer(): Buffer {
-  const sampleRate = 8000;
-  const numSamples = 800; // 0.1s
+  const sampleRate = 44100;
+  const numSamples = 4410; // 0.1s
   const dataSize = numSamples * 2;
   const buffer = Buffer.alloc(44 + dataSize);
 

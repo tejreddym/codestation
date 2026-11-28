@@ -42,10 +42,7 @@ export default function AudioTrimmerTool() {
     setAudioError(null);
     setAudioFile(file);
     try {
-      const context = audioContextRef.current ?? createAudioContext();
-      audioContextRef.current = context;
-      await resumeAudioContext(context);
-      const decoded = await decodeAudioFile(file, context);
+      const decoded = await decodeAudioFile(file);
       setAudioBuffer(decoded);
       setAudioDuration(decoded.duration);
       setTrimStart(0);
@@ -88,9 +85,19 @@ export default function AudioTrimmerTool() {
     }
   }, [waveformPeaks, trimStart, trimEnd, audioDuration]);
 
-  function toggleAudioPlayback() {
-    if (!audioBuffer || !audioContextRef.current) return;
-    const ctx = audioContextRef.current;
+  useEffect(() => {
+    return () => {
+      if (activeSourceRef.current) {
+        try {
+          activeSourceRef.current.stop();
+        } catch {}
+      }
+      void audioContextRef.current?.close().catch(() => undefined);
+    };
+  }, []);
+
+  async function toggleAudioPlayback() {
+    if (!audioBuffer) return;
 
     if (isPlayingAudio) {
       if (activeSourceRef.current) {
@@ -103,6 +110,9 @@ export default function AudioTrimmerTool() {
     }
 
     try {
+      const ctx = audioContextRef.current ?? createAudioContext();
+      audioContextRef.current = ctx;
+      await resumeAudioContext(ctx);
       const source = ctx.createBufferSource();
       source.buffer = audioBuffer;
       source.connect(ctx.destination);
@@ -207,7 +217,7 @@ export default function AudioTrimmerTool() {
               </div>
 
               <div className={ui.actions}>
-                <Button onClick={toggleAudioPlayback}>{isPlayingAudio ? "Stop Preview" : "Play Selection"}</Button>
+                <Button onClick={() => void toggleAudioPlayback()}>{isPlayingAudio ? "Stop Preview" : "Play Selection"}</Button>
                 <Button variant="primary" onClick={downloadTrimmedWav}>Download Trimmed WAV</Button>
               </div>
             </>

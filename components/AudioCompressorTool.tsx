@@ -3,13 +3,11 @@
 import { useEffect, useRef, useState } from "react";
 import { getAudioDefinition } from "@/config/audio-tools";
 import {
-  createAudioContext,
   decodeAudioFile,
   decodeFailureMessage,
   audioFileRejection,
   isAudioFile,
   readChannels,
-  resumeAudioContext,
 } from "@/lib/tools/audio/decode";
 import {
   COMPRESSOR_RULES,
@@ -133,12 +131,10 @@ export default function AudioCompressorTool() {
     }
 
     const token = ++decodeToken.current;
-    const context = createAudioContext();
     setBusy("decode");
     setNotice("Decoding the audio locally…");
     try {
-      await resumeAudioContext(context);
-      const buffer = await decodeAudioFile(file, context);
+      const buffer = await decodeAudioFile(file);
       if (!mounted.current || token !== decodeToken.current) return;
       setSource({ name: file.name, size: file.size, buffer });
       setProgress(1);
@@ -150,7 +146,6 @@ export default function AudioCompressorTool() {
       setNotice("No audio was loaded.");
       setDropKey(key => key + 1);
     } finally {
-      await context.close().catch(() => undefined);
       if (mounted.current && token === decodeToken.current) setBusy(null);
     }
   }

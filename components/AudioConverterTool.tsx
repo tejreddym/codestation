@@ -4,11 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import { getAudioDefinition } from "@/config/audio-tools";
 import {
   audioFileRejection,
-  createAudioContext,
   decodeAudioFile,
   decodeFailureMessage,
   isAudioFile,
-  resumeAudioContext,
 } from "@/lib/tools/audio/decode";
 import {
   CONVERTER_BITRATES,
@@ -124,12 +122,10 @@ export default function AudioConverterTool() {
     }
 
     const token = ++decodeToken.current;
-    const context = createAudioContext();
     setBusy(true);
     setNotice("Decoding the audio locally…");
     try {
-      await resumeAudioContext(context);
-      const buffer = await decodeAudioFile(file, context);
+      const buffer = await decodeAudioFile(file);
       if (!mounted.current || token !== decodeToken.current) return;
       setSource({ name: file.name, size: file.size, buffer });
       setNotice("Audio ready. Choose the output format, then convert.");
@@ -140,7 +136,6 @@ export default function AudioConverterTool() {
       setNotice("No audio was loaded.");
       setDropKey(key => key + 1);
     } finally {
-      await context.close().catch(() => undefined);
       if (mounted.current && token === decodeToken.current) setBusy(false);
     }
   }

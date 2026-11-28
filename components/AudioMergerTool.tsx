@@ -4,11 +4,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { getAudioDefinition } from "@/config/audio-tools";
 import {
   audioFileRejection,
-  createAudioContext,
   decodeAudioFile,
   decodeFailureMessage,
   isAudioFile,
-  resumeAudioContext,
 } from "@/lib/tools/audio/decode";
 import {
   MERGER_MAX_DURATION_SECONDS,
@@ -128,16 +126,14 @@ export default function AudioMergerTool() {
     }
 
     const token = ++decodeToken.current;
-    const context = createAudioContext();
     setBusy("decode");
     setNotice(`Decoding ${list.length} audio file${list.length === 1 ? "" : "s"} locally…`);
     const decoded: SourceItem[] = [];
     let failed = "";
     try {
-      await resumeAudioContext(context);
       for (const file of list) {
         try {
-          const buffer = await decodeAudioFile(file, context);
+          const buffer = await decodeAudioFile(file);
           decoded.push({
             id: `${file.name}-${file.size}-${file.lastModified}-${counter.current++}`,
             name: file.name,
@@ -165,7 +161,6 @@ export default function AudioMergerTool() {
         setNotice("No audio files were added.");
       }
     } finally {
-      await context.close().catch(() => undefined);
       if (mounted.current && token === decodeToken.current) {
         setBusy(null);
         setDropKey(key => key + 1);
