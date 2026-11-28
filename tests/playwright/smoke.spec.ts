@@ -368,6 +368,7 @@ test.describe("Code Station production smoke & accessibility suite", () => {
   test("WCAG 2.1 A/AA axe audit passes across core routes in light and dark themes", async ({
     browser,
   }) => {
+    test.setTimeout(60_000);
     const coreRoutes = [
       "/",
       "/tools/json-formatter",

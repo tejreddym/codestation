@@ -3,12 +3,14 @@ import type {
   LicensePlan,
   LicensePlanType,
   LicenseRecord,
+  OrderProvisioningRecord,
 } from "./types";
 import { INDIVIDUAL_SEAT_LIMIT } from "./pricing";
 import { hashLicenseKey } from "./hash";
 
 // In-memory fallback map for local development, builds, and unit testing
 const localFallbackStore = new Map<string, LicenseRecord>();
+const localOrderFallbackStore = new Map<string, OrderProvisioningRecord>();
 
 function getKVNamespace(): any {
   try {
@@ -381,9 +383,37 @@ export async function resetLicenseDevices(rawKey: string): Promise<boolean> {
   return res.found && res.revoked;
 }
 
+export async function getOrderProvisioning(
+  orderId: string
+): Promise<OrderProvisioningRecord | null> {
+  const cleanOrderId = orderId.trim();
+  if (!cleanOrderId) return null;
+  const kvKey = `ord_${cleanOrderId}`;
+  const kv = getKVNamespace();
+  if (kv && typeof kv.get === "function") {
+    const data = await kv.get(kvKey, "json");
+    return (data as OrderProvisioningRecord) ?? null;
+  }
+  return localOrderFallbackStore.get(kvKey) ?? null;
+}
+
+export async function saveOrderProvisioning(
+  record: OrderProvisioningRecord
+): Promise<OrderProvisioningRecord> {
+  const kvKey = `ord_${record.orderId}`;
+  const kv = getKVNamespace();
+  if (kv && typeof kv.put === "function") {
+    await kv.put(kvKey, JSON.stringify(record));
+  } else {
+    localOrderFallbackStore.set(kvKey, record);
+  }
+  return record;
+}
+
 /**
  * Clears local test store (used in unit tests)
  */
 export function clearTestStore(): void {
   localFallbackStore.clear();
+  localOrderFallbackStore.clear();
 }

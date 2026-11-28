@@ -39,6 +39,9 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Verify MCP docs catalog
+        run: node scripts/generate-mcp-docs.mjs --check
+
       - name: UI token audit
         run: npm run audit:ui
 

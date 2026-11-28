@@ -1,4 +1,5 @@
 import * as fs from "node:fs";
+import * as path from "node:path";
 import { decodeJwt, formatJson, jsonDiff, testJsonPath } from "../lib/tools/index";
 import { parseCron } from "../lib/tools/cron/parser";
 import { explainCron } from "../lib/tools/cron/explain";
@@ -10,12 +11,112 @@ import { curlToCode, type CurlTargetLanguage } from "../lib/tools/curl-to-code";
 import { auditEnv, formatEnvAuditReport } from "../lib/tools/env-audit";
 import { generateMockDataset, type MockTemplate, type SqlDialect } from "../lib/tools/mock-data";
 import { parseAndResolveGitConflicts, formatConflictReport, type ConflictStrategy } from "../lib/tools/git-conflict";
-import { resolveLicense } from "./config";
+import {
+  OFFLINE_GRACE_WINDOW_MS,
+  clearCachedLicense,
+  getLicenseCacheFilePath,
+  getProUpgradeNotice,
+  getStableMachineFingerprint,
+  readCachedLicense,
+  resolveLicense,
+  verifyLicenseOnline,
+  type LicenseCacheOptions,
+  type OnlineVerifyOptions,
+} from "./config";
+import {
+  describeBridgeTool,
+  executeBridgeTool,
+  getNodePureToolCount,
+  getWiredNodeFileTools,
+  listBridgeTools,
+  resolveBridgeToolTier,
+  type BridgeListFilter,
+} from "./registry-bridge";
 import { SHARED_TOOLS } from "../config/shared-registry";
 
 export interface CliExecutionResult {
   handled: boolean;
   exitCode: number;
+}
+
+export interface CliIoContext {
+  stdout?: (chunk: string) => void;
+  stderr?: (chunk: string) => void;
+  stdinText?: () => Promise<string>;
+  isStdinTTY?: boolean;
+  cacheOptions?: LicenseCacheOptions;
+  verifyOptions?: OnlineVerifyOptions;
+}
+
+const DUAL_MODE_FILE_SLUGS = new Set([
+  "csv-to-json",
+  "json-to-csv",
+  "gzip-compressor",
+  "gzip-decompressor",
+]);
+
+interface ParsedCliArgs {
+  positional: string[];
+  values: Record<string, string>;
+  multiValues: Record<string, string[]>;
+  flags: Set<string>;
+}
+
+function parseCliFlags(
+  args: string[],
+  valueFlags: ReadonlySet<string>,
+  multiValueFlags: ReadonlySet<string> = new Set(),
+): ParsedCliArgs {
+  const positional: string[] = [];
+  const values: Record<string, string> = {};
+  const multiValues: Record<string, string[]> = {};
+  const flags = new Set<string>();
+
+  for (let i = 0; i < args.length; i += 1) {
+    const arg = args[i];
+    if (arg === "--") {
+      positional.push(...args.slice(i + 1));
+      break;
+    }
+    if (arg.startsWith("--")) {
+      const eqIdx = arg.indexOf("=");
+      if (eqIdx !== -1) {
+        const key = arg.slice(0, eqIdx);
+        const val = arg.slice(eqIdx + 1);
+        flags.add(key);
+        if (multiValueFlags.has(key)) {
+          (multiValues[key] ??= []).push(val);
+        }
+        values[key] = val;
+        continue;
+      }
+      flags.add(arg);
+      if ((valueFlags.has(arg) || multiValueFlags.has(arg)) && i + 1 < args.length) {
+        const val = args[i + 1];
+        if (multiValueFlags.has(arg)) {
+          (multiValues[arg] ??= []).push(val);
+        }
+        values[arg] = val;
+        i += 1;
+      }
+      continue;
+    }
+    if (arg.startsWith("-") && arg.length === 2) {
+      flags.add(arg);
+      if ((valueFlags.has(arg) || multiValueFlags.has(arg)) && i + 1 < args.length) {
+        const val = args[i + 1];
+        if (multiValueFlags.has(arg)) {
+          (multiValues[arg] ??= []).push(val);
+        }
+        values[arg] = val;
+        i += 1;
+      }
+      continue;
+    }
+    positional.push(arg);
+  }
+
+  return { positional, values, multiValues, flags };
 }
 
 function stripAnsi(text: string): string {
@@ -47,31 +148,141 @@ async function readInput(arg?: string): Promise<string> {
   return "";
 }
 
-export async function handleCliSubcommand(command: string, args: string[]): Promise<CliExecutionResult> {
+async function readRawStdin(io?: CliIoContext): Promise<string> {
+  if (io?.stdinText) {
+    return io.stdinText();
+  }
+  const isTTY = io?.isStdinTTY ?? Boolean(process.stdin.isTTY);
+  if (isTTY) return "";
+  return new Promise((resolve, reject) => {
+    let data = "";
+    process.stdin.setEncoding("utf-8");
+    process.stdin.on("data", (chunk) => {
+      data += chunk;
+    });
+    process.stdin.on("end", () => resolve(data));
+    process.stdin.on("error", reject);
+  });
+}
+
+export async function handleCliSubcommand(
+  command: string,
+  args: string[],
+  io?: CliIoContext
+): Promise<CliExecutionResult> {
   const isNoColor = args.includes("--no-color") || process.env.NO_COLOR !== undefined;
   const isJson = args.includes("--json");
   const isHelp = args.includes("--help") || args.includes("-h");
 
+  const writeOut = io?.stdout ?? ((text: string) => { process.stdout.write(text); });
+  const writeErr = io?.stderr ?? ((text: string) => { process.stderr.write(text); });
+
   const out = (text: string) => {
-    process.stdout.write(isNoColor ? stripAnsi(text) : text);
+    writeOut(isNoColor ? stripAnsi(text) : text);
   };
 
   const err = (text: string) => {
-    process.stderr.write(isNoColor ? stripAnsi(text) : text);
+    writeErr(isNoColor ? stripAnsi(text) : text);
   };
 
   const cmd = command.toLowerCase();
 
   switch (cmd) {
     // -------------------------------------------------------------
+    // LOGIN (Verify & Cache Pro/Team License Key)
+    // -------------------------------------------------------------
+    case "login": {
+      if (isHelp) {
+        out("Usage: codestation login <license_key> [--json] [--no-color]\nActivate Code Station Pro / Team locally with 14-day offline grace caching.\n");
+        return { handled: true, exitCode: 0 };
+      }
+      const parsed = parseCliFlags(args, new Set(["--key"]));
+      const rawKey = parsed.values["--key"] ?? parsed.positional[0];
+      if (!rawKey || !rawKey.trim()) {
+        err("Error: License key is required. Usage: codestation login <CS-PRO-YOURKEY>\n");
+        return { handled: true, exitCode: 1 };
+      }
+
+      const verifyRes = await verifyLicenseOnline(rawKey.trim(), {
+        ...io?.cacheOptions,
+        ...io?.verifyOptions,
+      });
+
+      if (!verifyRes.valid) {
+        err(`Error: ${verifyRes.message}\n`);
+        return { handled: true, exitCode: 1 };
+      }
+
+      const cacheFile = getLicenseCacheFilePath(io?.cacheOptions?.cacheFile);
+      const fingerprint = io?.cacheOptions?.fingerprint ?? getStableMachineFingerprint();
+      if (isJson) {
+        out(
+          JSON.stringify(
+            {
+              activated: true,
+              tier: "pro",
+              planType: verifyRes.planType ?? "individual",
+              orgName: verifyRes.orgName,
+              offlineFallback: Boolean(verifyRes.offlineFallback),
+              offlineGraceDays: 14,
+              cacheFile,
+              machineFingerprint: fingerprint,
+              message: verifyRes.message,
+            },
+            null,
+            2
+          ) + "\n"
+        );
+      } else {
+        out("\n✔ Code Station Pro license activated\n");
+        out(`Status:      ${verifyRes.message}\n`);
+        out(`Plan:        ${verifyRes.planType ?? "individual"}${verifyRes.orgName ? ` (${verifyRes.orgName})` : ""}\n`);
+        out(`Offline:     14-day grace window cached at ${cacheFile}\n`);
+        out(`Fingerprint: ${fingerprint.slice(0, 16)}...\n\n`);
+      }
+      return { handled: true, exitCode: 0 };
+    }
+
+    // -------------------------------------------------------------
+    // LOGOUT (Clear Cached License)
+    // -------------------------------------------------------------
+    case "logout": {
+      if (isHelp) {
+        out("Usage: codestation logout [--json]\nRemove locally cached Code Station Pro license.\n");
+        return { handled: true, exitCode: 0 };
+      }
+      const cacheFile = getLicenseCacheFilePath(io?.cacheOptions?.cacheFile);
+      const removed = clearCachedLicense(io?.cacheOptions);
+      if (isJson) {
+        out(JSON.stringify({ loggedOut: true, cacheCleared: removed, cacheFile }, null, 2) + "\n");
+      } else if (removed) {
+        out(`✔ Logged out. Removed cached license (${cacheFile}).\n`);
+      } else {
+        out("No cached license found. Running in Free Tier.\n");
+      }
+      return { handled: true, exitCode: 0 };
+    }
+
+    // -------------------------------------------------------------
     // STATUS
     // -------------------------------------------------------------
     case "status": {
       if (isHelp) {
-        out("Usage: codestation status [--json] [--no-color]\nView Code Station license tier, active tools, and local MCP readiness.\n");
+        out("Usage: codestation status [--key <key>] [--json] [--no-color]\nView Code Station license tier, offline grace cache, machine fingerprint, and active tool counts.\n");
         return { handled: true, exitCode: 0 };
       }
-      const license = resolveLicense();
+      const parsed = parseCliFlags(args, new Set(["--key"]));
+      const license = resolveLicense(parsed.values["--key"], io?.cacheOptions);
+      const cached = readCachedLicense(io?.cacheOptions);
+      const now = io?.cacheOptions?.now ?? Date.now();
+      const cacheFile = getLicenseCacheFilePath(io?.cacheOptions?.cacheFile);
+      const nodePureCount = getNodePureToolCount();
+      const nodeFileCount = getWiredNodeFileTools().length;
+      const graceRemainingMs = cached
+        ? Math.max(0, cached.verifiedAt + OFFLINE_GRACE_WINDOW_MS - now)
+        : 0;
+      const graceRemainingDays = Number((graceRemainingMs / (24 * 60 * 60 * 1000)).toFixed(1));
+
       if (isJson) {
         out(
           JSON.stringify(
@@ -81,9 +292,19 @@ export async function handleCliSubcommand(command: string, args: string[]): Prom
               license: {
                 tier: license.tier,
                 isPro: license.isPro,
-                keyConfigured: Boolean(license.licenseKey),
+                source: license.source,
+                planType: license.planType,
+                orgName: license.orgName,
+                keyPrefix: license.licenseKey ? `${license.licenseKey.slice(0, 10)}...` : null,
+                machineFingerprint: license.machineFingerprint,
+                cacheFile,
+                offlineGraceRemainingDays: cached ? graceRemainingDays : 0,
               },
-              toolCount: SHARED_TOOLS.length,
+              toolCounts: {
+                nodePure: nodePureCount,
+                nodeFileWired: nodeFileCount,
+                sharedRegistry: SHARED_TOOLS.length,
+              },
               privacy: "local-only",
               mcpReady: true,
             },
@@ -94,11 +315,275 @@ export async function handleCliSubcommand(command: string, args: string[]): Prom
       } else {
         out("\n=== CODE STATION STATUS ===\n");
         out("Version:     1.3.0\n");
-        out(`License:     ${license.isPro ? "PRO TIER (Active)" : "FREE TIER (Pro key not active)"}\n`);
-        out(`Tools:       ${SHARED_TOOLS.length} registered tools across Web, CLI & MCP\n`);
+        out(
+          `License:     ${
+            license.isPro
+              ? `PRO TIER (Active via ${license.source}${license.planType === "team" ? " · Team" : ""})`
+              : "FREE TIER (15 core tools + 3 discovery tools)"
+          }\n`
+        );
+        if (license.licenseKey) {
+          out(`Key Prefix:  ${license.licenseKey.slice(0, 10)}...\n`);
+        }
+        if (cached) {
+          out(`Grace Cache: Valid (${graceRemainingDays} / 14 days remaining offline)\n`);
+        }
+        if (license.machineFingerprint) {
+          out(`Machine FP:  ${license.machineFingerprint.slice(0, 16)}...\n`);
+        }
+        out(`Tools:       ${nodePureCount} node-pure + ${nodeFileCount} local file tools (${SHARED_TOOLS.length} shared shortcuts)\n`);
         out("MCP Server:  Ready (Stdio transport)\n");
-        out("Privacy:     Zero telemetry, memory-only execution\n\n");
+        out("Privacy:     Zero telemetry, local execution only\n\n");
       }
+      return { handled: true, exitCode: 0 };
+    }
+
+    // -------------------------------------------------------------
+    // LIST (Browse Registered Tools)
+    // -------------------------------------------------------------
+    case "list": {
+      if (isHelp) {
+        out("Usage: codestation list [--station <name>] [--tier free|pro|all] [--search <q>] [--runtime node-pure|node-file|browser-only|all] [--limit <n>] [--json]\n");
+        return { handled: true, exitCode: 0 };
+      }
+      const parsed = parseCliFlags(
+        args,
+        new Set(["--station", "-s", "--tier", "--search", "--query", "-q", "--runtime", "--limit", "-n"])
+      );
+      const tierRaw = (parsed.values["--tier"] ?? "all").toLowerCase();
+      if (!["all", "free", "pro"].includes(tierRaw)) {
+        err(`Error: Invalid --tier "${tierRaw}". Expected free, pro, or all.\n`);
+        return { handled: true, exitCode: 1 };
+      }
+      const runtimeRaw = (parsed.values["--runtime"] ?? "all").toLowerCase();
+      if (!["all", "node-pure", "node-file", "browser-only"].includes(runtimeRaw)) {
+        err(`Error: Invalid --runtime "${runtimeRaw}". Expected node-pure, node-file, browser-only, or all.\n`);
+        return { handled: true, exitCode: 1 };
+      }
+
+      const limitRaw = parsed.values["--limit"] ?? parsed.values["-n"];
+      const filter: BridgeListFilter = {
+        station: parsed.values["--station"] ?? parsed.values["-s"] ?? parsed.positional[0],
+        tier: tierRaw as "all" | "free" | "pro",
+        query: parsed.values["--search"] ?? parsed.values["--query"] ?? parsed.values["-q"],
+        runtime: runtimeRaw as BridgeListFilter["runtime"],
+        limit: limitRaw ? Number(limitRaw) : 50,
+      };
+
+      const res = listBridgeTools(filter);
+      if (isJson) {
+        out(JSON.stringify(res, null, 2) + "\n");
+      } else {
+        out(
+          `\nCode Station Tools — showing ${res.returned} of ${res.totalMatching} matching (${res.totalRegistered} total)\n`
+        );
+        out(
+          `Runtime: node-pure=${res.countsByRuntime["node-pure"]} · node-file=${res.countsByRuntime["node-file"]} · browser-only=${res.countsByRuntime["browser-only"]}\n\n`
+        );
+        for (const t of res.tools) {
+          const tierTag = t.tier === "free" ? "[FREE]" : "[PRO] ";
+          const rtTag = t.runtimeCompatibility === "node-file"
+            ? (t.nodeFileSupported ? "node-file" : "browser  ")
+            : t.runtimeCompatibility;
+          out(`  ${tierTag} ${t.slug.padEnd(32)} ${rtTag.padEnd(13)} ${t.station.padEnd(18)} ${t.name}\n`);
+        }
+        out("\nRun: codestation info <slug> | codestation run <slug> --input ...\n\n");
+      }
+      return { handled: true, exitCode: 0 };
+    }
+
+    // -------------------------------------------------------------
+    // INFO (Inspect Tool Metadata, Tier, Runtime & Options Schema)
+    // -------------------------------------------------------------
+    case "info": {
+      if (isHelp) {
+        out("Usage: codestation info <slug> [--json]\nShow description, tier, runtime compatibility, options schema, and examples.\n");
+        return { handled: true, exitCode: 0 };
+      }
+      const parsed = parseCliFlags(args, new Set());
+      const slug = parsed.positional[0];
+      if (!slug) {
+        err("Error: Tool slug is required. Usage: codestation info <slug>\n");
+        return { handled: true, exitCode: 1 };
+      }
+      const meta = describeBridgeTool(slug);
+      if (!meta) {
+        err(`Error: Unknown tool "${slug}". Run 'codestation list --search ${slug}' to find tools.\n`);
+        return { handled: true, exitCode: 1 };
+      }
+
+      if (isJson) {
+        out(JSON.stringify(meta, null, 2) + "\n");
+      } else {
+        const optionProps =
+          ((meta.inputSchema?.properties as Record<string, any> | undefined)?.options?.properties as
+            | Record<string, { type?: string; description?: string }>
+            | undefined) ?? {};
+        const optionEntries = Object.entries(optionProps);
+
+        out(`\n=== ${meta.name} (${meta.slug}) ===\n`);
+        out(`Tier:        ${meta.tier.toUpperCase()}\n`);
+        out(
+          `Runtime:     ${meta.runtimeCompatibility}${
+            meta.runtimeCompatibility === "node-file"
+              ? meta.nodeFileSupported
+                ? " (Node-native file support ready)"
+                : " (Browser-only fallback)"
+              : ""
+          }\n`
+        );
+        out(`Station:     ${meta.stationName} (${meta.stationId})\n`);
+        out(`MCP Tool:    ${meta.mcpName}\n`);
+        out(`Description: ${meta.description}\n`);
+        if (optionEntries.length > 0) {
+          out("\nOptions:\n");
+          for (const [k, v] of optionEntries) {
+            out(`  --options '{"${k}": ...}'  (${v?.type ?? "any"}) ${v?.description ?? ""}\n`);
+          }
+        }
+        if (meta.examples[0]) {
+          out(`\nExample:\n  codestation run ${meta.slug}`);
+          if (meta.examples[0].arguments.input) {
+            out(` --input ${JSON.stringify(meta.examples[0].arguments.input)}`);
+          }
+          if (meta.examples[0].arguments.options) {
+            out(` --options '${JSON.stringify(meta.examples[0].arguments.options)}'`);
+          }
+          out("\n");
+        }
+        out("\n");
+      }
+      return { handled: true, exitCode: 0 };
+    }
+
+    // -------------------------------------------------------------
+    // RUN (Pipeable Execution for Any Registered Node-Compatible Tool)
+    // -------------------------------------------------------------
+    case "run": {
+      if (isHelp) {
+        out("Usage: codestation run <slug> [--input <text>] [--in <file>] [--out <file>] [--options '<json>'] [--key <license_key>] [--json]\nSupports piped stdin: cat data.json | codestation run json-to-yaml\n");
+        return { handled: true, exitCode: 0 };
+      }
+
+      const parsed = parseCliFlags(
+        args,
+        new Set(["--input", "-i", "--out", "-o", "--options", "--key"]),
+        new Set(["--in"])
+      );
+      const slug = parsed.positional[0];
+      if (!slug) {
+        err("Error: Tool slug is required. Usage: codestation run <slug> [--input <text>]\n");
+        return { handled: true, exitCode: 1 };
+      }
+
+      const meta = describeBridgeTool(slug);
+      if (!meta) {
+        err(`Error: Tool "${slug}" is not registered in Code Station registry.\n`);
+        return { handled: true, exitCode: 1 };
+      }
+
+      const license = resolveLicense(parsed.values["--key"], io?.cacheOptions);
+      const requiredTier = resolveBridgeToolTier(meta.slug);
+      if (requiredTier === "pro" && !license.isPro) {
+        err(getProUpgradeNotice(meta.slug) + "\n");
+        return { handled: true, exitCode: 1 };
+      }
+
+      let toolOptions: Record<string, unknown> = {};
+      if (parsed.values["--options"]) {
+        try {
+          const decodedOpts = JSON.parse(parsed.values["--options"]);
+          if (!decodedOpts || typeof decodedOpts !== "object" || Array.isArray(decodedOpts)) {
+            err("Error: --options must be a JSON object.\n");
+            return { handled: true, exitCode: 1 };
+          }
+          toolOptions = decodedOpts as Record<string, unknown>;
+        } catch (e) {
+          err(`Error: Invalid JSON in --options: ${e instanceof Error ? e.message : String(e)}\n`);
+          return { handled: true, exitCode: 1 };
+        }
+      }
+
+      const inFiles = parsed.multiValues["--in"] ?? [];
+      const singleInFile = inFiles[0];
+      const outFile = parsed.values["--out"] ?? parsed.values["-o"];
+      let inputText = parsed.values["--input"] ?? parsed.values["-i"] ?? "";
+
+      const isFileRuntime =
+        meta.runtimeCompatibility === "node-file" ||
+        (DUAL_MODE_FILE_SLUGS.has(meta.slug) && inFiles.length > 0);
+
+      if (isFileRuntime) {
+        if (inFiles.length > 1 || ((meta.slug === "pdf-merge" || meta.slug === "zip-create" || meta.slug === "zip-creator") && inFiles.length > 0)) {
+          if (!toolOptions.inputPaths) {
+            toolOptions.inputPaths = inFiles.map((f) => path.resolve(f));
+          }
+        } else if (singleInFile && !toolOptions.inputPath) {
+          toolOptions.inputPath = path.resolve(singleInFile);
+        } else if (!inputText && parsed.positional[1]) {
+          const candidate = parsed.positional[1];
+          if (fs.existsSync(candidate) && fs.statSync(candidate).isFile()) {
+            toolOptions.inputPath = path.resolve(candidate);
+          } else {
+            inputText = candidate;
+          }
+        } else if (!inputText && !toolOptions.inputPath && !toolOptions.inputPaths && !toolOptions.inputBase64) {
+          const stdinRaw = await readRawStdin(io);
+          if (stdinRaw) {
+            inputText = stdinRaw.replace(/\r?\n$/, "");
+          }
+        }
+
+        if (outFile && !toolOptions.outputPath && meta.slug !== "zip-extract" && meta.slug !== "zip-extractor") {
+          toolOptions.outputPath = path.resolve(outFile);
+        } else if (outFile && !toolOptions.outputDir && (meta.slug === "zip-extract" || meta.slug === "zip-extractor")) {
+          toolOptions.outputDir = path.resolve(outFile);
+        }
+      } else {
+        if (!inputText && singleInFile) {
+          const resolvedIn = path.resolve(singleInFile);
+          if (!fs.existsSync(resolvedIn)) {
+            err(`Error: Input file not found: ${resolvedIn}\n`);
+            return { handled: true, exitCode: 1 };
+          }
+          inputText = fs.readFileSync(resolvedIn, "utf-8");
+        } else if (!inputText && parsed.positional[1]) {
+          inputText = parsed.positional[1];
+        } else if (!inputText) {
+          const stdinRaw = await readRawStdin(io);
+          if (stdinRaw) {
+            inputText = stdinRaw.replace(/\r?\n$/, "");
+          }
+        }
+      }
+
+      const execRes = await executeBridgeTool(
+        meta.slug,
+        { input: inputText, options: toolOptions },
+        license
+      );
+
+      if (execRes.isError) {
+        err(execRes.content.map((c) => c.text).join("\n") + "\n");
+        return { handled: true, exitCode: 1 };
+      }
+
+      const resultText = execRes.content.map((c) => c.text).join("\n");
+      if (outFile && !isFileRuntime) {
+        const resolvedOut = path.resolve(outFile);
+        fs.mkdirSync(path.dirname(resolvedOut), { recursive: true });
+        fs.writeFileSync(
+          resolvedOut,
+          resultText.endsWith("\n") ? resultText : `${resultText}\n`,
+          "utf-8"
+        );
+        if (isJson) {
+          out(JSON.stringify({ slug: meta.slug, outputPath: resolvedOut, bytes: Buffer.byteLength(resultText, "utf-8") }, null, 2) + "\n");
+        }
+        return { handled: true, exitCode: 0 };
+      }
+
+      out(resultText.endsWith("\n") ? resultText : `${resultText}\n`);
       return { handled: true, exitCode: 0 };
     }
 

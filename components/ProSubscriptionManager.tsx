@@ -60,6 +60,8 @@ export function ProSubscriptionManager() {
     null,
   );
   const [copiedKey, setCopiedKey] = useState(false);
+  const [copiedMcpConfig, setCopiedMcpConfig] = useState(false);
+  const [downloadedTxt, setDownloadedTxt] = useState(false);
   const { copy } = useCopy();
 
   // Coupon state
@@ -121,9 +123,16 @@ export function ProSubscriptionManager() {
     }
   }, []);
 
-  async function handleVerify(e: React.FormEvent) {
-    e.preventDefault();
-    if (!verifyKeyInput.trim()) return;
+  async function runVerifyRequest(rawKey: string) {
+    const cleanKey = rawKey.trim();
+    if (!cleanKey) {
+      setVerifyResult({
+        valid: false,
+        message: "Enter your license key (e.g. CS-PRO-XXXX-XXXX-XXXX or CS-TEAM-XXXX-XXXX-XXXX) to check seat usage.",
+      });
+      setSeatActionMessage(null);
+      return;
+    }
 
     setVerifyLoading(true);
     setVerifyResult(null);
@@ -133,7 +142,7 @@ export function ProSubscriptionManager() {
       const res = await fetch("/api/v1/license/verify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ key: verifyKeyInput.trim() }),
+        body: JSON.stringify({ key: cleanKey }),
       });
       const data = (await res.json()) as VerifyResult;
       setVerifyResult(data);
@@ -145,6 +154,11 @@ export function ProSubscriptionManager() {
     } finally {
       setVerifyLoading(false);
     }
+  }
+
+  async function handleVerify(e: React.FormEvent) {
+    e.preventDefault();
+    await runVerifyRequest(verifyKeyInput);
   }
 
   async function handleRevokeSeat(options: { deviceId?: string; resetAll?: boolean }) {
@@ -336,6 +350,68 @@ export function ProSubscriptionManager() {
     setTimeout(() => setCopiedKey(false), 2000);
   }
 
+  function buildMcpConfigJson(licenseKey: string): string {
+    return JSON.stringify(
+      {
+        mcpServers: {
+          codestation: {
+            command: "npx",
+            args: ["-y", "codestation-mcp"],
+            env: {
+              CODESTATION_LICENSE_KEY: licenseKey,
+            },
+          },
+        },
+      },
+      null,
+      2,
+    );
+  }
+
+  async function copyMcpConfig(licenseKey: string) {
+    if (!(await copy(buildMcpConfigJson(licenseKey)))) return;
+    setCopiedMcpConfig(true);
+    setTimeout(() => setCopiedMcpConfig(false), 2000);
+  }
+
+  function downloadLicenseTxt(res: GenerateResult) {
+    if (!res.key) return;
+    const content = [
+      "CODE STATION PRO / TEAM LICENSE BACKUP",
+      "======================================",
+      `License Key: ${res.key}`,
+      `Plan:        ${(res.plan ?? "pro").toUpperCase()}`,
+      `Type:        ${res.planType === "team" ? "TEAM" : "INDIVIDUAL"}`,
+      `Seat Limit:  ${res.seatLimit ?? 3}`,
+      ...(res.orgName ? [`Org Name:    ${res.orgName}`] : []),
+      `Expires:     ${res.expiresAt ? new Date(res.expiresAt).toISOString() : "Lifetime (Never Expires)"}`,
+      "",
+      "1. Activate Terminal CLI & Cache 14-Day Offline Grace:",
+      `   npx codestation-mcp login ${res.key}`,
+      "",
+      "2. One-Click Cursor / Claude / Windsurf Setup:",
+      `   npx codestation-mcp setup --key ${res.key}`,
+      "",
+      "3. MCP JSON Config (Cursor / Claude Desktop / Windsurf):",
+      buildMcpConfigJson(res.key),
+      "",
+      "Support & Key Recovery: hello@codestation.in (keep your Razorpay Payment ID)",
+      "",
+    ].join("\n");
+
+    const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = "codestation-license.txt";
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    setDownloadedTxt(true);
+    setTimeout(() => setDownloadedTxt(false), 2500);
+  }
+
   const checkoutButtonLabel = checkoutLoading
     ? "Opening Razorpay..."
     : appliedCoupon?.valid && selectedPlan === "monthly"
@@ -364,10 +440,10 @@ export function ProSubscriptionManager() {
               </div>
             </div>
             <ul className={styles.featuresList}>
-              <li>✓ Full access to local MCP server</li>
+              <li>✓ Full access to local MCP &amp; CLI tools</li>
               <li>✓ Up to 3 personal devices</li>
-              <li>✓ Unlimited offline usage with 30-day cache</li>
-              <li>✓ SHA-256, HMAC, JWT inspector</li>
+              <li>✓ 14-day offline grace cache (~/.codestation/license.json)</li>
+              <li>✓ All 304 pure-Node + PDF/XLSX/ZIP file tools</li>
               <li>✓ Multi-dialect SQL, IANA timezones &amp; business days</li>
               <li>✓ Zero login or password required</li>
             </ul>
@@ -556,6 +632,33 @@ export function ProSubscriptionManager() {
           >
             {checkoutButtonLabel}
           </button>
+          <p className={styles.currencyNote}>
+            Processed in INR (₹
+            {appliedCoupon?.valid && selectedPlan === "monthly"
+              ? Math.round(appliedCoupon.discountedAmountPaise! / 100)
+              : activeCheckoutPricing.amountInr}
+            ) via Razorpay UPI / International Cards — approx.{" "}
+            <strong>{activeCheckoutPricing.usdDisplay}</strong>. Webhook failover
+            guarantees instant key provisioning even if your tab closes mid-redirect.
+          </p>
+        </div>
+
+        <div className={styles.guaranteeBox} data-testid="pro-guarantee-box">
+          <div>
+            <strong>7-Day Guarantee</strong>
+            <span>Full refund if Pro MCP tools do not work in your workflow.</span>
+          </div>
+          <div>
+            <strong>Human Support</strong>
+            <span>
+              Email <a href="mailto:hello@codestation.in">hello@codestation.in</a>{" "}
+              with your Payment ID anytime.
+            </span>
+          </div>
+          <div>
+            <strong>Zero-Account Privacy</strong>
+            <span>Only one-way SHA-256 key hashes touch Cloudflare KV.</span>
+          </div>
         </div>
 
         {checkoutError && (
@@ -566,7 +669,7 @@ export function ProSubscriptionManager() {
         )}
 
         {generatedResult?.success && generatedResult.key && (
-          <div className={styles.generatedKeyBox}>
+          <div className={styles.generatedKeyBox} data-testid="generated-key-box">
             <div className={styles.keyNotice}>
               <strong>Payment Verified! Save your key now:</strong> This
               plaintext key is shown only once and will never be displayed
@@ -574,13 +677,24 @@ export function ProSubscriptionManager() {
             </div>
             <div className={styles.keyDisplay}>
               <code>{generatedResult.key}</code>
-              <button
-                type="button"
-                className={styles.keyCopyBtn}
-                onClick={() => copyToClipboard(generatedResult.key!)}
-              >
-                {copiedKey ? "Copied!" : "Copy Key"}
-              </button>
+              <div className={styles.keyActions}>
+                <button
+                  type="button"
+                  className={styles.keyCopyBtn}
+                  onClick={() => copyToClipboard(generatedResult.key!)}
+                >
+                  {copiedKey ? "✓ Copied Key" : "Copy Key"}
+                </button>
+                <button
+                  type="button"
+                  className={styles.keyDownloadBtn}
+                  onClick={() => downloadLicenseTxt(generatedResult)}
+                >
+                  {downloadedTxt
+                    ? "✓ Downloaded .txt"
+                    : "Download codestation-license.txt"}
+                </button>
+              </div>
             </div>
             <div className={styles.expiryInfo}>
               Plan: <strong>{generatedResult.plan?.toUpperCase()}</strong> •
@@ -606,25 +720,24 @@ export function ProSubscriptionManager() {
 
             <div className={styles.recoveryNotice}>
               ⚠️ <strong>Backup this key safely:</strong> Code Station does not
-              store plaintext keys. If you lose your key, email{" "}
+              store plaintext keys. Download{" "}
+              <code>codestation-license.txt</code> above or email{" "}
               <a href="mailto:hello@codestation.in">hello@codestation.in</a>{" "}
-              with your Payment ID or receipt screenshot to regenerate a new key
-              (₹25 for 1st recovery, doubling each subsequent recovery: ₹50,
-              ₹100, etc.).
+              with your Razorpay Payment ID if you ever need a key reset.
             </div>
 
             <div className={styles.cliSnippet}>
-              <label>Run with Cursor or Claude Desktop:</label>
-              <pre>
-                {`{
-  "mcpServers": {
-    "codestation": {
-      "command": "npx",
-      "args": ["-y", "codestation-mcp", "--key", "${generatedResult.key}"]
-    }
-  }
-}`}
-              </pre>
+              <div className={styles.cliSnippetHeader}>
+                <label>Ready-to-Paste MCP Config (Cursor / Claude Desktop / Windsurf):</label>
+                <button
+                  type="button"
+                  className={styles.keyCopyBtn}
+                  onClick={() => copyMcpConfig(generatedResult.key!)}
+                >
+                  {copiedMcpConfig ? "✓ MCP Config Copied" : "Copy MCP Config"}
+                </button>
+              </div>
+              <pre>{buildMcpConfigJson(generatedResult.key)}</pre>
             </div>
           </div>
         )}
@@ -662,6 +775,7 @@ export function ProSubscriptionManager() {
         {verifyResult && (
           <div
             className={`${styles.resultBanner} ${verifyResult.valid ? styles.valid : styles.invalid}`}
+            role={verifyResult.valid ? "status" : "alert"}
           >
             <div>
               <strong>
@@ -669,10 +783,18 @@ export function ProSubscriptionManager() {
                   ? verifyResult.planType === "team"
                     ? "Active Team License"
                     : "Active Pro License"
-                  : "Verification Failed"}
+                  : "Verification Notice"}
               </strong>
               <p>{verifyResult.message}</p>
-              {verifyResult.valid && (
+              {!verifyResult.valid && !verifyResult.devices?.length && (
+                <small>
+                  Check key spelling (<code>CS-PRO-...</code> or{" "}
+                  <code>CS-TEAM-...</code>), or email{" "}
+                  <a href="mailto:hello@codestation.in">hello@codestation.in</a>{" "}
+                  with your Razorpay Payment ID for recovery.
+                </small>
+              )}
+              {(verifyResult.valid || (verifyResult.devices?.length ?? 0) > 0) && (
                 <small>
                   Plan: {verifyResult.plan?.toUpperCase()} • Type:{" "}
                   {verifyResult.planType === "team" ? "Team" : "Individual"} •
@@ -690,7 +812,7 @@ export function ProSubscriptionManager() {
               )}
             </div>
 
-            {verifyResult.valid && (
+            {(verifyResult.valid || (verifyResult.devices?.length ?? 0) > 0) && (
               <div className={styles.seatManager}>
                 <div className={styles.seatManagerHeader}>
                   <span>
@@ -698,18 +820,28 @@ export function ProSubscriptionManager() {
                     {verifyResult.devices?.length ?? verifyResult.deviceCount ?? 0} /{" "}
                     {verifyResult.seatLimit ?? verifyResult.maxDevices ?? 3})
                   </span>
-                  {(verifyResult.devices?.length ?? 0) > 0 && (
+                  <div className={styles.keyActions}>
                     <button
                       type="button"
-                      className={styles.resetSeatsBtn}
-                      disabled={seatActionLoading !== null}
-                      onClick={() => void handleRevokeSeat({ resetAll: true })}
+                      className={styles.revokeSeatBtn}
+                      disabled={verifyLoading || seatActionLoading !== null}
+                      onClick={() => void runVerifyRequest(verifyKeyInput)}
                     >
-                      {seatActionLoading === "reset_all"
-                        ? "Resetting..."
-                        : "Reset All Seats"}
+                      {verifyLoading ? "Refreshing..." : "Refresh Seats"}
                     </button>
-                  )}
+                    {(verifyResult.devices?.length ?? 0) > 0 && (
+                      <button
+                        type="button"
+                        className={styles.resetSeatsBtn}
+                        disabled={seatActionLoading !== null}
+                        onClick={() => void handleRevokeSeat({ resetAll: true })}
+                      >
+                        {seatActionLoading === "reset_all"
+                          ? "Resetting..."
+                          : "Reset All Seats"}
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 {verifyResult.devices && verifyResult.devices.length > 0 ? (

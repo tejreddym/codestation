@@ -1,4 +1,7 @@
+import Link from "next/link";
 import { metadataForPage } from "@/config/site";
+import mcpCatalog from "@/config/mcp-docs-catalog.json";
+import { INDIVIDUAL_PRICING, TEAM_PRICING } from "@/lib/license/pricing";
 import { InformationalPage } from "@/components/InformationalPage";
 import { ProSubscriptionManager } from "@/components/ProSubscriptionManager";
 import styles from "./pro.module.css";
@@ -131,29 +134,30 @@ export default function ProPage() {
           <div className={styles.badgeRow}>
             <span className={styles.pillBadge}>
               <span className={styles.pillDot} />
-              Local MCP Server
+              {mcpCatalog.counts.executableTotal} Local MCP &amp; CLI Tools
             </span>
             <span className={styles.pillBadge}>
               <span className={styles.pillDot} />
-              10 Terminal CLIs
+              {mcpCatalog.counts.nodePure} Pure Node + {mcpCatalog.counts.nodeFileWired} File Handlers
             </span>
             <span className={styles.pillBadge}>
-              Zero Latency • Zero Tracking
+              Zero Latency • 14-Day Offline Grace
             </span>
           </div>
 
           <h2 className={styles.heroTitle}>
-            Supercharge Cursor, Claude & Your Terminal
+            Supercharge Cursor, Claude Desktop, VS Code &amp; Your Terminal
           </h2>
 
           <p className={styles.heroLead}>
-            AI assistants frequently hallucinate when dealing with date
-            mathematics, timezone edge cases, cryptographic digests, and regex
-            parsing. Code Station Pro equips{" "}
-            <strong>Cursor, Claude Desktop, Windsurf, and Claude Code</strong>{" "}
-            with 15 deterministic local tools over the open{" "}
-            <strong>Model Context Protocol (MCP)</strong>, alongside 10
-            lightning-fast terminal subcommands.
+            Stop AI hallucinations on timezone arithmetic, cryptographic digests,
+            SQL ASTs, PDFs, spreadsheets, and ZIP archives. Free tier unlocks{" "}
+            <strong>3 universal discovery tools + {mcpCatalog.counts.freeExecutable} core utilities</strong>;
+            Code Station Pro unlocks all{" "}
+            <strong>{mcpCatalog.counts.executableTotal} local tools</strong>{" "}
+            ({mcpCatalog.counts.nodePure} in-memory <code>node-pure</code> +{" "}
+            {mcpCatalog.counts.nodeFileWired} local <code>node-file</code> handlers)
+            over stdio MCP and a pipeable Unix CLI.
           </p>
 
           <div className={styles.terminalBox}>
@@ -161,29 +165,21 @@ export default function ProPage() {
               <span className={`${styles.termDot} ${styles.termDotRed}`} />
               <span className={`${styles.termDot} ${styles.termDotYellow}`} />
               <span className={`${styles.termDot} ${styles.termDotGreen}`} />
-              <span className={styles.termTitle}>bash — 1-click setup</span>
+              <span className={styles.termTitle}>bash — 1-click setup &amp; piping</span>
             </div>
             <div>
               <span className={styles.termPrompt}>$</span>
               <span>npx codestation-mcp setup --key CS-PRO-••••-••••</span>
             </div>
-            <div className={styles.termSuccess}>
-              ✔ Cursor
-              IDE&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-              Configured (~/Library/Application Support/Cursor/...)
+            <div>
+              <span className={styles.termPrompt}>$</span>
+              <span>cat schema.json | codestation run json-to-zod</span>
             </div>
             <div className={styles.termSuccess}>
-              ✔ Claude
-              Desktop&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-              Configured (~/Library/Application Support/Claude/...)
-            </div>
-            <div className={styles.termSuccess}>
-              ✔
-              Windsurf&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-              Configured (~/.codeium/windsurf/mcp_config.json)
+              ✔ Cursor / Claude Desktop / Windsurf / VS Code configured
             </div>
             <div className={styles.termAccent}>
-              ✨ Setup complete! 15 local tools ready for your AI assistant.
+              ✨ {mcpCatalog.counts.executableTotal} local tools ready (0 telemetry · 14-day offline cache).
             </div>
           </div>
         </section>
@@ -215,13 +211,11 @@ export default function ProPage() {
 
             <div className={styles.perkCard}>
               <div className={styles.perkIconWrap} aria-hidden="true">⚡</div>
-              <h3 className={styles.perkTitle}>10+ Terminal Subcommands</h3>
+              <h3 className={styles.perkTitle}>Pipeable CLI &amp; Local Files</h3>
               <p className={styles.perkDesc}>
-                Run <code>jwt</code>, <code>sql</code>, <code>cron</code>,{" "}
-                <code>hash</code>, <code>curl</code>, <code>env</code>,{" "}
-                <code>mock</code>, <code>conflict</code>, <code>ts</code>,{" "}
-                <code>zod</code> directly in your terminal without opening a
-                browser.
+                Pipe data with <code>codestation run json-to-yaml</code> or process
+                PDFs, Excel workbooks, ZIP archives, and SVGs directly on disk via{" "}
+                <code>--in</code> / <code>--out</code> with zero native addons.
               </p>
               <span className={styles.perkTag}>CLI Workflows</span>
             </div>
@@ -250,11 +244,12 @@ export default function ProPage() {
 
             <div className={styles.perkCard}>
               <div className={styles.perkIconWrap} aria-hidden="true">✈️</div>
-              <h3 className={styles.perkTitle}>30-Day Air-Gapped Offline</h3>
+              <h3 className={styles.perkTitle}>14-Day Air-Gapped Offline Grace</h3>
               <p className={styles.perkDesc}>
-                Validated licenses are cached locally on your device (
-                <code>~/.codestation/license.json</code>). Work completely
-                offline on flights or remote without internet pings.
+                Validated licenses are cached locally in{" "}
+                <code>~/.codestation/license.json</code> (<code>0600</code>) with a
+                14-day offline grace window and silent background revalidation when
+                back online.
               </p>
               <span className={styles.perkTag}>Offline First</span>
             </div>
@@ -291,11 +286,11 @@ export default function ProPage() {
           <div className={styles.sectionHeader}>
             <span className={styles.sectionKicker}>Capabilities Catalog</span>
             <h2 className={styles.sectionTitle}>
-              15 Dedicated Pro MCP & CLI Tools
+              {mcpCatalog.counts.executableTotal} Local MCP &amp; CLI Tools (Highlights)
             </h2>
             <p className={styles.sectionSubtitle}>
-              Available to your AI agents via stdio and callable directly from
-              your command line.
+              High-demand tools callable over stdio MCP or directly in your terminal —{" "}
+              <Link href="/docs#tool-catalog">browse all {mcpCatalog.counts.executableTotal} tools</Link>.
             </p>
           </div>
 
@@ -317,9 +312,9 @@ export default function ProPage() {
         {/* --- Comparison Matrix --- */}
         <section>
           <div className={styles.sectionHeader}>
-            <span className={styles.sectionKicker}>Feature Matrix</span>
+            <span className={styles.sectionKicker}>Plan Comparison</span>
             <h2 className={styles.sectionTitle}>
-              Free Web Toolbox vs Pro MCP & CLI
+              Free Browser &amp; Core vs. Pro Individual vs. Team Seats
             </h2>
           </div>
 
@@ -328,96 +323,116 @@ export default function ProPage() {
               <thead>
                 <tr>
                   <th className={styles.featureCol}>Capability</th>
-                  <th className={styles.freeCol}>Free Web App</th>
-                  <th className={styles.proCol}>Pro Tier</th>
+                  <th className={styles.freeCol}>Free Tier</th>
+                  <th className={styles.proCol}>
+                    Pro Individual (₹{INDIVIDUAL_PRICING.monthly.amountInr}/mo)
+                  </th>
+                  <th className={styles.proCol}>
+                    Team Seats (₹{TEAM_PRICING[5].amountInr}–₹{TEAM_PRICING[25].amountInr}/mo)
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
                   <td className={styles.featureCol}>
-                    Web App (codestation.in)
+                    Web App (<code>codestation.in</code>)
                   </td>
                   <td className={styles.freeCol}>
-                    <span className={styles.check}>✔</span> 250+ Free Tools
+                    <span className={styles.check}>✔</span> 383 Browser Tools Free
                   </td>
                   <td className={styles.proCol}>
-                    <span className={styles.check}>✔</span> 250+ Free Tools
+                    <span className={styles.check}>✔</span> 383 Browser Tools Free
+                  </td>
+                  <td className={styles.proCol}>
+                    <span className={styles.check}>✔</span> 383 Browser Tools Free
                   </td>
                 </tr>
                 <tr>
                   <td className={styles.featureCol}>
-                    Model Context Protocol (MCP) Server
+                    MCP Server &amp; Pipeable CLI Tools
+                  </td>
+                  <td className={styles.freeCol}>
+                    {mcpCatalog.counts.universalMetaTools} Meta + {mcpCatalog.counts.freeExecutable} Core Free Tools
+                  </td>
+                  <td className={styles.proCol}>
+                    <span className={styles.check}>✔</span> All {mcpCatalog.counts.executableTotal} Tools
+                  </td>
+                  <td className={styles.proCol}>
+                    <span className={styles.check}>✔</span> All {mcpCatalog.counts.executableTotal} Tools
+                  </td>
+                </tr>
+                <tr>
+                  <td className={styles.featureCol}>
+                    Local File Processing (PDF, XLSX, ZIP, SVG)
+                  </td>
+                  <td className={styles.freeCol}>
+                    <span className={styles.cross}>✖</span> Browser UI only
+                  </td>
+                  <td className={styles.proCol}>
+                    <span className={styles.check}>✔</span> {mcpCatalog.counts.nodeFileWired} Node File Tools
+                  </td>
+                  <td className={styles.proCol}>
+                    <span className={styles.check}>✔</span> {mcpCatalog.counts.nodeFileWired} Node File Tools
+                  </td>
+                </tr>
+                <tr>
+                  <td className={styles.featureCol}>
+                    <code>--stations=</code> Direct Tool Expansion
                   </td>
                   <td className={styles.freeCol}>
                     <span className={styles.cross}>✖</span> Not included
                   </td>
                   <td className={styles.proCol}>
-                    <span className={styles.check}>✔</span> 15 Native Tools
-                  </td>
-                </tr>
-                <tr>
-                  <td className={styles.featureCol}>
-                    Cursor, Claude Desktop & Windsurf Setup
-                  </td>
-                  <td className={styles.freeCol}>
-                    <span className={styles.cross}>✖</span> Not included
+                    <span className={styles.check}>✔</span> Full Station Expansion
                   </td>
                   <td className={styles.proCol}>
-                    <span className={styles.check}>✔</span> 1-Click Auto-Setup
-                  </td>
-                </tr>
-                <tr>
-                  <td className={styles.featureCol}>
-                    Terminal Subcommands (npx codestation-mcp)
-                  </td>
-                  <td className={styles.freeCol}>
-                    <span className={styles.cross}>✖</span> Limited
-                  </td>
-                  <td className={styles.proCol}>
-                    <span className={styles.check}>✔</span> 10+ Subcommands
-                  </td>
-                </tr>
-                <tr>
-                  <td className={styles.featureCol}>
-                    Secret Leak & .env Scanner
-                  </td>
-                  <td className={styles.freeCol}>
-                    <span className={styles.cross}>✖</span> Web only
-                  </td>
-                  <td className={styles.proCol}>
-                    <span className={styles.check}>✔</span> Terminal & MCP
+                    <span className={styles.check}>✔</span> Full Station Expansion
                   </td>
                 </tr>
                 <tr>
                   <td className={styles.featureCol}>Concurrent Device Seats</td>
-                  <td className={styles.freeCol}>Browser session</td>
+                  <td className={styles.freeCol}>No key required</td>
                   <td className={styles.proCol}>
-                    <span className={styles.check}>✔</span> 3 Devices (Individual) · 5 / 10 / 25 Seats (Team)
+                    <span className={styles.check}>✔</span> {INDIVIDUAL_PRICING.monthly.seatLimit} Personal Devices
+                  </td>
+                  <td className={styles.proCol}>
+                    <span className={styles.check}>✔</span> 5, 10, or 25 Team Seats
                   </td>
                 </tr>
                 <tr>
-                  <td className={styles.featureCol}>Organization &amp; Seat Management</td>
+                  <td className={styles.featureCol}>Organization &amp; Seat Controls</td>
                   <td className={styles.freeCol}>
                     <span className={styles.cross}>✖</span> Not applicable
                   </td>
                   <td className={styles.proCol}>
-                    <span className={styles.check}>✔</span> Org Metadata &amp; Per-Seat Revocation
+                    <span className={styles.check}>✔</span> Self-Serve Seat Reset
+                  </td>
+                  <td className={styles.proCol}>
+                    <span className={styles.check}>✔</span> Org Metadata &amp; Per-Seat Revoke
                   </td>
                 </tr>
                 <tr>
                   <td className={styles.featureCol}>
-                    Air-Gapped Offline Caching
+                    Pricing Options (INR / Global USD)
                   </td>
-                  <td className={styles.freeCol}>Online required</td>
+                  <td className={styles.freeCol}>₹0 / $0 Forever</td>
                   <td className={styles.proCol}>
-                    <span className={styles.check}>✔</span> 30-Day Cache
+                    ₹{INDIVIDUAL_PRICING.monthly.amountInr}/mo ({INDIVIDUAL_PRICING.monthly.usdDisplay}) · ₹{INDIVIDUAL_PRICING.lifetime.amountInr} ({INDIVIDUAL_PRICING.lifetime.usdDisplay})
+                  </td>
+                  <td className={styles.proCol}>
+                    From ₹{TEAM_PRICING[5].amountInr}/mo ({TEAM_PRICING[5].usdDisplay})
                   </td>
                 </tr>
                 <tr>
-                  <td className={styles.featureCol}>Data Privacy</td>
-                  <td className={styles.freeCol}>Client-side in browser</td>
+                  <td className={styles.featureCol}>
+                    Offline Grace &amp; Data Privacy
+                  </td>
+                  <td className={styles.freeCol}>Browser / Local memory</td>
                   <td className={styles.proCol}>
-                    <span className={styles.check}>✔</span> Local stdio memory
+                    <span className={styles.check}>✔</span> 14-Day Cache · 0 Telemetry
+                  </td>
+                  <td className={styles.proCol}>
+                    <span className={styles.check}>✔</span> 14-Day Cache · 0 Telemetry
                   </td>
                 </tr>
               </tbody>
@@ -507,10 +522,11 @@ export default function ProPage() {
                 Are all the tools on the website free?
               </h3>
               <p className={styles.faqAnswer}>
-                Yes! All 250+ tools on codestation.in are 100% free with no
-                paywalls or signups. The Pro subscription is strictly for local
-                MCP AI Assistant integration and command-line terminal power
-                tools.
+                Yes! All 383 developer tools on codestation.in are 100% free with
+                no paywalls or signups, plus 15 core CLI &amp; MCP utilities free
+                without a key. Code Station Pro unlocks all{" "}
+                {mcpCatalog.counts.executableTotal} local MCP &amp; CLI tools,
+                local file processing, and multi-seat team licenses.
               </p>
             </div>
           </div>

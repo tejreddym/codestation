@@ -39,6 +39,22 @@ export function getRazorpayClient(): Razorpay {
   });
 }
 
+export function getRazorpayWebhookSecret(): string {
+  let webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET || "";
+  if (!webhookSecret) {
+    try {
+      const { getCloudflareContext } = require("@opennextjs/cloudflare");
+      const ctx = getCloudflareContext();
+      if (ctx?.env?.RAZORPAY_WEBHOOK_SECRET) {
+        webhookSecret = ctx.env.RAZORPAY_WEBHOOK_SECRET;
+      }
+    } catch {
+      // Cloudflare context not available in local next dev / vitest
+    }
+  }
+  return webhookSecret;
+}
+
 export function verifySignature(
   orderId: string,
   paymentId: string,
@@ -49,6 +65,32 @@ export function verifySignature(
   const expectedSignature = crypto
     .createHmac("sha256", secret)
     .update(payload)
+    .digest("hex");
+
+  if (expectedSignature.length !== signature.length) {
+    return false;
+  }
+
+  return crypto.timingSafeEqual(
+    Buffer.from(expectedSignature, "utf-8"),
+    Buffer.from(signature, "utf-8")
+  );
+}
+
+/**
+ * Verifies Razorpay webhook `x-razorpay-signature` header against raw JSON request body.
+ */
+export function verifyWebhookSignature(
+  rawBody: string,
+  signature: string,
+  secret: string
+): boolean {
+  if (!rawBody || !signature || !secret) {
+    return false;
+  }
+  const expectedSignature = crypto
+    .createHmac("sha256", secret)
+    .update(rawBody)
     .digest("hex");
 
   if (expectedSignature.length !== signature.length) {

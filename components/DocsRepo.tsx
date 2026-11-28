@@ -3,6 +3,8 @@
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import { CopySnippet } from "@/components/CopySnippet";
+import { McpQuickstartTabs, McpToolCatalogExplorer } from "@/components/McpDocsExperience";
+import mcpCatalog from "@/config/mcp-docs-catalog.json";
 import NativeAd from "@/components/NativeAd";
 import BannerAd from "@/components/BannerAd";
 import styles from "./DocsRepo.module.css";
@@ -35,8 +37,22 @@ const TOPICS: DocTopic[] = [
   {
     id: "cli-overview",
     category: "cli",
-    title: "Terminal CLI Overview & Piping",
-    keywords: ["cli", "terminal", "command", "pipe", "stdin", "subcommands"],
+    title: "Pipeable CLI Reference (list, info, run, login, status)",
+    keywords: [
+      "cli",
+      "terminal",
+      "command",
+      "pipe",
+      "stdin",
+      "list",
+      "info",
+      "run",
+      "login",
+      "logout",
+      "status",
+      "offline",
+      "grace",
+    ],
   },
   {
     id: "cli-curl",
@@ -178,15 +194,19 @@ const TOPICS: DocTopic[] = [
   {
     id: "ai-assistants",
     category: "ai",
-    title: "AI Assistant Configurations (Claude, Cursor, Windsurf)",
+    title: "AI Client Quickstart Tabs (Cursor, Claude, Windsurf, VS Code)",
     keywords: [
       "claude",
+      "claude code",
       "cursor",
       "windsurf",
+      "vscode",
+      "vs code",
       "cline",
       "ai",
       "mcp config",
       "assistant",
+      "stations",
     ],
   },
   {
@@ -205,8 +225,21 @@ const TOPICS: DocTopic[] = [
   {
     id: "tool-catalog",
     category: "catalog",
-    title: "MCP Tool Capability Matrix (20+ Tools)",
-    keywords: ["catalog", "tools", "capabilities", "free", "pro", "matrix"],
+    title: `Searchable MCP & CLI Catalog (${mcpCatalog.counts.executableTotal} Tools)`,
+    keywords: [
+      "catalog",
+      "tools",
+      "capabilities",
+      "free",
+      "pro",
+      "matrix",
+      "node-pure",
+      "node-file",
+      "pdf",
+      "xlsx",
+      "zip",
+      "slug",
+    ],
   },
   {
     id: "web-stations",
@@ -342,14 +375,16 @@ export function DocsRepo() {
             <h1>Documentation Repository</h1>
             <p>
               Authoritative developer reference manual for the Code Station
-              Local Model Context Protocol (MCP) server, dual-purpose terminal
-              CLI, 370+ client-side web tools, AI coding agent workflows, and
-              licensing policies.
+              Local Model Context Protocol (MCP) server, pipeable terminal
+              CLI ({mcpCatalog.counts.executableTotal} local tools), 383 client-side
+              web tools, AI coding agent workflows, and Freemium licensing.
             </p>
           </div>
           <div className={styles.repoBadge}>
             <span className={styles.badgePulse} aria-hidden="true" />
-            <span>v1.2.1 • Node 22+ • 100% Offline-Ready</span>
+            <span>
+              v{mcpCatalog.version} • Node 22+ • {mcpCatalog.counts.executableTotal} MCP &amp; CLI Tools
+            </span>
           </div>
         </div>
       </div>
@@ -469,7 +504,7 @@ export function DocsRepo() {
         </aside>
 
         {/* Core Content Area */}
-        <main className={styles.docsContent}>
+        <div className={styles.docsContent}>
           {/* 1. Quickstart & Auto-Setup */}
           {activeIds.has("quickstart") && (
             <section id="quickstart" className={styles.docSection}>
@@ -535,34 +570,106 @@ export function DocsRepo() {
           {activeIds.has("cli-overview") && (
             <section id="cli-overview" className={styles.docSection}>
               <div className={styles.sectionHeader}>
-                <h2>2. Terminal Developer CLI &amp; Unix Piping</h2>
+                <h2>2. Pipeable CLI Reference &amp; Offline License Cache</h2>
                 <span className={styles.sectionTag}>CLI Power Engine</span>
               </div>
               <p className={styles.leadText}>
-                The <code>codestation-mcp</code> binary is engineered to be
-                dual-purpose: when invoked with subcommands, it behaves as an
-                ultra-fast terminal utility with exit codes, formatted colors,
-                and Unix pipe support.
+                The <code>codestation</code> / <code>codestation-mcp</code>{" "}
+                binary doubles as an interactive MCP stdio server (with zero{" "}
+                <code>stdout</code> noise) and a composable Unix terminal CLI
+                covering all{" "}
+                <strong>{mcpCatalog.counts.executableTotal} local tools</strong>
+                .
               </p>
 
               <div className={styles.callout + " " + styles.tip}>
-                <strong>Unix Stdin Piping:</strong> All subcommands accept piped
-                input via <code>stdin</code>. For instance,{" "}
-                <code>
-                  cat request.curl | npx codestation-mcp curl --target go
-                </code>{" "}
-                or <code>cat data.json | npx codestation-mcp ts Profile</code>.
+                <strong>Unix Stdin Piping &amp; 14-Day Offline Grace:</strong>{" "}
+                Pipe files directly with{" "}
+                <code>cat data.json | codestation run json-to-yaml</code>.
+                Activated Pro/Team keys are cached in{" "}
+                <code>~/.codestation/license.json</code> (<code>0600</code>{" "}
+                permissions) with a <strong>14-day offline grace window</strong>{" "}
+                and silent background revalidation when back online.
               </div>
 
               <CopySnippet
-                title="Terminal CLI Subcommand Syntax"
-                code={`# General Syntax
-npx codestation-mcp <command> [input_or_file] [flags]
+                title="Core Pipeable CLI Commands"
+                code={`# 1. Discover tools & filter by station, tier, or keyword
+codestation list --station json --tier free
+codestation list --search xlsx --json
 
-# Or with global install
-codestation <command> [input_or_file] [flags]`}
+# 2. Inspect exact description, tier, runtime type, and options schema
+codestation info pdf-merge
+
+# 3. Execute inline, via stdin pipe, or via --in / --out file flags
+echo '{"hello":"world"}' | codestation run json-formatter
+cat data.json | codestation run json-to-yaml --key CS-PRO-YOUR-KEY
+codestation run pdf-merge --in a.pdf --in b.pdf --out merged.pdf
+codestation run svg-resize --in icon.svg --out icon-128.svg --options '{"width":128}'
+
+# 4. Manage cached Pro / Team activation (14-day offline grace)
+codestation login CS-PRO-YOUR-KEY
+codestation status
+codestation logout`}
                 language="bash"
               />
+
+              <table className={styles.specTable}>
+                <thead>
+                  <tr>
+                    <th>Command</th>
+                    <th>Flags &amp; Behavior</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>
+                      <code>codestation list</code>
+                    </td>
+                    <td>
+                      Filter with <code>--station &lt;name&gt;</code>,{" "}
+                      <code>--tier free|pro</code>,{" "}
+                      <code>--search &lt;query&gt;</code>,{" "}
+                      <code>--runtime node-pure|node-file</code>,{" "}
+                      <code>--json</code>.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <code>codestation info &lt;slug&gt;</code>
+                    </td>
+                    <td>
+                      Prints tier, runtime compatibility (<code>node-pure</code>{" "}
+                      vs <code>node-file</code>), option schema, and CLI
+                      example.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <code>codestation run &lt;slug&gt;</code>
+                    </td>
+                    <td>
+                      Accepts <code>--input &lt;text&gt;</code>, piped{" "}
+                      <code>stdin</code>, one or more <code>--in &lt;file&gt;</code>,{" "}
+                      <code>--out &lt;file&gt;</code>, and{" "}
+                      <code>--options &apos;&#123;...&#125;&apos;</code>.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <code>codestation login / status / logout</code>
+                    </td>
+                    <td>
+                      Verifies keys against{" "}
+                      <code>codestation.in/api/v1/license/verify</code> using a
+                      stable machine fingerprint (hostname, platform, arch,
+                      username — immune to Node upgrades) and stores a{" "}
+                      <strong>14-day offline grace cache</strong> with{" "}
+                      <code>0600</code> permissions.
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </section>
           )}
 
@@ -1367,96 +1474,19 @@ console.log(JSON.parse(list.content[0].text));`}
           {activeIds.has("ai-assistants") && (
             <section id="ai-assistants" className={styles.docSection}>
               <div className={styles.sectionHeader}>
-                <h2>15. AI Assistant Configuration Guides</h2>
+                <h2>15. AI Client Quickstart Guides</h2>
                 <span className={styles.sectionTag}>Integration Setup</span>
               </div>
               <p className={styles.leadText}>
-                Connect Code Station to your favorite AI development environment
-                in seconds.
+                Connect <code>codestation-mcp</code> to{" "}
+                <strong>Cursor</strong>, <strong>Claude Desktop</strong>,{" "}
+                <strong>Windsurf</strong>, <strong>Claude Code</strong>, or{" "}
+                <strong>VS Code</strong> with zero setup friction. Toggle Pro
+                activation (<code>CODESTATION_LICENSE_KEY</code>) and optional{" "}
+                <code>--stations=</code> expansion below, then copy in one click:
               </p>
 
-              <div className={styles.subSection}>
-                <h3>Claude Desktop</h3>
-                <p>Add to your Claude configuration file:</p>
-                <ul>
-                  <li>
-                    <strong>macOS:</strong>{" "}
-                    <code>
-                      ~/Library/Application
-                      Support/Claude/claude_desktop_config.json
-                    </code>
-                  </li>
-                  <li>
-                    <strong>Windows:</strong>{" "}
-                    <code>%APPDATA%\Claude\claude_desktop_config.json</code>
-                  </li>
-                </ul>
-                <CopySnippet
-                  title="claude_desktop_config.json"
-                  code={`{
-  "mcpServers": {
-    "codestation": {
-      "command": "npx",
-      "args": ["-y", "codestation-mcp", "--key", "CS-PRO-YOUR-KEY"]
-    }
-  }
-}`}
-                  language="json"
-                />
-              </div>
-
-              <div className={styles.subSection}>
-                <h3>Cursor IDE</h3>
-                <p>
-                  Add to your project&apos;s <code>.cursor/mcp.json</code> or
-                  paste into Cursor Settings (
-                  <strong>Settings → Features → MCP</strong>):
-                </p>
-                <CopySnippet
-                  title=".cursor/mcp.json"
-                  code={`{
-  "mcpServers": {
-    "codestation": {
-      "command": "npx",
-      "args": ["-y", "codestation-mcp", "--key", "CS-PRO-YOUR-KEY"]
-    }
-  }
-}`}
-                  language="json"
-                />
-              </div>
-
-              <div className={styles.subSection}>
-                <h3>Windsurf / Codeium</h3>
-                <p>
-                  Add to <code>~/.codeium/windsurf/mcp_config.json</code>:
-                </p>
-                <CopySnippet
-                  title="mcp_config.json"
-                  code={`{
-  "mcpServers": {
-    "codestation": {
-      "command": "npx",
-      "args": ["-y", "codestation-mcp", "--key", "CS-PRO-YOUR-KEY"]
-    }
-  }
-}`}
-                  language="json"
-                />
-              </div>
-
-              <div className={styles.subSection}>
-                <h3>Claude Code CLI</h3>
-                <p>
-                  Register directly using Claude Code&apos;s built-in MCP
-                  manager:
-                </p>
-                <CopySnippet
-                  title="Claude Code CLI"
-                  code="claude mcp add codestation npx -y codestation-mcp --key CS-PRO-YOUR-KEY"
-                  language="bash"
-                />
-              </div>
+              <McpQuickstartTabs />
             </section>
           )}
 
@@ -1502,267 +1532,27 @@ Always prioritize calling these local, deterministic tools instead of calculatin
           {activeIds.has("tool-catalog") && (
             <section id="tool-catalog" className={styles.docSection}>
               <div className={styles.sectionHeader}>
-                <h2>16. Complete MCP Tool Capability Matrix</h2>
-                <span className={styles.sectionTag}>Tool Catalog</span>
+                <h2>
+                  16. Searchable MCP &amp; CLI Tool Catalog (
+                  {mcpCatalog.counts.executableTotal} Tools)
+                </h2>
+                <span className={styles.sectionTag}>Live Generated Registry</span>
               </div>
               <p className={styles.leadText}>
-                Overview of all 20+ Model Context Protocol tools exposed by{" "}
-                <code>codestation-mcp</code>:
+                Auto-generated directly from <code>mcp/registry-bridge.ts</code>{" "}
+                — browse all <strong>{mcpCatalog.counts.executableTotal}</strong>{" "}
+                Node-executable tools ({mcpCatalog.counts.nodePure}{" "}
+                <code>node-pure</code> in-memory utilities +{" "}
+                {mcpCatalog.counts.nodeFileWired} local <code>node-file</code>{" "}
+                PDF/XLSX/ZIP/Image handlers) across{" "}
+                {mcpCatalog.counts.stationsCount} stations. Free tier unlocks{" "}
+                <strong>{mcpCatalog.counts.universalMetaTools}</strong>{" "}
+                universal discovery/router tools plus{" "}
+                <strong>{mcpCatalog.counts.freeExecutable}</strong> core
+                developer utilities without a key.
               </p>
 
-              <table className={styles.specTable}>
-                <thead>
-                  <tr>
-                    <th>MCP Tool Name</th>
-                    <th>Tier</th>
-                    <th>Description</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td>
-                      <code>codestation_curl_to_code</code>
-                    </td>
-                    <td>
-                      <strong style={{ color: "var(--accent)" }}>Pro</strong>
-                    </td>
-                    <td>
-                      Converts cURL commands into TypeScript fetch/axios,
-                      Python, or Go.
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>
-                      <code>codestation_env_audit</code>
-                    </td>
-                    <td>
-                      <strong style={{ color: "var(--accent)" }}>Pro</strong>
-                    </td>
-                    <td>
-                      Scans .env for secrets (Stripe, AWS, OpenAI, GitHub PAT)
-                      &amp; audits .env.example.
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>
-                      <code>codestation_mock_data</code>
-                    </td>
-                    <td>
-                      <strong style={{ color: "var(--accent)" }}>Pro</strong>
-                    </td>
-                    <td>
-                      Generates realistic mock datasets &amp; SQL INSERT
-                      statements.
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>
-                      <code>codestation_git_conflict</code>
-                    </td>
-                    <td>
-                      <strong style={{ color: "var(--accent)" }}>Pro</strong>
-                    </td>
-                    <td>
-                      Parses &amp; resolves Git merge conflicts with ours,
-                      theirs, or both.
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>
-                      <code>codestation_json_to_typescript</code>
-                    </td>
-                    <td>
-                      <strong style={{ color: "var(--accent)" }}>Pro</strong>
-                    </td>
-                    <td>
-                      Generates clean, nested TypeScript interfaces from sample
-                      JSON.
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>
-                      <code>codestation_json_to_zod</code>
-                    </td>
-                    <td>
-                      <strong style={{ color: "var(--accent)" }}>Pro</strong>
-                    </td>
-                    <td>
-                      Generates production-ready Zod schema declarations and
-                      inferred types.
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>
-                      <code>codestation_jwt_decode</code>
-                    </td>
-                    <td>
-                      <strong style={{ color: "var(--accent)" }}>Pro</strong>
-                    </td>
-                    <td>
-                      Decodes JWT headers, claims, and calculates expiry TTL.
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>
-                      <code>codestation_format_sql</code>
-                    </td>
-                    <td>
-                      <strong style={{ color: "var(--accent)" }}>Pro</strong>
-                    </td>
-                    <td>
-                      Beautifies SQL queries for PostgreSQL, MySQL, SQLite, and
-                      SQL Server.
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>
-                      <code>codestation_cron_explain</code>
-                    </td>
-                    <td>
-                      <strong style={{ color: "var(--accent)" }}>Pro</strong>
-                    </td>
-                    <td>
-                      Translates Unix cron expressions and projects next 5
-                      runtimes.
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>
-                      <code>codestation_hash</code>
-                    </td>
-                    <td>
-                      <strong style={{ color: "var(--accent)" }}>Pro</strong>
-                    </td>
-                    <td>
-                      Cryptographic hashing (SHA-256, SHA-512, MD5, SHA-1,
-                      CRC-32).
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>
-                      <code>codestation_hmac</code>
-                    </td>
-                    <td>
-                      <strong style={{ color: "var(--accent)" }}>Pro</strong>
-                    </td>
-                    <td>
-                      Keyed HMAC message authentication (SHA-256, SHA-512).
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>
-                      <code>codestation_business_days</code>
-                    </td>
-                    <td>
-                      <strong style={{ color: "var(--accent)" }}>Pro</strong>
-                    </td>
-                    <td>
-                      Calculates business working days between two dates
-                      excluding weekends/holidays.
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>
-                      <code>codestation_regex_test</code>
-                    </td>
-                    <td>
-                      <strong style={{ color: "var(--accent)" }}>Pro</strong>
-                    </td>
-                    <td>
-                      Tests regular expressions and extracts capture groups.
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>
-                      <code>codestation_json_schema</code>
-                    </td>
-                    <td>
-                      <strong style={{ color: "var(--accent)" }}>Pro</strong>
-                    </td>
-                    <td>
-                      Infers Draft 7 or 2020-12 JSON Schema structures from
-                      sample data.
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>
-                      <code>codestation_format_json</code>
-                    </td>
-                    <td>
-                      <span style={{ color: "var(--green)" }}>Free</span>
-                    </td>
-                    <td>Formats and pretty-prints JSON payloads.</td>
-                  </tr>
-                  <tr>
-                    <td>
-                      <code>codestation_minify_json</code>
-                    </td>
-                    <td>
-                      <span style={{ color: "var(--green)" }}>Free</span>
-                    </td>
-                    <td>Compacts JSON into single-line representations.</td>
-                  </tr>
-                  <tr>
-                    <td>
-                      <code>codestation_json_to_yaml</code>
-                    </td>
-                    <td>
-                      <span style={{ color: "var(--green)" }}>Free</span>
-                    </td>
-                    <td>Converts JSON data into YAML syntax.</td>
-                  </tr>
-                  <tr>
-                    <td>
-                      <code>codestation_yaml_to_json</code>
-                    </td>
-                    <td>
-                      <span style={{ color: "var(--green)" }}>Free</span>
-                    </td>
-                    <td>Parses YAML into standard JSON.</td>
-                  </tr>
-                  <tr>
-                    <td>
-                      <code>codestation_base64</code>
-                    </td>
-                    <td>
-                      <span style={{ color: "var(--green)" }}>Free</span>
-                    </td>
-                    <td>Standard and URL-safe Base64 encode and decode.</td>
-                  </tr>
-                  <tr>
-                    <td>
-                      <code>codestation_case_convert</code>
-                    </td>
-                    <td>
-                      <span style={{ color: "var(--green)" }}>Free</span>
-                    </td>
-                    <td>
-                      Converts identifiers between camelCase, snake_case,
-                      kebab-case, PascalCase.
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>
-                      <code>codestation_text_diff</code>
-                    </td>
-                    <td>
-                      <span style={{ color: "var(--green)" }}>Free</span>
-                    </td>
-                    <td>Unified line-by-line semantic text comparison.</td>
-                  </tr>
-                  <tr>
-                    <td>
-                      <code>codestation_uuid</code>
-                    </td>
-                    <td>
-                      <span style={{ color: "var(--green)" }}>Free</span>
-                    </td>
-                    <td>
-                      Generates cryptographically random RFC 4122 v4 UUIDs.
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+              <McpToolCatalogExplorer />
             </section>
           )}
 
@@ -2278,9 +2068,10 @@ Always prioritize calling these local, deterministic tools instead of calculatin
                     home PC).
                   </li>
                   <li>
-                    <strong>Hardware Fingerprinting:</strong> Machines register
-                    a unique local hardware fingerprint with the license
-                    service.
+                    <strong>Stable Machine Fingerprinting:</strong> Devices bind
+                    using a SHA-256 fingerprint derived from hostname, platform,
+                    architecture, and username (never Node version or cwd, so
+                    runtime upgrades do not consume extra slots).
                   </li>
                   <li>
                     <strong>Automatic 30-Day Pruning:</strong> Inactive machines
@@ -2292,10 +2083,12 @@ Always prioritize calling these local, deterministic tools instead of calculatin
                     button on the <Link href="/pro">Pro page</Link>.
                   </li>
                   <li>
-                    <strong>Offline Caching:</strong> Validated license status
-                    is cached locally in{" "}
-                    <code>~/.codestation/license.json</code>, enabling seamless
-                    offline work.
+                    <strong>14-Day Offline Grace Window:</strong> Validated
+                    license status is cached locally in{" "}
+                    <code>~/.codestation/license.json</code> with{" "}
+                    <code>0600</code> permissions, enabling 14 days of
+                    offline work with silent background revalidation when
+                    connected.
                   </li>
                 </ul>
               </div>
@@ -2491,7 +2284,7 @@ Always prioritize calling these local, deterministic tools instead of calculatin
 
           {/* Opt-in Leaderboard Banner */}
           <BannerAd size="leaderboard" className={styles.adContainer} />
-        </main>
+        </div>
       </div>
     </div>
   );

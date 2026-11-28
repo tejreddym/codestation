@@ -1,8 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import crypto from "node:crypto";
-import { clearTestStore } from "@/lib/license/storage";
+import { clearTestStore, getOrderProvisioning } from "@/lib/license/storage";
 import { POST as createOrderPost } from "./create-order/route";
 import { POST as verifyPaymentPost } from "./verify-payment/route";
+import { POST as razorpayWebhookPost } from "./webhooks/razorpay/route";
 import { POST as createLicensePost } from "./v1/license/create/route";
 import { POST as verifyLicensePost } from "./v1/license/verify/route";
 import { POST as revokeLicensePost } from "./v1/license/revoke/route";
@@ -21,6 +22,23 @@ vi.mock("razorpay", () => ({
 
 const TEST_KEY_ID = "rzp_test_team_123456";
 const TEST_KEY_SECRET = "test_secret_abcdef_123456";
+const TEST_WEBHOOK_SECRET = "whsec_test_9876543210";
+
+function signWebhookPayload(rawBody: string, secret = TEST_WEBHOOK_SECRET): string {
+  return crypto.createHmac("sha256", secret).update(rawBody).digest("hex");
+}
+
+function webhookRequest(rawBody: string, signature?: string) {
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (signature !== undefined) {
+    headers["x-razorpay-signature"] = signature;
+  }
+  return new Request("http://localhost/api/webhooks/razorpay", {
+    method: "POST",
+    headers,
+    body: rawBody,
+  });
+}
 
 function signPayment(orderId: string, paymentId: string, secret = TEST_KEY_SECRET): string {
   return crypto
@@ -47,6 +65,7 @@ beforeEach(() => {
   }));
   process.env.RAZORPAY_KEY_ID = TEST_KEY_ID;
   process.env.RAZORPAY_KEY_SECRET = TEST_KEY_SECRET;
+  process.env.RAZORPAY_WEBHOOK_SECRET = TEST_WEBHOOK_SECRET;
   delete process.env.LICENSE_GENERATOR_SECRET;
 });
 
@@ -221,5 +240,138 @@ describe("Pro & Team Licensing API Routes", () => {
     const resetAllJson = (await resetAllRes.json()) as Record<string, any>;
     expect(resetAllJson.deviceCount).toBe(0);
     expect(resetAllJson.devices).toEqual([]);
+  });
+
+  it("verifies Razorpay webhook HMAC signatures, rejects tampered requests, and provisions idempotently", async () => {
+    const webhookBody = JSON.stringify({
+      event: "payment.captured",
+      payload: {
+        payment: {
+          entity: {
+            id: "pay_webhook_001",
+            order_id: "order_webhook_001",
+            amount: 149900,
+            notes: {
+              plan: "team",
+              planType: "team",
+              seatLimit: "10",
+              orgName: "Webhook Org",
+            },
+          },
+        },
+      },
+    });
+
+    // Reject missing or invalid signature
+    const missingSig = await razorpayWebhookPost(webhookRequest(webhookBody));
+    expect(missingSig.status).toBe(401);
+
+    const badSig = await razorpayWebhookPost(webhookRequest(webhookBody, "0".repeat(64)));
+    expect(badSig.status).toBe(401);
+
+    // Valid signature provisions Team 10-seat license on first event
+    const validSig = signWebhookPayload(webhookBody);
+    const firstHook = await razorpayWebhookPost(webhookRequest(webhookBody, validSig));
+    expect(firstHook.status).toBe(200);
+    const firstJson = (await firstHook.json()) as Record<string, any>;
+    expect(firstJson.received).toBe(true);
+    expect(firstJson.provisioned).toBe(true);
+    expect(firstJson.idempotent).toBe(false);
+    expect(firstJson.seatLimit).toBe(10);
+    expect(firstJson.orgName).toBe("Webhook Org");
+    expect(firstJson.licenseKey).toBeUndefined();
+
+    // Duplicate payment.captured delivery is idempotent with identical keyHash
+    const dupHook = await razorpayWebhookPost(webhookRequest(webhookBody, validSig));
+    expect(dupHook.status).toBe(200);
+    const dupJson = (await dupHook.json()) as Record<string, any>;
+    expect(dupJson.idempotent).toBe(true);
+    expect(dupJson.provisioned).toBe(false);
+    expect(dupJson.keyHash).toBe(firstJson.keyHash);
+
+    // Subsequent order.paid for the same order_id is also idempotent
+    const orderPaidBody = JSON.stringify({
+      event: "order.paid",
+      payload: {
+        order: { entity: { id: "order_webhook_001", amount: 149900 } },
+        payment: { entity: { id: "pay_webhook_001", order_id: "order_webhook_001" } },
+      },
+    });
+    const orderPaidHook = await razorpayWebhookPost(
+      webhookRequest(orderPaidBody, signWebhookPayload(orderPaidBody))
+    );
+    expect(orderPaidHook.status).toBe(200);
+    const orderPaidJson = (await orderPaidHook.json()) as Record<string, any>;
+    expect(orderPaidJson.idempotent).toBe(true);
+    expect(orderPaidJson.keyHash).toBe(firstJson.keyHash);
+
+    // If buyer's /api/verify-payment completes right after webhook, it returns the provisioned key & scrubs pendingKey
+    const clientSig = signPayment("order_webhook_001", "pay_webhook_001");
+    const claimRes = await verifyPaymentPost(
+      jsonRequest("http://localhost/api/verify-payment", {
+        razorpay_order_id: "order_webhook_001",
+        razorpay_payment_id: "pay_webhook_001",
+        razorpay_signature: clientSig,
+        plan: "team",
+        seatLimit: 10,
+      })
+    );
+    expect(claimRes.status).toBe(200);
+    const claimJson = (await claimRes.json()) as Record<string, any>;
+    expect(claimJson.provisionedByWebhook).toBe(true);
+    expect(claimJson.licenseKey).toMatch(/^CS-TEAM-/);
+
+    const scrubbed = await getOrderProvisioning("order_webhook_001");
+    expect(scrubbed?.clientClaimed).toBe(true);
+    expect(scrubbed?.pendingKey).toBeUndefined();
+
+    // Verify provisioned key works against /api/v1/license/verify
+    const activeCheck = await verifyLicensePost(
+      jsonRequest("http://localhost/api/v1/license/verify", {
+        key: claimJson.licenseKey,
+        deviceId: "team-dev-1",
+      })
+    );
+    expect(activeCheck.status).toBe(200);
+    const activeJson = (await activeCheck.json()) as Record<string, any>;
+    expect(activeJson.valid).toBe(true);
+    expect(activeJson.seatLimit).toBe(10);
+    expect(activeJson.orgName).toBe("Webhook Org");
+  });
+
+  it("handles verify-payment first followed by webhook idempotently", async () => {
+    const clientSig = signPayment("order_client_first_001", "pay_client_first_001");
+    const verifyRes = await verifyPaymentPost(
+      jsonRequest("http://localhost/api/verify-payment", {
+        razorpay_order_id: "order_client_first_001",
+        razorpay_payment_id: "pay_client_first_001",
+        razorpay_signature: clientSig,
+        plan: "lifetime",
+      })
+    );
+    expect(verifyRes.status).toBe(200);
+    const verifyJson = (await verifyRes.json()) as Record<string, any>;
+    expect(verifyJson.licenseKey).toMatch(/^CS-PRO-/);
+
+    const webhookBody = JSON.stringify({
+      event: "order.paid",
+      payload: {
+        order: { entity: { id: "order_client_first_001", amount: 99900 } },
+        payment: {
+          entity: {
+            id: "pay_client_first_001",
+            order_id: "order_client_first_001",
+            notes: { plan: "lifetime" },
+          },
+        },
+      },
+    });
+    const hookRes = await razorpayWebhookPost(
+      webhookRequest(webhookBody, signWebhookPayload(webhookBody))
+    );
+    expect(hookRes.status).toBe(200);
+    const hookJson = (await hookRes.json()) as Record<string, any>;
+    expect(hookJson.idempotent).toBe(true);
+    expect(hookJson.provisioned).toBe(false);
   });
 });

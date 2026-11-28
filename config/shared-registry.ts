@@ -32,7 +32,13 @@ import { convertBetweenTimeZones, businessDaysBetween } from "../lib/tools/date-
 import { parseCron } from "../lib/tools/cron/parser";
 import { explainCron } from "../lib/tools/cron/explain";
 import { nextCronRun } from "../lib/tools/cron/engine";
-import type { LicenseStatus } from "../mcp/config";
+import { tools as catalogTools } from "./tools";
+import {
+  FREE_DIRECT_MCP_TOOLS,
+  PRO_TOOLS,
+  isFreeTierSlug,
+  type LicenseStatus,
+} from "../mcp/config";
 
 export type ToolAccessLevel = "free" | "pro" | "local-only" | "paid-key";
 export type ToolPrivacyClassification = "local-only" | "client-side" | "memory-only";
@@ -72,18 +78,53 @@ export interface AccessCheckResult {
   requiredTier?: "free" | "pro" | "paid-key";
 }
 
+const UNIVERSAL_META_TOOL_NAMES = new Set([
+  "codestation_list_tools",
+  "codestation_describe_tool",
+  "codestation_run_tool",
+]);
+
+const VIRTUAL_NODE_FILE_SLUGS = new Set([
+  "pdf-inspect",
+  "xlsx-inspect",
+  "xlsx-to-json",
+  "json-to-xlsx",
+  "gzip-compress",
+  "gzip-decompress",
+  "zip-list",
+  "zip-create",
+  "zip-extract",
+  "image-inspect",
+  "svg-resize",
+]);
+
 /**
- * Single authoritative access policy engine across Web App, CLI, and MCP.
+ * Single authoritative Freemium access policy engine across Web App, CLI, and MCP.
  */
 export function checkToolAccess(
   toolId: string,
   license?: LicenseStatus | null
 ): AccessCheckResult {
+  if (UNIVERSAL_META_TOOL_NAMES.has(toolId) || FREE_DIRECT_MCP_TOOLS.has(toolId)) {
+    return { allowed: true, status: "granted" };
+  }
+
+  const normalized = toolId.toLowerCase().trim().replace(/^codestation[-_]/, "").replace(/_/g, "-");
   const tool = SHARED_TOOLS.find(
     (t) => t.id === toolId || t.mcpMetadata.toolName === toolId || t.cliMetadata.command === toolId || t.cliMetadata.aliases.includes(toolId)
   );
+  const catalogMatch = catalogTools.find(
+    (t) =>
+      t.id === toolId ||
+      t.slug === toolId ||
+      t.id === normalized ||
+      t.slug === normalized ||
+      `codestation_${t.slug.replace(/[^a-zA-Z0-9_]/g, "_")}` === toolId
+  );
+  const isVirtualNodeFile = VIRTUAL_NODE_FILE_SLUGS.has(toolId) || VIRTUAL_NODE_FILE_SLUGS.has(normalized);
+  const isProDirectMcp = PRO_TOOLS.has(toolId);
 
-  if (!tool) {
+  if (!tool && !catalogMatch && !isVirtualNodeFile && !isProDirectMcp) {
     return {
       allowed: false,
       status: "denied",
@@ -91,38 +132,21 @@ export function checkToolAccess(
     };
   }
 
-  // Free tools are always granted
-  if (tool.accessLevel === "free" || tool.accessLevel === "local-only") {
+  if (isFreeTierSlug(toolId) || (catalogMatch && isFreeTierSlug(catalogMatch.slug))) {
     return { allowed: true, status: "granted" };
   }
 
-  // Pro tools require valid Pro license
-  if (tool.accessLevel === "pro") {
-    if (license?.isPro) {
-      return { allowed: true, status: "granted" };
-    }
-    return {
-      allowed: false,
-      status: "denied",
-      requiredTier: "pro",
-      reason: `Tool "${tool.name}" requires Code Station Pro. Upgrade at https://codestation.in/pro or launch with --key CS-PRO-YOURKEY.`,
-    };
+  if (license?.isPro) {
+    return { allowed: true, status: "granted" };
   }
 
-  // Paid key required
-  if (tool.accessLevel === "paid-key") {
-    if (license?.isPro) {
-      return { allowed: true, status: "granted" };
-    }
-    return {
-      allowed: false,
-      status: "denied",
-      requiredTier: "paid-key",
-      reason: `Tool "${tool.name}" requires a valid paid key.`,
-    };
-  }
-
-  return { allowed: true, status: "granted" };
+  const displayName = tool?.name ?? catalogMatch?.name ?? toolId;
+  return {
+    allowed: false,
+    status: "denied",
+    requiredTier: "pro",
+    reason: `🔒 Tool "${displayName}" (${toolId}) requires Code Station Pro. Upgrade at https://codestation.in/pro or run: codestation login CS-PRO-YOURKEY`,
+  };
 }
 
 export const SHARED_TOOLS: SharedToolDefinition[] = [

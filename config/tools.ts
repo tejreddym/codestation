@@ -13,6 +13,7 @@ import { apiTools, type ApiToolContract, type ApiToolId } from "./api-tools";
 import { imageTools, type ImageToolId } from "./image-tools";
 import { videoTools, isVideoToolId, type VideoToolId } from "./video-tools";
 import type { LocalContract } from "./local-contract";
+import type { ToolRuntimeCompatibility } from "./runtime-compatibility";
 import { spreadsheetTools, type SpreadsheetToolId } from "./spreadsheet-tools";
 import { markdownTools, type MarkdownToolId } from "./markdown-tools";
 import { colorTools, type ColorToolId } from "./color-tools";
@@ -40,6 +41,12 @@ export { isGitToolId, type GitToolId } from "./git-tools";
 export { isFinanceToolId, type FinanceToolId } from "./finance-tools";
 export { isProductivityToolId, type ProductivityToolId } from "./productivity-tools";
 export { isVideoToolId, type VideoToolId } from "./video-tools";
+export {
+  classifyToolRuntime,
+  NODE_FILE_TOOL_IDS,
+  BROWSER_ONLY_TOOL_IDS,
+  type ToolRuntimeCompatibility,
+} from "./runtime-compatibility";
 
 /** Includes the legacy catalog plus typed station metadata; no browser code. */
 export type RegisteredToolId =
@@ -75,7 +82,7 @@ export type RegisteredToolId =
   | GitToolId
   | FinanceToolId
   | ProductivityToolId;
-export type ToolDefinition = { id: RegisteredToolId; slug: string; name: string; description: string; category: string; keywords: readonly string[]; featured?: boolean; pairId?: string; direction?: "forward" | "reverse"; pairedTool?: RegisteredToolId; inputFormat?: string; outputFormat?: string; inputType?: string; outputType?: string; dataContract?: DataToolContract; encodingContract?: EncodingToolContract; securityContract?: SecurityToolContract; regexContract?: RegexToolContract; dateTimeContract?: DateTimeToolContract; textContract?: TextToolContract; cronContract?: CronToolContract; sqlContract?: SqlToolContract; webContract?: WebToolContract; apiContract?: ApiToolContract; localContract?: LocalContract; relatedTools?: readonly string[]; seo?: { title?: string; description?: string }; };
+export type ToolDefinition = { id: RegisteredToolId; slug: string; name: string; description: string; category: string; keywords: readonly string[]; featured?: boolean; pairId?: string; direction?: "forward" | "reverse"; pairedTool?: RegisteredToolId; inputFormat?: string; outputFormat?: string; inputType?: string; outputType?: string; runtimeCompatibility?: ToolRuntimeCompatibility; dataContract?: DataToolContract; encodingContract?: EncodingToolContract; securityContract?: SecurityToolContract; regexContract?: RegexToolContract; dateTimeContract?: DateTimeToolContract; textContract?: TextToolContract; cronContract?: CronToolContract; sqlContract?: SqlToolContract; webContract?: WebToolContract; apiContract?: ApiToolContract; localContract?: LocalContract; relatedTools?: readonly string[]; seo?: { title?: string; description?: string }; };
 
 export const tools: ToolDefinition[] = [
   ...jsonDataTools,

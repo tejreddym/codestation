@@ -22,8 +22,16 @@
   "dependencies": {
     "@cfworker/json-schema": "^4.1.1",
     "@modelcontextprotocol/sdk": "^1.32.1",
+    "entities": "^8.1.0",
+    "exceljs": "4.4.0",
+    "fflate": "0.8.3",
     "node-sql-parser": "5.4.0",
+    "pdf-lib": "^1.17.1",
+    "qrcode": "^1.5.4",
+    "saxes": "^6.0.0",
+    "smol-toml": "^1.9.0",
     "sql-formatter": "15.9.0",
+    "tr46": "^6.0.0",
     "yaml": "^2.9.1"
   },
   "keywords": [

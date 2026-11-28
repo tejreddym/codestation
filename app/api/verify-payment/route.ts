@@ -2,7 +2,12 @@ import { NextResponse } from "next/server";
 import { getRazorpayCredentials, verifySignature } from "@/lib/razorpay";
 import { generateLicenseKey } from "@/lib/license/hash";
 import { resolvePlanPricing } from "@/lib/license/pricing";
-import { sanitizeOrgName, saveLicense } from "@/lib/license/storage";
+import {
+  getOrderProvisioning,
+  sanitizeOrgName,
+  saveLicense,
+  saveOrderProvisioning,
+} from "@/lib/license/storage";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -72,13 +77,68 @@ export async function POST(request: Request) {
       );
     }
 
-    // Generate Pro license key and persist one-way SHA-256 hash in Cloudflare KV
-    const licenseKey = generateLicenseKey();
+    // Check if webhook already provisioned this order idempotently
+    const existingOrder = await getOrderProvisioning(String(orderId));
+    if (existingOrder?.pendingKey) {
+      const claimedKey = existingOrder.pendingKey;
+      await saveOrderProvisioning({
+        ...existingOrder,
+        paymentId: existingOrder.paymentId || String(paymentId),
+        clientClaimed: true,
+        pendingKey: undefined,
+      });
+
+      return NextResponse.json(
+        {
+          success: true,
+          verified: true,
+          provisionedByWebhook: true,
+          message: "Payment verified successfully",
+          licenseKey: claimedKey,
+          plan: existingOrder.plan,
+          planType: existingOrder.planType,
+          seatLimit: existingOrder.seatLimit,
+          maxDevices: existingOrder.seatLimit,
+          ...(existingOrder.orgName ? { orgName: existingOrder.orgName } : {}),
+          createdAt: existingOrder.createdAt,
+          expiresAt: existingOrder.expiresAt,
+          payment_id: paymentId,
+          order_id: orderId,
+        },
+        { status: 200, headers: CORS_HEADERS }
+      );
+    }
+
+    if (existingOrder?.clientClaimed) {
+      return NextResponse.json(
+        {
+          success: true,
+          verified: true,
+          alreadyClaimed: true,
+          message: "Order already verified and license key already delivered.",
+          plan: existingOrder.plan,
+          planType: existingOrder.planType,
+          seatLimit: existingOrder.seatLimit,
+          maxDevices: existingOrder.seatLimit,
+          ...(existingOrder.orgName ? { orgName: existingOrder.orgName } : {}),
+          createdAt: existingOrder.createdAt,
+          expiresAt: existingOrder.expiresAt,
+          payment_id: paymentId,
+          order_id: orderId,
+        },
+        { status: 200, headers: CORS_HEADERS }
+      );
+    }
+
+    // Generate Pro/Team license key and persist one-way SHA-256 hash in Cloudflare KV
+    const licenseKey = generateLicenseKey(
+      pricing.planType === "team" ? "CS-TEAM" : "CS-PRO"
+    );
     const now = Date.now();
     const expiresAt =
       pricing.durationMs === null ? null : now + pricing.durationMs;
 
-    await saveLicense(licenseKey, {
+    const { keyHash } = await saveLicense(licenseKey, {
       status: "active",
       tier: "pro",
       plan: pricing.plan,
@@ -90,6 +150,20 @@ export async function POST(request: Request) {
       expiresAt,
       orderId,
       notes: `Razorpay payment ${paymentId}`,
+    });
+
+    await saveOrderProvisioning({
+      orderId: String(orderId),
+      paymentId: String(paymentId),
+      keyHash,
+      plan: pricing.plan,
+      planType: pricing.planType,
+      seatLimit: pricing.seatLimit,
+      ...(orgName ? { orgName } : {}),
+      createdAt: now,
+      expiresAt,
+      provisionedBy: "verify-payment",
+      clientClaimed: true,
     });
 
     return NextResponse.json(

@@ -23,6 +23,22 @@ export interface LicenseRecord {
   devices?: ActiveDevice[];
 }
 
+export interface OrderProvisioningRecord {
+  orderId: string;
+  paymentId: string;
+  keyHash: string;
+  plan: LicensePlan;
+  planType: LicensePlanType;
+  seatLimit: number;
+  orgName?: string;
+  createdAt: number;
+  expiresAt: number | null;
+  provisionedBy: "verify-payment" | "webhook";
+  clientClaimed: boolean;
+  webhookEvent?: string;
+  pendingKey?: string; // Cleared automatically as soon as client claims key
+}
+
 export interface VerificationResponse {
   valid: boolean;
   tier?: "pro" | "free";

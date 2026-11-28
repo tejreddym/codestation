@@ -23,11 +23,20 @@ Local-first developer toolbox for AI assistants (Cursor, Claude Desktop, Windsur
 Usage:
   npx codestation-mcp [command|options]
 
-1-Click AI Assistant Setup:
+1-Click AI Assistant Setup & Licensing:
   npx codestation-mcp setup [--key <license_key>]
     Automatically configures Claude Desktop, Cursor IDE, and Windsurf.
+  codestation login <key>       Verify & cache Pro/Team license (14-day offline grace)
+  codestation status            Show active license tier, grace cache, & tool counts
+  codestation logout            Clear locally cached license
 
-Terminal Subcommands:
+Universal Pipeable Registry CLI:
+  codestation list [--station <name>] [--tier free|pro] [--search <q>]
+  codestation info <slug>
+  codestation run <slug> [--input <text>] [--in <file>] [--out <file>] [--options '<json>']
+    Example: cat data.json | codestation run json-to-yaml --key CS-PRO-YOURKEY
+
+Quick Terminal Shortcuts:
   jwt <token>                   Decode & inspect JWT header, payload, and expiry
   sql "<query>" [--dialect]     Format SQL query (postgresql, mysql, sqlite, sqlserver)
   cron "<expression>"           Explain cron schedule & project next 5 runtimes
@@ -48,9 +57,14 @@ Terminal Subcommands:
 
 Stdio Server Options (for AI Assistants):
   --key <license_key>           Activate Code Station Pro features
+  --stations=<list>             Expose extra Node-compatible stations directly (e.g. json,security,sql)
   --no-update-check             Disable npm update check (or set CODESTATION_NO_UPDATE_CHECK=1)
   --help, -h                    Show this help message
   --version, -v                 Show version information
+
+Environment Variables:
+  CODESTATION_LICENSE_KEY       Code Station Pro license key
+  CODESTATION_MCP_STATIONS      Comma-separated stations to expose directly alongside the Top 25 + 3 meta-tools
 
 Pricing:
   • Free Tier:                  Unlimited Base64, JSON, YAML, UUID, Text Diff, Case conversion
@@ -134,20 +148,47 @@ async function main(): Promise<void> {
     cliKey = cleanArgs[keyIndex + 1];
   }
 
-  const { server, license } = createMcpServer(cliKey);
+  let stationArgs: string[] | undefined;
+  const eqStations = cleanArgs.find((a) => a.startsWith("--stations="));
+  if (eqStations) {
+    stationArgs = eqStations
+      .slice("--stations=".length)
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+  } else {
+    const idx = cleanArgs.indexOf("--stations");
+    if (idx !== -1 && cleanArgs[idx + 1]) {
+      stationArgs = cleanArgs[idx + 1]
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+    }
+  }
+
+  const { server, license, exposedToolCount, nodePureToolCount } = createMcpServer(cliKey, {
+    stations: stationArgs,
+  });
 
   if (license.isPro) {
     process.stderr.write(PRO_ASCII_BADGE);
-    process.stderr.write(`[Code Station MCP] Pro Tier Active (License: ${license.licenseKey?.slice(0, 8)}...). All tools unlocked.\n`);
+    process.stderr.write(`[Code Station MCP] Pro Tier Active (License: ${license.licenseKey?.slice(0, 8)}..., source: ${license.source}). All tools unlocked.\n`);
   } else {
+    if (stationArgs && stationArgs.length > 0) {
+      process.stderr.write(
+        `[Code Station MCP] Note: --stations expansion requires Code Station Pro (${PRICING.upgradeUrl}). Using Free Tier tool surface.\n`
+      );
+    }
     process.stderr.write(
-      `[Code Station MCP] Running in Free Tier. Pro tools available at ${PRICING.inr} / ${PRICING.usd} (${PRICING.upgradeUrl})\n`
+      `[Code Station MCP] Running in Free Tier (3 universal + 15 core tools). Unlock all 300+ tools & file handlers at ${PRICING.inr} / ${PRICING.usd} (${PRICING.upgradeUrl})\n`
     );
   }
 
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  process.stderr.write("[Code Station MCP] Connected to stdio. Ready for tool requests.\n");
+  process.stderr.write(
+    `[Code Station MCP] Connected to stdio (${exposedToolCount} direct MCP tools + ${nodePureToolCount} Node-pure tools via Hybrid Registry).\n`
+  );
 }
 
 main().catch((err) => {

@@ -14,6 +14,7 @@
     "dev": "next dev",
     "postinstall": "node scripts/copy-pdfjs-assets.mjs",
     "generate:notices": "node scripts/generate-third-party-notices.mjs",
+    "generate:mcp-docs": "node scripts/generate-mcp-docs.mjs",
     "build": "node scripts/copy-pdfjs-assets.mjs && node scripts/generate-third-party-notices.mjs && next build && node scripts/generate-offline-manifest.mjs",
     "build:mcp": "esbuild mcp/cli.ts --bundle --platform=node --target=node22 --format=esm --packages=external --outfile=bin/codestation-mcp.mjs && chmod +x bin/codestation-mcp.mjs && mkdir -p packages/codestation-mcp/bin && cp bin/codestation-mcp.mjs packages/codestation-mcp/bin/ && chmod +x packages/codestation-mcp/bin/codestation-mcp.mjs",
     "publish:mcp": "npm run build:mcp && cd packages/codestation-mcp && npm publish --access public",

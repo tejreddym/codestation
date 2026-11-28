@@ -45,7 +45,8 @@
   padding: 3px 8px;
   border-radius: 4px;
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--ink);
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--line));
   margin-bottom: 12px;
 }
 
@@ -272,38 +273,104 @@
   margin-bottom: 12px;
 }
 
+.currencyNote {
+  margin: 10px 0 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--secondary);
+}
+
+.guaranteeBox {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+  padding: 14px 16px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-alt);
+  border: 1px solid var(--line);
+}
+
+.guaranteeBox > div {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.guaranteeBox strong {
+  font-size: 13px;
+  color: var(--ink);
+}
+
+.guaranteeBox span {
+  font-size: 12px;
+  color: var(--secondary);
+  line-height: 1.45;
+}
+
+.guaranteeBox a {
+  color: var(--accent);
+  font-weight: 700;
+}
+
 .keyDisplay {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   margin-bottom: 12px;
 }
 
 .keyDisplay code {
   flex: 1;
-  font-size: 18px;
+  min-width: 210px;
+  font-size: 16px;
   font-weight: 700;
   padding: 10px 14px;
   background: var(--code);
   color: var(--code-ink);
   border-radius: var(--radius-sm);
-  letter-spacing: 0.05em;
+  letter-spacing: 0.04em;
   user-select: all;
+  overflow-wrap: anywhere;
 }
 
-.keyCopyBtn {
+.keyActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.keyCopyBtn,
+.keyDownloadBtn {
   background: var(--surface);
   border: 1px solid var(--line-strong);
   color: var(--ink);
   font-weight: 700;
-  padding: 10px 16px;
+  padding: 9px 14px;
   border-radius: var(--radius-sm);
-  font-size: 13px;
+  font-size: 12.5px;
   white-space: nowrap;
+  cursor: pointer;
 }
 
-.keyCopyBtn:hover {
+.keyCopyBtn:hover,
+.keyDownloadBtn:hover {
   border-color: var(--accent);
+}
+
+.cliSnippetHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.cliSnippetHeader label {
+  margin-bottom: 0;
 }
 
 .expiryInfo {
@@ -376,13 +443,18 @@
 .resultBanner.valid {
   background: color-mix(in srgb, var(--green) 10%, var(--surface));
   border: 1px solid var(--green);
-  color: var(--green);
+  color: var(--ink);
 }
 
 .resultBanner.invalid {
   background: color-mix(in srgb, var(--red) 10%, var(--surface));
   border: 1px solid var(--red);
-  color: var(--red);
+  color: var(--ink);
+}
+
+.resultBanner a {
+  color: var(--accent);
+  font-weight: 700;
 }
 
 .resultBanner p {
@@ -543,11 +615,26 @@
 .generateButton:focus-visible,
 .verifyBtn:focus-visible,
 .keyCopyBtn:focus-visible,
+.keyDownloadBtn:focus-visible,
 .revokeSeatBtn:focus-visible,
 .resetSeatsBtn:focus-visible,
 .inputField:focus-visible,
 .orgInput:focus-visible {
   outline: 2px solid var(--focus);
   outline-offset: 2px;
+}
+
+@media (max-width: 720px) {
+  .guaranteeBox {
+    grid-template-columns: 1fr;
+  }
+
+  .verifyForm {
+    flex-direction: column;
+  }
+
+  .actionBox {
+    padding: 18px;
+  }
 }
 

@@ -253,6 +253,12 @@
 
 .docSection {
   scroll-margin-top: 90px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.docSection code {
+  overflow-wrap: anywhere;
 }
 
 .sectionHeader {
@@ -293,6 +299,8 @@
   margin-top: 36px;
   padding-top: 24px;
   border-top: 1px dashed var(--line);
+  min-width: 0;
+  max-width: 100%;
 }
 
 .subSection h3 {
@@ -320,6 +328,8 @@
   padding: 22px;
   margin-bottom: 24px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+  min-width: 0;
+  max-width: 100%;
 }
 
 .commandHeader {
@@ -346,19 +356,20 @@
 
 .commandBadge.pro {
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--ink);
   border-color: color-mix(in srgb, var(--accent) 30%, var(--line));
 }
 
 .commandBadge.free {
-  background: color-mix(in srgb, var(--green) 12%, transparent);
-  color: var(--green);
-  border-color: color-mix(in srgb, var(--green) 30%, var(--line));
+  background: color-mix(in srgb, var(--green) 14%, var(--surface));
+  color: var(--ink);
+  border-color: color-mix(in srgb, var(--green) 35%, var(--line));
 }
 
 /* Tables */
 .specTable {
   width: 100%;
+  max-width: 100%;
   border-collapse: collapse;
   font-size: 13.5px;
   margin: 16px 0 24px;
@@ -490,6 +501,11 @@
 
   .commandCard {
     padding: 16px;
+  }
+
+  .specTable {
+    display: block;
+    overflow-x: auto;
   }
 
   .specTable th, .specTable td {

@@ -1,0 +1,335 @@
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.controlsRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.tabBar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  border-bottom: 1px solid var(--line);
+  padding-bottom: var(--space-2);
+}
+
+.tabChip {
+  background: var(--surface-alt);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 7px 14px;
+  font-size: var(--text-sm);
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.tabChip:hover {
+  border-color: var(--accent);
+}
+
+.tabChipActive {
+  background: var(--action-bg);
+  color: var(--action-ink);
+  border-color: var(--action-border);
+  box-shadow: var(--shadow-tactile);
+}
+
+.modeGroup {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.modePill {
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-pill);
+  padding: 5px 12px;
+  font-size: var(--text-xs);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.modePillActive {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.stationFlagInput {
+  min-width: 210px;
+  height: var(--control-h-sm);
+  padding: 0 var(--space-3);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+.configPathNote {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--secondary);
+}
+
+.summaryGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.statTile {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: var(--space-3);
+}
+
+.statValue {
+  display: block;
+  font-size: var(--text-xl);
+  font-weight: 800;
+  color: var(--ink);
+  font-family: var(--font-mono);
+}
+
+.statLabel {
+  display: block;
+  font-size: var(--text-xs);
+  color: var(--secondary);
+  margin-top: 2px;
+}
+
+.filterBox {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.filterTop {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 230px;
+  gap: var(--space-3);
+}
+
+.searchField,
+.stationSelect {
+  height: var(--control-h-sm);
+  padding: 0 var(--space-3);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface-alt);
+  color: var(--ink);
+  font-size: var(--text-sm);
+  width: 100%;
+}
+
+.filterBottom {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.resultMeta {
+  font-size: var(--text-xs);
+  color: var(--secondary);
+  font-family: var(--font-mono);
+}
+
+.catalogList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.toolCard {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.toolHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.toolTitleGroup {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.toolTitle {
+  font-size: var(--text-md);
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0;
+}
+
+.toolSlug {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  background: var(--surface-alt);
+  color: var(--ink);
+  padding: 2px 7px;
+  border-radius: var(--radius-xs);
+  border: 1px solid var(--line);
+}
+
+.badgeRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.tierFree,
+.tierPro,
+.runtimeBadge,
+.stationBadge {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: var(--radius-xs);
+  border: 1px solid var(--line);
+}
+
+.tierFree {
+  background: color-mix(in srgb, var(--green) 14%, var(--surface));
+  color: var(--ink);
+  border-color: color-mix(in srgb, var(--green) 45%, var(--line));
+}
+
+.tierPro {
+  background: var(--accent-soft);
+  color: var(--ink);
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
+}
+
+.runtimeBadge {
+  background: var(--surface-alt);
+  color: var(--ink);
+}
+
+.stationBadge {
+  background: var(--surface);
+  color: var(--secondary);
+}
+
+.toolDescription {
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: 1.55;
+  color: var(--secondary);
+}
+
+.toolMetaLine {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  font-size: var(--text-xs);
+  color: var(--muted);
+  font-family: var(--font-mono);
+}
+
+.cliCommandBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  background: var(--code);
+  color: var(--code-ink);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  overflow-x: auto;
+}
+
+.cliCommandCode {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--code-ink);
+}
+
+.copyAction {
+  flex-shrink: 0;
+  background: var(--action-bg);
+  color: var(--action-ink);
+  border: 1px solid var(--action-border);
+  border-radius: var(--radius-xs);
+  padding: 4px 10px;
+  font-size: var(--text-xs);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.copyAction:hover {
+  background: var(--action-hover);
+}
+
+.paginationRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding-top: var(--space-2);
+}
+
+.loadMoreAction {
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  padding: 8px 16px;
+  font-size: var(--text-sm);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.loadMoreAction:hover {
+  border-color: var(--accent);
+}
+
+@media (max-width: 720px) {
+  .summaryGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .filterTop {
+    grid-template-columns: 1fr;
+  }
+
+  .stationFlagInput {
+    width: 100%;
+  }
+}
