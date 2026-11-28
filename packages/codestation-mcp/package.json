@@ -32,7 +32,7 @@
     "qrcode": "^1.5.4",
     "saxes": "^6.0.0",
     "smol-toml": "^1.9.0",
-    "sql-formatter": "15.9.0",
+    "sql-formatter": "15.10.0",
     "tr46": "^6.0.0",
     "yaml": "^2.9.1",
     "zod": "^4.0.0"
