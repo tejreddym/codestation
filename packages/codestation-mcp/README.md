@@ -181,6 +181,8 @@ Ways to provide your key:
 
 ---
 
-## License
+## Licensing
 
-MIT © [Code Station](https://codestation.in)
+`codestation-mcp` is **source-available** and governed by the Code Station Commercial License ([`LICENSE`](LICENSE) / [`COMMERCIAL_LICENSE.md`](https://github.com/tejreddym/codestation/blob/main/COMMERCIAL_LICENSE.md)):
+- **Free Browser Tools:** All **383 client-side browser utilities** on [codestation.in](https://codestation.in) are open source under the **MIT License**.
+- **MCP Server & Pro (`codestation-mcp`):** Source code is visible for inspection and security review only. Production use of Pro tools, modification, redistribution, or disabling/bypassing license verification requires an active Code Station Pro or Team license from [codestation.in/pro](https://codestation.in/pro).

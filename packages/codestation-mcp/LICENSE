@@ -1,0 +1,12 @@
+Code Station Commercial License
+
+Copyright (c) 2026 Tej Reddy / Code Station. All rights reserved.
+
+This package (`codestation-mcp`) and the `mcp/` source directory are governed by the Code Station Commercial License (see `COMMERCIAL_LICENSE.md` in the root repository at https://github.com/tejreddym/codestation/blob/main/COMMERCIAL_LICENSE.md).
+
+Terms Summary:
+1. Source code is visible solely for inspection, auditing, and security review.
+2. Production use of Pro capabilities, modification, redistribution, hosted SaaS/service resale, or removal/bypass of license enforcement requires an active Code Station Pro or Team license from https://codestation.in/pro.
+3. Unless expressly authorized in writing, you may not bypass, patch out, or circumvent license verification or device/seat limits, nor republish modified copies of `codestation-mcp`.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.

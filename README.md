@@ -2,7 +2,7 @@
 
 [![Checks](https://github.com/tejreddym/codestation/actions/workflows/ci.yml/badge.svg)](https://github.com/tejreddym/codestation/actions/workflows/ci.yml)
 [![npm codestation-mcp](https://img.shields.io/npm/v/codestation-mcp?label=codestation-mcp)](https://www.npmjs.com/package/codestation-mcp)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![License: Open-Core](https://img.shields.io/badge/License-MIT%20%2B%20Commercial-green.svg)](LICENSE)
 
 Code Station is a browser-first developer toolbox featuring **383 utilities (380+)** across **30 specialized stations** for formatting, converting, hashing, inspecting, compressing, and generating data — **100% locally in the browser** with zero server uploads or accounts required.
 
@@ -72,8 +72,13 @@ Copy `.env.example` to `.env.local` when local configuration is needed. `NEXT_PU
 
 The production target is Cloudflare Workers through the OpenNext adapter. The repository includes `wrangler.jsonc`, `open-next.config.ts`, and `npm run preview`, `npm run deploy`, and `npm run upload` commands. Read [`docs/CLOUDFLARE_DEPLOYMENT.md`](docs/CLOUDFLARE_DEPLOYMENT.md) before connecting Workers Builds or the `codestation.in` custom domain.
 
-## Contributing, Security & License
+## Contributing, Security & Licensing
 
 - **Contributing:** See [`CONTRIBUTING.md`](CONTRIBUTING.md) for setup, verification commands, and how to add a tool via `lib/engine/`.
 - **Security:** See [`SECURITY.md`](SECURITY.md) for responsible disclosure, response SLAs, and scope.
-- **License:** Released under the [MIT License](LICENSE).
+
+### Licensing
+
+Code Station uses a dual **Open-Core** license model:
+- **Browser Tools & Web App ([`LICENSE`](LICENSE) — MIT):** All **383 browser-local tools**, stations, UI components, WebMCP integration, and pure client-side engines in `lib/tools/` and `app/` (excluding `app/api/`) are open source under the **MIT License**.
+- **Pro, Billing & MCP Components ([`COMMERCIAL_LICENSE.md`](COMMERCIAL_LICENSE.md)):** The local MCP server & CLI (`mcp/`, `packages/codestation-mcp/`) and Pro licensing/billing endpoints (`app/api/`) are source-available for security inspection under the **Code Station Commercial License**. Production use of Pro capabilities, modification, redistribution, or removing license checks requires an active Pro or Team license from [codestation.in/pro](https://codestation.in/pro).
