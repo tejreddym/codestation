@@ -1052,7 +1052,7 @@ export function createMcpServer(cliKey?: string, options?: McpServerOptions) {
   const server = new Server(
     {
       name: "codestation-mcp",
-      version: "1.4.0",
+      version: "1.4.1",
     },
     {
       capabilities: {

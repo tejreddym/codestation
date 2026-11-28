@@ -220,7 +220,7 @@ export function buildMcpDocsCatalog(registry) {
   ];
 
   return {
-    version: "1.4.0",
+    version: "1.4.1",
     pricing: {
       inr: pricing.inr,
       usd: pricing.usd,

@@ -27078,7 +27078,7 @@ function createMcpServer(cliKey, options) {
   const server = new Server(
     {
       name: "codestation-mcp",
-      version: "1.4.0"
+      version: "1.4.1"
     },
     {
       capabilities: {
@@ -27467,7 +27467,7 @@ async function handleCliSubcommand(command, args, io) {
           JSON.stringify(
             {
               name: "Code Station",
-              version: "1.4.0",
+              version: "1.4.1",
               license: {
                 tier: license.tier,
                 isPro: license.isPro,
@@ -27493,7 +27493,7 @@ async function handleCliSubcommand(command, args, io) {
         );
       } else {
         out("\n=== CODE STATION STATUS ===\n");
-        out("Version:     1.4.0\n");
+        out("Version:     1.4.1\n");
         out(
           `License:     ${license.isPro ? `PRO TIER (Active via ${license.source}${license.planType === "team" ? " \xB7 Team" : ""})` : "FREE TIER (15 core tools + 3 discovery tools)"}
 `
@@ -28387,7 +28387,7 @@ async function checkForCliUpdate(options) {
 }
 
 // mcp/cli.ts
-var CLI_VERSION = "1.4.0";
+var CLI_VERSION = "1.4.1";
 var PRO_ASCII_BADGE = `
   \u250C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510
   \u2502  CODE STATION [PRO]  \u2022  LOCAL MCP & DEVELOPER TOOLBOX    \u2502

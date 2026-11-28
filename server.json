@@ -1,0 +1,42 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.tejreddym/codestation",
+  "title": "Code Station MCP",
+  "description": "Local-first MCP server & CLI with 332 offline dev/file tools via a 28-tool Hybrid router.",
+  "version": "1.4.1",
+  "repository": {
+    "url": "https://github.com/tejreddym/codestation",
+    "source": "github"
+  },
+  "websiteUrl": "https://codestation.in/docs",
+  "packages": [
+    {
+      "registryType": "npm",
+      "registryBaseUrl": "https://registry.npmjs.org",
+      "identifier": "codestation-mcp",
+      "version": "1.4.1",
+      "runtimeHint": "npx",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "CODESTATION_LICENSE_KEY",
+          "description": "Optional Code Station Pro or Team license key unlocking all 332 local dev and file tools.",
+          "format": "string",
+          "isRequired": false,
+          "isSecret": true,
+          "placeholder": "CS-PRO-XXXX-XXXX-XXXX"
+        },
+        {
+          "name": "CODESTATION_MCP_STATIONS",
+          "description": "Optional comma-separated stations to expose directly alongside the default Hybrid surface.",
+          "format": "string",
+          "isRequired": false,
+          "isSecret": false,
+          "placeholder": "json,security,sql,pdf"
+        }
+      ]
+    }
+  ]
+}

@@ -288,7 +288,7 @@ export async function handleCliSubcommand(
           JSON.stringify(
             {
               name: "Code Station",
-              version: "1.4.0",
+              version: "1.4.1",
               license: {
                 tier: license.tier,
                 isPro: license.isPro,
@@ -314,7 +314,7 @@ export async function handleCliSubcommand(
         );
       } else {
         out("\n=== CODE STATION STATUS ===\n");
-        out("Version:     1.4.0\n");
+        out("Version:     1.4.1\n");
         out(
           `License:     ${
             license.isPro
