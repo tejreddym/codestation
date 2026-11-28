@@ -6,7 +6,7 @@ import { runAutoSetup } from "./setup";
 import { handleCliSubcommand } from "./cli-tools";
 import { checkForCliUpdate } from "./update-check";
 
-const CLI_VERSION = "1.3.0";
+const CLI_VERSION = "1.4.0";
 
 const PRO_ASCII_BADGE = `
   ┌──────────────────────────────────────────────────────────┐

@@ -1,6 +1,6 @@
 {
   "name": "codestation-mcp",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "Local-first Model Context Protocol (MCP) server for Code Station developer utilities. Connects with Claude Desktop, Cursor, and AI agents.",
   "type": "module",
   "main": "./bin/codestation-mcp.mjs",
