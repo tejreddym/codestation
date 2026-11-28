@@ -3,6 +3,7 @@
 [![Checks](https://github.com/tejreddym/codestation/actions/workflows/ci.yml/badge.svg)](https://github.com/tejreddym/codestation/actions/workflows/ci.yml)
 [![npm codestation-mcp](https://img.shields.io/npm/v/codestation-mcp?label=codestation-mcp)](https://www.npmjs.com/package/codestation-mcp)
 [![License: Open-Core](https://img.shields.io/badge/License-MIT%20%2B%20Commercial-green.svg)](LICENSE)
+[![tejreddym/codestation MCP server](https://glama.ai/mcp/servers/tejreddym/codestation/badges/score.svg)](https://glama.ai/mcp/servers/tejreddym/codestation)
 
 Code Station is a browser-first developer toolbox featuring **383 utilities (380+)** across **30 specialized stations** for formatting, converting, hashing, inspecting, compressing, and generating data — **100% locally in the browser** with zero server uploads or accounts required.
 
