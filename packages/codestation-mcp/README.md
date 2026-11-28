@@ -602,6 +602,6 @@ Ways to activate:
 
 ## Licensing
 
-`codestation-mcp` is **source-available** and governed by the Code Station Commercial License ([`LICENSE`](LICENSE) / [`COMMERCIAL_LICENSE.md`](https://github.com/tejreddym/codestation/blob/main/COMMERCIAL_LICENSE.md)):
-- **Free Browser Tools:** All **383 client-side browser utilities** on [codestation.in](https://codestation.in) are open source under the **MIT License**.
-- **MCP Server & Pro (`codestation-mcp`):** Source code is visible for inspection and security review only. Production use of Pro tools, modification, redistribution, or disabling/bypassing license verification requires an active Code Station Pro or Team license from [codestation.in/pro](https://codestation.in/pro).
+`codestation-mcp` (`mcp/` and `packages/codestation-mcp/`) and Code Station's **383 client-side browser utilities** are open source under the **[MIT License](LICENSE)** (see the root [`LICENSE`](https://github.com/tejreddym/codestation/blob/main/LICENSE)).
+
+- Official managed Pro/Team license keys for hosted verification and support are available at [codestation.in/pro](https://codestation.in/pro); the hosted billing and license-issuance backend endpoints (`app/api/`) are governed separately by [`COMMERCIAL_LICENSE.md`](https://github.com/tejreddym/codestation/blob/main/COMMERCIAL_LICENSE.md).

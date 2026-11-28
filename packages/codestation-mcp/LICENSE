@@ -1,12 +1,21 @@
-Code Station Commercial License
+MIT License
 
-Copyright (c) 2026 Tej Reddy / Code Station. All rights reserved.
+Copyright (c) 2026 Tej Reddy
 
-This package (`codestation-mcp`) and the `mcp/` source directory are governed by the Code Station Commercial License (see `COMMERCIAL_LICENSE.md` in the root repository at https://github.com/tejreddym/codestation/blob/main/COMMERCIAL_LICENSE.md).
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
 
-Terms Summary:
-1. Source code is visible solely for inspection, auditing, and security review.
-2. Production use of Pro capabilities, modification, redistribution, hosted SaaS/service resale, or removal/bypass of license enforcement requires an active Code Station Pro or Team license from https://codestation.in/pro.
-3. Unless expressly authorized in writing, you may not bypass, patch out, or circumvent license verification or device/seat limits, nor republish modified copies of `codestation-mcp`.
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

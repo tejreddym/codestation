@@ -2,7 +2,7 @@
 
 [![Checks](https://github.com/tejreddym/codestation/actions/workflows/ci.yml/badge.svg)](https://github.com/tejreddym/codestation/actions/workflows/ci.yml)
 [![npm codestation-mcp](https://img.shields.io/npm/v/codestation-mcp?label=codestation-mcp)](https://www.npmjs.com/package/codestation-mcp)
-[![License: Open-Core](https://img.shields.io/badge/License-MIT%20%2B%20Commercial-green.svg)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![tejreddym/codestation MCP server](https://glama.ai/mcp/servers/tejreddym/codestation/badges/score.svg)](https://glama.ai/mcp/servers/tejreddym/codestation)
 
 Code Station is a browser-first developer toolbox featuring **383 utilities (380+)** across **30 specialized stations** for formatting, converting, hashing, inspecting, compressing, and generating data — **100% locally in the browser** with zero server uploads or accounts required.
@@ -80,6 +80,6 @@ The production target is Cloudflare Workers through the OpenNext adapter. The re
 
 ### Licensing
 
-Code Station uses a dual **Open-Core** license model:
-- **Browser Tools & Web App ([`LICENSE`](LICENSE) — MIT):** All **383 browser-local tools**, stations, UI components, WebMCP integration, and pure client-side engines in `lib/tools/` and `app/` (excluding `app/api/`) are open source under the **MIT License**.
-- **Pro, Billing & MCP Components ([`COMMERCIAL_LICENSE.md`](COMMERCIAL_LICENSE.md)):** The local MCP server & CLI (`mcp/`, `packages/codestation-mcp/`) and Pro licensing/billing endpoints (`app/api/`) are source-available for security inspection under the **Code Station Commercial License**. Production use of Pro capabilities, modification, redistribution, or removing license checks requires an active Pro or Team license from [codestation.in/pro](https://codestation.in/pro).
+Code Station's open-source web app, browser utilities, and local MCP server/CLI are licensed under the **MIT License**:
+- **Browser Tools, Web App & MCP Server/CLI ([`LICENSE`](LICENSE) — MIT):** All **383 browser-local tools**, stations, UI components, WebMCP integration, pure client-side engines in `lib/tools/`, and the local MCP server & pipeable CLI (`mcp/`, `packages/codestation-mcp/`) are open source under the **MIT License**.
+- **Billing & License Backend ([`COMMERCIAL_LICENSE.md`](COMMERCIAL_LICENSE.md)):** Only the hosted Pro license issuance, verification, revocation, and Razorpay billing backend endpoints (`app/api/`) remain governed by the **Code Station Commercial License**. Managed Pro/Team license keys for hosted validation and support are available from [codestation.in/pro](https://codestation.in/pro).
