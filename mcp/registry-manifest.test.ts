@@ -1,5 +1,6 @@
 // @vitest-environment node
 import * as fs from "node:fs";
+import { builtinModules } from "node:module";
 import * as path from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -40,7 +41,12 @@ describe("Official MCP Registry Manifest (server.json)", () => {
   ) as McpServerManifest;
   const mcpPkg = JSON.parse(
     fs.readFileSync(pkgJsonPath, "utf-8")
-  ) as { name: string; mcpName?: string; version: string };
+  ) as {
+    name: string;
+    mcpName?: string;
+    version: string;
+    dependencies?: Record<string, string>;
+  };
 
   it("matches npm package mcpName and semver version across server.json and packages/codestation-mcp", () => {
     expect(serverManifest.$schema).toBe(
@@ -82,5 +88,28 @@ describe("Official MCP Registry Manifest (server.json)", () => {
     expect(stationsVar).toBeDefined();
     expect(stationsVar?.isRequired).toBe(false);
     expect(stationsVar?.isSecret).toBe(false);
+  });
+
+  it("declares every external package imported by packages/codestation-mcp/bin/codestation-mcp.mjs", () => {
+    const bundlePath = path.join(rootDir, "packages/codestation-mcp/bin/codestation-mcp.mjs");
+    const bundle = fs.readFileSync(bundlePath, "utf-8");
+    const builtins = new Set(builtinModules.flatMap((m) => [m, `node:${m}`]));
+    const declared = new Set(Object.keys(mcpPkg.dependencies ?? {}));
+
+    const externalImports = new Set<string>();
+    for (const line of bundle.split("\n")) {
+      const staticMatch = line.match(/^\s*import\b[^"']*["']([^"']+)["'];?$/);
+      if (staticMatch) externalImports.add(staticMatch[1]);
+      for (const m of line.matchAll(/(?:__require|await import)\(["']([^"']+)["']\)/g)) {
+        externalImports.add(m[1]);
+      }
+    }
+
+    const undeclared = [...externalImports]
+      .filter((spec) => !spec.startsWith(".") && !builtins.has(spec))
+      .map((spec) => (spec.startsWith("@") ? spec.split("/").slice(0, 2).join("/") : spec.split("/")[0]))
+      .filter((pkg) => !declared.has(pkg));
+
+    expect(undeclared).toEqual([]);
   });
 });
